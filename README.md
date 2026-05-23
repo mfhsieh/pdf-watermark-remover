@@ -1,4 +1,4 @@
-# 純前端 PDF 浮水印移除工具 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+# 純前端 PDF 浮水印移除工具 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 
 這是一個輕量、免安裝且 100% 在本機瀏覽器端執行的 [純前端 PDF 浮水印移除工具](https://mfhsieh.github.io/pdf-watermark-remover/)。
 
