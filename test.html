@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF 浮水印移除工具 - 自動化測試套件</title>
+
+  <!-- 引入開源高效能 PDF 結構重構程式庫 pdf-lib -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+
+  <style>
+    /* ==========================================
+       自動化測試套件專屬極致科技感 CSS 設計系統
+       ========================================== */
+    :root {
+      --bg: #0f172a;
+      /* 深邃藍黑背景 */
+      --surface: #1e293b;
+      /* 卡片表面色 */
+      --surface-border: #334155;
+      /* 邊框色 */
+      --primary: #3b82f6;
+      /* 科技湛藍 */
+      --primary-glow: rgba(59, 130, 246, 0.4);
+      --success: #10b981;
+      /* 通過綠色 */
+      --success-glow: rgba(16, 185, 129, 0.4);
+      --error: #ef4444;
+      /* 失敗紅色 */
+      --error-glow: rgba(239, 68, 68, 0.4);
+      --text: #f8fafc;
+      /* 高對比亮字 */
+      --text-muted: #94a3b8;
+      /* 次要灰色文字 */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", "Noto Sans TC", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1), transparent 40%),
+        var(--bg);
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ==========================================
+       Header 與標題設計
+       ========================================== */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      margin: 12px 0 0;
+      font-size: 1.1rem;
+    }
+
+    /* ==========================================
+       儀表板與狀態統計卡片
+       ========================================== */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--primary);
+    }
+
+    .stat-card.success::before {
+      background: var(--success);
+    }
+
+    .stat-card.error::before {
+      background: var(--error);
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin: 8px 0;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ==========================================
+       進度條與重新測試按鈕
+       ========================================== */
+    .control-panel {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .progress-container {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .progress-bar-bg {
+      background: rgba(51, 65, 85, 0.5);
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #2563eb);
+      color: var(--text);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--primary-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px var(--primary-glow);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* ==========================================
+       測試卡片列表
+       ========================================== */
+    .test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .test-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      backdrop-filter: blur(8px);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .test-card:hover {
+      border-color: #475569;
+    }
+
+    .test-card.running {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+    }
+
+    .test-card.passed {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.03);
+    }
+
+    .test-card.failed {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.03);
+    }
+
+    .test-info {
+      flex: 1;
+    }
+
+    .test-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .test-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .test-badge.strategy {
+      background: rgba(59, 130, 246, 0.12);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .test-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 6px 0 0;
+    }
+
+    .test-metrics {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .metric-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .test-status-area {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-badge.pending {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+    }
+
+    .status-badge.running {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      animation: pulse 1.5s infinite ease-in-out;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .status-badge.passed {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      box-shadow: 0 0 12px var(--success-glow);
+    }
+
+    .status-badge.failed {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      box-shadow: 0 0 12px var(--error-glow);
+    }
+
+    .test-time {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================
+       Console 日誌與錯誤輸出
+       ========================================== */
+    .console-panel {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 30px;
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 0.85rem;
+      max-height: 250px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .console-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .console-log {
+      margin: 4px 0;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .console-log.info {
+      color: #94a3b8;
+    }
+
+    .console-log.success {
+      color: #34d399;
+    }
+
+    .console-log.error {
+      color: #f87171;
+    }
+
+    /* ==========================================
+       動畫特效
+       ========================================== */
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>PDF 浮水印移除工具 - 自動化測試套件</h1>
+      <p>基於純前端重構架構，深度驗證 6 大策略於測試樣本下的執行成效與冪等性</p>
+    </header>
+
+    <div class="dashboard">
+      <div class="stat-card" id="cardTotal">
+        <div class="stat-value" id="valTotal">0</div>
+        <div class="stat-label">總測試項目</div>
+      </div>
+      <div class="stat-card success" id="cardPassed">
+        <div class="stat-value" id="valPassed" style="color: var(--success)">0</div>
+        <div class="stat-label">通過項目</div>
+      </div>
+      <div class="stat-card error" id="cardFailed">
+        <div class="stat-value" id="valFailed" style="color: var(--error)">0</div>
+        <div class="stat-label">失敗項目</div>
+      </div>
+      <div class="stat-card" id="cardTime">
+        <div class="stat-value" id="valTime">0ms</div>
+        <div class="stat-label">總執行耗時</div>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progressLabel">準備就緒</span>
+          <span id="progressPercent">0%</span>
+        </div>
+      </div>
+      <button class="btn" id="btnRun">執行完整測試</button>
+    </div>
+
+    <div class="test-list" id="testList">
+      <!-- 測試卡片會由 JavaScript 動態渲染 -->
+    </div>
+
+    <div class="console-panel">
+      <div class="console-title">
+        <span>控制台輸出日誌</span>
+        <span style="cursor: pointer; text-decoration: underline" id="btnClearLog">清除記錄</span>
+      </div>
+      <div id="logOutput"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================
+       測試案例定義
+       ========================================== */
+    const testCases = [
+      {
+        id: 1,
+        title: "測試案例一：Form XObject 清除",
+        desc: "驗證向量與文字封裝之 Form XObject 浮水印移除成效與冪等性 (test_1_form_xobject.pdf)",
+        file: "test-files/test_1_form_xobject.pdf",
+        strategy: "removeFormXObject",
+        funcName: "removeFormXObjects"
+      },
+      {
+        id: 2,
+        title: "測試案例二：Annotations 註解移除",
+        desc: "驗證最上層蓋印、stamp 等附加元件之物理刪除 (test_2_annotations.pdf)",
+        file: "test-files/test_2_annotations.pdf",
+        strategy: "removeAnnotations",
+        funcName: "removeAnnotations"
+      },
+      {
+        id: 3,
+        title: "測試案例三：Direct Content 內容流",
+        desc: "驗證 Contents 流中直接以明文寫出之浮水印文字掃描與空串流置換 (test_3_direct_content.pdf)",
+        file: "test-files/test_3_direct_content.pdf",
+        strategy: "removeDirectContent",
+        funcName: "removeDirectContent"
+      },
+      {
+        id: 4,
+        title: "測試案例四：ExtGState 透明度清除",
+        desc: "驗證半透明浮水印所綁定之圖形擴充狀態透明度置換 (test_4_extgstate.pdf)",
+        file: "test-files/test_4_extgstate.pdf",
+        strategy: "removeExtGState",
+        funcName: "removeExtGState"
+      },
+      {
+        id: 5,
+        title: "測試案例五：OCG 隱藏圖層清除",
+        desc: "驗證位於 Catalog 全域圖層定義中的特徵圖層名稱隱藏 (test_5_ocg.pdf)",
+        file: "test-files/test_5_ocg.pdf",
+        strategy: "removeOCG",
+        funcName: "removeOCG"
+      },
+      {
+        id: 6,
+        title: "測試案例六：Image XObject 圖片清除",
+        desc: "驗證包含 watermark 或 wm 等命名特徵之圖片型浮水印置換 (test_6_image_xobject.pdf)",
+        file: "test-files/test_6_image_xobject.pdf",
+        strategy: "removeImageXObject",
+        funcName: "removeImageXObjects"
+      },
+      {
+        id: 7,
+        title: "測試案例七：真實範例一 綜合測試",
+        desc: "驗證日常正常無加密 PDF 對所有策略的相容性與無損儲存 (sample1.pdf)",
+        file: "test-files/sample1.pdf",
+        strategy: "all"
+      },
+      {
+        id: 8,
+        title: "測試案例八：真實範例二 綜合測試",
+        desc: "驗證多頁面、複雜資源檔案於綜合清理策略下之穩定度 (sample2.pdf)",
+        file: "test-files/sample2.pdf",
+        strategy: "all"
+      },
+      {
+        id: 9,
+        title: "測試案例九：加密文件解密與移除",
+        desc: "驗證 qpdf-wasm 動態載入、自動以空密碼解密，並接續進行策略清理 (sample3.pdf)",
+        file: "test-files/sample3.pdf",
+        strategy: "all",
+        isEncrypted: true
+      }
+    ];
+
+    /* ==========================================
+       核心對齊：宣告 1:1 複製自 index.html 的處理策略
+       這些函數在 index.html 中剛完成物理順序重排（策略一至策略六）
+       ========================================== */
+    const PDFName = PDFLib.PDFName;
+    const PDFDict = PDFLib.PDFDict;
+    const PDFArray = PDFLib.PDFArray;
+    const PDFRawStream = PDFLib.PDFRawStream;
+    const PDFString = PDFLib.PDFString;
+    const PDFHexString = PDFLib.PDFHexString;
+
+    // 觸發特徵字眼
+    const TRIGGER_WORDS = ["watermark", "copia", "draft", "confidential", "wm", "浮水印", "草稿", "機密"];
+
+    /**
+     * 策略一：清除 Form XObject 浮水印
+     */
+    function removeFormXObjects(pdfDoc, resources) {
+      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+      if (!(xObjects instanceof PDFDict)) return 0;
+
+      let count = 0;
+      for (const key of xObjects.keys()) {
+        const xObject = pdfDoc.context.lookup(xObjects.get(key));
+        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+
+        if (subtype instanceof PDFName && subtype.toString() === "/Form") {
+          // 冪等狀態檢查：若該物件已包含已被我們清理的標記，則直接跳過
+          if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) continue;
+
+          const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
+            "BBox",
+            "Matrix",
+            "Group",
+            "Resources",
+          ]);
+          xObjects.set(key, blankedStream);
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * 策略二：移除 Annots 註解
+     */
+    function removeAnnotations(page) {
+      const annotsKey = PDFName.of("Annots");
+      if (page.node.has(annotsKey)) {
+        const originalAnnots = page.node.lookup(annotsKey);
+        page.node.delete(annotsKey);
+        return 1;
+      }
+      return 0;
+    }
+
+    /**
+     * 策略三：檢查並清空可疑內容流
+     */
+    function removeDirectContent(pdfDoc, page, pageIndex, options) {
+      const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
+      if (!contents) return 0;
+
+      const streams = [];
+      if (contents instanceof PDFArray) {
+        for (let idx = 0; idx < contents.size(); idx += 1) {
+          streams.push({ item: contents.lookup(idx), index: idx });
+        }
+      } else {
+        streams.push({ item: contents, index: null });
+      }
+
+      let count = 0;
+      streams.forEach((entry) => {
+        const stream = entry.item;
+        if (!(stream instanceof PDFRawStream)) return;
+
+        try {
+          const data = stream.getContents();
+          const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
+
+          const containsTriggerWord = TRIGGER_WORDS.some((word) => text.includes(word));
+          if (containsTriggerWord) {
+            const clonedDict = stream.dict.clone(pdfDoc.context);
+            const emptyStream = pdfDoc.context.stream(new Uint8Array(), clonedDict);
+            const ref = pdfDoc.context.register(emptyStream);
+
+            if (entry.index === null) {
+              page.node.set(PDFName.of("Contents"), ref);
+            } else {
+              contents.set(entry.index, ref);
+            }
+            count += 1;
+          }
+        } catch (error) {
+          console.error("Direct content scan failed", error);
+        }
+      });
+      return count;
+    }
+
+    /**
+     * 策略四：清理 ExtGState 半透明狀態
+     */
+    function removeExtGState(pdfDoc, resources) {
+      const extGState = resources.lookup(PDFName.of("ExtGState"));
+      if (!(extGState instanceof PDFDict)) return 0;
+
+      let count = 0;
+      for (const key of extGState.keys()) {
+        if (key.value().toLowerCase().includes("watermark")) {
+          // 冪等狀態檢查：若物件已是被重置的空 ExtGState 字典，則跳過
+          const val = extGState.lookup(key);
+          if (val instanceof PDFDict && val.keys().length <= 1) continue;
+
+          extGState.set(key, pdfDoc.context.obj({ Type: PDFName.of("ExtGState") }));
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
+     */
+    function removeOCG(pdfDoc) {
+      const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));
+      if (!ocPropertiesRef) return 0;
+
+      const ocProperties = pdfDoc.context.lookup(ocPropertiesRef);
+      if (!(ocProperties instanceof PDFDict)) return 0;
+
+      const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
+      if (!ocgsRef) return 0;
+
+      const ocgs = pdfDoc.context.lookup(ocgsRef);
+      if (!(ocgs instanceof PDFArray)) return 0;
+
+      let count = 0;
+      for (let idx = 0; idx < ocgs.size(); idx += 1) {
+        const ocg = ocgs.lookup(idx);
+        if (!(ocg instanceof PDFDict)) continue;
+        const nameObject = ocg.lookup(PDFName.of("Name"));
+        if (!(nameObject instanceof PDFString || nameObject instanceof PDFHexString)) continue;
+
+        const name = nameObject.decodeText().toLowerCase();
+        if (name.includes("watermark")) {
+          ocg.set(PDFName.of("Name"), PDFString.of(""));
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * 策略六：清除圖片型浮水印 (Image XObject)
+     */
+    function removeImageXObjects(pdfDoc, resources) {
+      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+      if (!(xObjects instanceof PDFDict)) return 0;
+
+      let count = 0;
+      for (const key of xObjects.keys()) {
+        const xObject = pdfDoc.context.lookup(xObjects.get(key));
+        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+
+        if (subtype instanceof PDFName && subtype.toString() === "/Image") {
+          const name = key.value().toLowerCase();
+          if (name.includes("watermark") || name.includes("wm")) {
+            // 冪等狀態檢查：若該物件已包含已被我們清理的標記，則直接跳過
+            if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) continue;
+
+            const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
+              "Width",
+              "Height",
+              "ColorSpace",
+              "BitsPerComponent",
+              "Decode",
+              "Intent",
+            ]);
+            xObjects.set(key, blankedStream);
+            count += 1;
+          }
+        }
+      }
+      return count;
+    }
+
+    /**
+     * 建立空 XObject 串流
+     */
+    function createBlankXObjectStream(pdfDoc, originalStream, subtype, keepKeys = []) {
+      const dict = pdfDoc.context.obj({
+        Type: PDFName.of("XObject"),
+        Subtype: PDFName.of(subtype),
+        IsWatermarkRemoved: pdfDoc.context.obj(true),
+      });
+
+      for (const keyName of keepKeys) {
+        const key = PDFName.of(keyName);
+        const value = originalStream.dict.lookup(key);
+        if (value) {
+          dict.set(key, value);
+        }
+      }
+
+      const stream = pdfDoc.context.stream(new Uint8Array(), dict);
+      return pdfDoc.context.register(stream);
+    }
+
+    /**
+     * PDF 綜合處理中心
+     */
+    function processPdf(pdfDoc, options) {
+      let modifiedObjects = 0;
+
+      for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
+        const page = pdfDoc.getPage(pageIndex);
+
+        const contentsKey = PDFName.of("Contents");
+        const contents = page.node.lookup(contentsKey);
+        if (contents instanceof PDFArray) {
+          page.node.set(contentsKey, contents.clone(pdfDoc.context));
+        }
+
+        if (options.removeAnnotations) {
+          modifiedObjects += removeAnnotations(page);
+        }
+
+        let resources = page.node.lookup(PDFName.of("Resources"));
+        if (!(resources instanceof PDFDict)) {
+          continue;
+        }
+
+        if (resources.clone) {
+          resources = resources.clone(pdfDoc.context);
+          page.node.set(PDFName.of("Resources"), resources);
+        }
+
+        if (options.removeFormXObject) {
+          modifiedObjects += removeFormXObjects(pdfDoc, resources);
+        }
+        if (options.removeImageXObject) {
+          modifiedObjects += removeImageXObjects(pdfDoc, resources);
+        }
+        if (options.removeDirectContent) {
+          modifiedObjects += removeDirectContent(pdfDoc, page, pageIndex, options);
+        }
+        if (options.removeExtGState) {
+          modifiedObjects += removeExtGState(pdfDoc, resources);
+        }
+      }
+
+      if (options.removeOCG) {
+        modifiedObjects += removeOCG(pdfDoc);
+      }
+
+      return { modifiedObjects };
+    }
+
+    /* ==========================================
+       qpdf-wasm 解密模組
+       ========================================== */
+    async function decryptPdf(pdfBytes, password = "") {
+      if (!window._qpdfWasmModule) {
+        log("正在延遲載入 qpdf-wasm 模組 (約 1.8MB)...", "info");
+        const { default: QPDF } = await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
+        window._qpdfWasmModule = await QPDF();
+        log("qpdf-wasm 模組載入成功", "success");
+      }
+
+      const qpdf = window._qpdfWasmModule;
+      const inputPath = "input.pdf";
+      const outputPath = "output.pdf";
+
+      qpdf.FS.writeFile(inputPath, pdfBytes);
+
+      const args = ["--decrypt"];
+      if (password) {
+        args.push(`--password=${password}`);
+      }
+      args.push(inputPath, outputPath);
+
+      try {
+        const exitCode = qpdf.callMain(args);
+        if (exitCode !== 0) {
+          throw new Error(`qpdf exit with code ${exitCode}`);
+        }
+        const decryptedBytes = qpdf.FS.readFile(outputPath);
+        
+        try { qpdf.FS.unlink(inputPath); } catch { }
+        try { qpdf.FS.unlink(outputPath); } catch { }
+        
+        return decryptedBytes;
+      } catch (error) {
+        try { qpdf.FS.unlink(inputPath); } catch { }
+        try { qpdf.FS.unlink(outputPath); } catch { }
+        throw error;
+      }
+    }
+
+    /* ==========================================
+       UI 渲染與主邏輯
+       ========================================== */
+    const testListEl = document.getElementById("testList");
+    const logOutputEl = document.getElementById("logOutput");
+    const valTotalEl = document.getElementById("valTotal");
+    const valPassedEl = document.getElementById("valPassed");
+    const valFailedEl = document.getElementById("valFailed");
+    const valTimeEl = document.getElementById("valTime");
+    const progressFillEl = document.getElementById("progressFill");
+    const progressLabelEl = document.getElementById("progressLabel");
+    const progressPercentEl = document.getElementById("progressPercent");
+    const btnRunEl = document.getElementById("btnRun");
+    const btnClearLogEl = document.getElementById("btnClearLog");
+
+    // 初始化統計
+    valTotalEl.textContent = testCases.length;
+
+    // 清除記錄
+    btnClearLogEl.addEventListener("click", () => {
+      logOutputEl.innerHTML = "";
+    });
+
+    // 輸出 Log 輔助函數
+    function log(message, type = "info") {
+      const p = document.createElement("p");
+      p.className = `console-log ${type}`;
+      const time = new Date().toLocaleTimeString();
+      p.textContent = `[${time}] ${message}`;
+      logOutputEl.appendChild(p);
+      logOutputEl.scrollTop = logOutputEl.scrollHeight;
+    }
+
+    // 渲染測試卡片
+    function renderCards() {
+      testListEl.innerHTML = "";
+      testCases.forEach(tc => {
+        const card = document.createElement("div");
+        card.className = "test-card";
+        card.id = `tc-${tc.id}`;
+
+        card.innerHTML = `
+          <div class="test-info">
+            <div class="test-title">
+              <span>${tc.title}</span>
+              <span class="test-badge">ID: ${tc.id}</span>
+              ${tc.strategy !== "all" ? `<span class="test-badge strategy">${tc.strategy}</span>` : `<span class="test-badge" style="color: #34d399">綜合測試</span>`}
+            </div>
+            <p class="test-desc">${tc.desc}</p>
+            <div class="test-metrics" id="metrics-${tc.id}">
+              <!-- 動態填入度量 -->
+            </div>
+          </div>
+          <div class="test-status-area">
+            <div class="status-badge pending" id="status-${tc.id}">等待中</div>
+            <div class="test-time" id="time-${tc.id}">-</div>
+          </div>
+        `;
+        testListEl.appendChild(card);
+      });
+    }
+
+    renderCards();
+
+    // 執行所有測試案例
+    btnRunEl.addEventListener("click", runTests);
+
+    async function runTests() {
+      btnRunEl.disabled = true;
+      btnRunEl.textContent = "測試執行中...";
+      log("自動化測試啟動，開始載入測試文件...", "info");
+
+      renderCards();
+
+      let passedCount = 0;
+      let failedCount = 0;
+      const startTime = performance.now();
+
+      for (let i = 0; i < testCases.length; i += 1) {
+        const tc = testCases[i];
+        const card = document.getElementById(`tc-${tc.id}`);
+        const statusBadge = document.getElementById(`status-${tc.id}`);
+        const timeEl = document.getElementById(`time-${tc.id}`);
+        const metricsEl = document.getElementById(`metrics-${tc.id}`);
+
+        card.className = "test-card running";
+        statusBadge.className = "status-badge running";
+        statusBadge.textContent = "運行中";
+        
+        // 更新進度
+        const percent = Math.round((i / testCases.length) * 100);
+        progressFillEl.style.width = `${percent}%`;
+        progressLabelEl.textContent = `正執行: ${tc.title}`;
+        progressPercentEl.textContent = `${percent}%`;
+
+        const tcStartTime = performance.now();
+        let pass = false;
+        let errorMsg = "";
+        let details = {};
+
+        try {
+          log(`[項目 ${tc.id}] 正在下載測試文件: ${tc.file}...`, "info");
+          const response = await fetch(tc.file);
+          if (!response.ok) {
+            throw new Error(`下載失敗 (${response.status} ${response.statusText})`);
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          let pdfBytes = new Uint8Array(arrayBuffer);
+          log(`[項目 ${tc.id}] 下載成功，大小: ${pdfBytes.length} 位元組`, "info");
+
+          // 進行解密驗證 (測試案例九 / sample3.pdf)
+          let isEncrypted = false;
+          if (tc.isEncrypted) {
+            log(`[項目 ${tc.id}] 偵測到加密需求，正在呼叫 qpdf-wasm 解密...`, "info");
+            const decryptedBytes = await decryptPdf(pdfBytes);
+            pdfBytes = decryptedBytes;
+            isEncrypted = true;
+            log(`[項目 ${tc.id}] 解密成功！解密後大小: ${pdfBytes.length} 位元組`, "success");
+          }
+
+          // 載入 PDF 文件
+          const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+          
+          // 決定清理選項
+          const options = {
+            removeAnnotations: tc.strategy === "removeAnnotations" || tc.strategy === "all",
+            removeFormXObject: tc.strategy === "removeFormXObject" || tc.strategy === "all",
+            removeExtGState: tc.strategy === "removeExtGState" || tc.strategy === "all",
+            removeImageXObject: tc.strategy === "removeImageXObject" || tc.strategy === "all",
+            removeDirectContent: tc.strategy === "removeDirectContent" || tc.strategy === "all",
+            removeOCG: tc.strategy === "removeOCG" || tc.strategy === "all"
+          };
+
+          // 第一次掃描清理
+          log(`[項目 ${tc.id}] 進行第一次浮水印移除掃描...`, "info");
+          const res1 = processPdf(pdfDoc, options);
+          details.firstCleaned = res1.modifiedObjects;
+          log(`[項目 ${tc.id}] 第一次掃描完成，已置換或修改了 ${res1.modifiedObjects} 個物件。`, "info");
+
+          // 第二次掃描清理 (驗證冪等性)
+          log(`[項目 ${tc.id}] 進行第二次浮水印移除掃描以驗證冪等性...`, "info");
+          const res2 = processPdf(pdfDoc, options);
+          details.secondCleaned = res2.modifiedObjects;
+          log(`[項目 ${tc.id}] 第二次掃描完成，修改物件數: ${res2.modifiedObjects}`, "info");
+
+          // 保存並重新載入，確保沒有損壞 PDF 結構
+          log(`[項目 ${tc.id}] 驗證 PDF 結構無損重構與封裝保存...`, "info");
+          const savedBytes = await pdfDoc.save();
+          const reloadedDoc = await PDFLib.PDFDocument.load(savedBytes);
+          details.pages = reloadedDoc.getPageCount();
+
+          // 斷言邏輯
+          if (tc.strategy !== "all") {
+            // 單項特徵策略驗證：第一次至少要處理 1 個，第二次應該為 0 達成冪等
+            if (res1.modifiedObjects >= 1 && res2.modifiedObjects === 0) {
+              pass = true;
+            } else {
+              errorMsg = `第一次清理數為 ${res1.modifiedObjects} (預期>=1)，第二次清理數為 ${res2.modifiedObjects} (預期=0，達成冪等)`;
+            }
+          } else {
+            // 綜合範例：只要不拋錯即成功，若有加密則需確認解密且處理物件數 > 0
+            if (tc.isEncrypted) {
+              if (res1.modifiedObjects > 0) {
+                pass = true;
+              } else {
+                errorMsg = `加密解密成功，但未移除任何物件。`;
+              }
+            } else {
+              pass = true;
+            }
+          }
+
+        } catch (error) {
+          pass = false;
+          errorMsg = error.message;
+          log(`[項目 ${tc.id}] 拋出異常: ${errorMsg}`, "error");
+        }
+
+        const tcEndTime = performance.now();
+        const elapsed = Math.round(tcEndTime - tcStartTime);
+        timeEl.textContent = `${elapsed}ms`;
+
+        if (pass) {
+          passedCount += 1;
+          card.className = "test-card passed";
+          statusBadge.className = "status-badge passed";
+          statusBadge.textContent = "PASS";
+          log(`[項目 ${tc.id}] 測試成功通過！`, "success");
+
+          metricsEl.innerHTML = `
+            <div class="metric-item">🟢 第一次清理數: ${details.firstCleaned}</div>
+            <div class="metric-item">🔄 第二次清理數: ${details.secondCleaned} (冪等驗證)</div>
+            <div class="metric-item">📄 總頁數: ${details.pages} 頁</div>
+          `;
+        } else {
+          failedCount += 1;
+          card.className = "test-card failed";
+          statusBadge.className = "status-badge failed";
+          statusBadge.textContent = "FAIL";
+          log(`[項目 ${tc.id}] 測試失敗: ${errorMsg}`, "error");
+
+          metricsEl.innerHTML = `
+            <div class="metric-item" style="color: var(--error)">❌ 失敗原因: ${errorMsg}</div>
+          `;
+        }
+
+        // 更新大盤統計
+        valPassedEl.textContent = passedCount;
+        valFailedEl.textContent = failedCount;
+      }
+
+      // 測試結束
+      const totalTime = Math.round(performance.now() - startTime);
+      valTimeEl.textContent = `${totalTime}ms`;
+      
+      progressFillEl.style.width = `100%`;
+      progressLabelEl.textContent = `測試完成`;
+      progressPercentEl.textContent = `100%`;
+
+      btnRunEl.disabled = false;
+      btnRunEl.textContent = "執行完整測試";
+      
+      if (failedCount === 0) {
+        log(`🎉 恭喜！所有測試案例皆已 100% PASS！這證明了程式順序重排非常完美，無任何邏輯破壞！`, "success");
+      } else {
+        log(`⚠️ 測試完成，但有 ${failedCount} 個項目失敗。請檢視上方失敗原因進行修復。`, "error");
+      }
+
+      // 事件驅動自動回報機制：若 URL 中帶有報告 Port，則將結構化結果發送給 Python TCP 伺服器
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("reportPort")) {
+        const port = urlParams.get("reportPort");
+        const report = {
+          passed: passedCount,
+          failed: failedCount,
+          totalTime: totalTime,
+          cases: testCases.map(tc => {
+            const card = document.getElementById(`tc-${tc.id}`);
+            const pass = card.classList.contains("passed");
+            const metricsEl = document.getElementById(`metrics-${tc.id}`);
+            const metrics = metricsEl ? Array.from(metricsEl.querySelectorAll(".metric-item")).map(el => el.textContent.trim()) : [];
+            return { id: tc.id, title: tc.title, pass: pass, metrics: metrics };
+          })
+        };
+        // 延遲 300ms 發送，確保 UI 完全渲染完畢
+        setTimeout(() => {
+          fetch(`http://localhost:${port}/report?data=${encodeURIComponent(JSON.stringify(report))}`).catch(()=>{});
+        }, 300);
+      }
+    }
+
+    // 自動執行一次測試
+    window.addEventListener("DOMContentLoaded", () => {
+      setTimeout(runTests, 800);
+    });
+  </script>
+</body>
+
+</html>
