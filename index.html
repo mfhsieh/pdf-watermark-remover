@@ -1165,25 +1165,6 @@
     }
 
     /**
-     * 策略二：移除 Annots 註解
-     * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
-     * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
-     * 
-     * @param {PDFPage} page - 目標頁面物件
-     * @returns {number} 移除成功與否的統計計數 (0 或 1)
-     */
-    function removeAnnotations(page) {
-      const annotsKey = PDFName.of("Annots");
-      if (page.node.has(annotsKey)) {
-        const originalAnnots = page.node.lookup(annotsKey);
-        page.node.delete(annotsKey);
-        console.log(`Removed Annots from page. Ref: ${originalAnnots.ref ? originalAnnots.ref.objectNumber : 'no ref'}`);
-        return 1;
-      }
-      return 0;
-    }
-
-    /**
      * 策略一：清除 Form XObject 浮水印
      * Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
      * 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
@@ -1218,43 +1199,22 @@
     }
 
     /**
-     * 策略六：清除圖片型浮水印 (Image XObject)
-     * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
-     * 為避免誤刪正常插圖，我們會檢查圖片元件的命名特徵鍵值（如 /Watermark1, /wm2 等）。
-     * 若符合，則建立空 Image 串流置換。
+     * 策略二：移除 Annots 註解
+     * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
+     * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
      * 
-     * @param {PDFDocument} pdfDoc - 文件物件
-     * @param {PDFDict} resources - 頁面資源字典
-     * @returns {number} 處理掉的 Image 數量
+     * @param {PDFPage} page - 目標頁面物件
+     * @returns {number} 移除成功與否的統計計數 (0 或 1)
      */
-    function removeImageXObjects(pdfDoc, resources) {
-      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
-      if (!(xObjects instanceof PDFDict)) return 0;
-
-      let count = 0;
-      for (const key of xObjects.keys()) {
-        const xObject = pdfDoc.context.lookup(xObjects.get(key));
-        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
-
-        if (subtype instanceof PDFName && subtype.toString() === "/Image") {
-          const name = key.value().toLowerCase();
-          // 比對特徵命名字串
-          if (name.includes("watermark") || name.includes("wm")) {
-            // 替換為空 Image，保留寬高尺寸與色彩空間等硬性參數
-            const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
-              "Width",
-              "Height",
-              "ColorSpace",
-              "BitsPerComponent",
-              "Decode",
-              "Intent",
-            ]);
-            xObjects.set(key, blankedStream);
-            count += 1;
-          }
-        }
+    function removeAnnotations(page) {
+      const annotsKey = PDFName.of("Annots");
+      if (page.node.has(annotsKey)) {
+        const originalAnnots = page.node.lookup(annotsKey);
+        page.node.delete(annotsKey);
+        console.log(`Removed Annots from page. Ref: ${originalAnnots.ref ? originalAnnots.ref.objectNumber : 'no ref'}`);
+        return 1;
       }
-      return count;
+      return 0;
     }
 
     /**
@@ -1381,6 +1341,46 @@
           // 清空圖層名稱，使其失效不顯示
           ocg.set(PDFName.of("Name"), PDFString.of(""));
           count += 1;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * 策略六：清除圖片型浮水印 (Image XObject)
+     * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
+     * 為避免誤刪正常插圖，我們會檢查圖片元件的命名特徵鍵值（如 /Watermark1, /wm2 等）。
+     * 若符合，則建立空 Image 串流置換。
+     * 
+     * @param {PDFDocument} pdfDoc - 文件物件
+     * @param {PDFDict} resources - 頁面資源字典
+     * @returns {number} 處理掉的 Image 數量
+     */
+    function removeImageXObjects(pdfDoc, resources) {
+      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+      if (!(xObjects instanceof PDFDict)) return 0;
+
+      let count = 0;
+      for (const key of xObjects.keys()) {
+        const xObject = pdfDoc.context.lookup(xObjects.get(key));
+        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+
+        if (subtype instanceof PDFName && subtype.toString() === "/Image") {
+          const name = key.value().toLowerCase();
+          // 比對特徵命名字串
+          if (name.includes("watermark") || name.includes("wm")) {
+            // 替換為空 Image，保留寬高尺寸與色彩空間等硬性參數
+            const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
+              "Width",
+              "Height",
+              "ColorSpace",
+              "BitsPerComponent",
+              "Decode",
+              "Intent",
+            ]);
+            xObjects.set(key, blankedStream);
+            count += 1;
+          }
         }
       }
       return count;
