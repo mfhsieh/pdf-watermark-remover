@@ -65,6 +65,24 @@
       margin: 0;
       /* 使用 clamp 實現流體字型大小，在手機與大螢幕之間完美無縫過渡 */
       font-size: clamp(2rem, 3vw, 2.8rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* 版本號精美圓角徽章樣式 */
+    .version-badge {
+      display: inline-flex;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: rgba(47, 107, 235, 0.08);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 8px;
+      letter-spacing: 0.03em;
+      border: 1px solid rgba(47, 107, 235, 0.15);
     }
 
     header p {
@@ -431,7 +449,7 @@
   <div class="container">
     <!-- 頁面頭部標題區 -->
     <header>
-      <h1>純前端 PDF 浮水印移除工具</h1>
+      <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.0.0</span></h1>
       <p>所有處理在瀏覽器端執行，檔案不會上傳到伺服器。</p>
     </header>
 
