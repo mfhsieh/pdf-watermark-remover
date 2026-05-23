@@ -2,1390 +2,1518 @@
 <html lang="zh-Hant">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- 網頁標題與 SEO 資訊 -->
-  <title>純前端 PDF 浮水印移除工具</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>純前端 PDF 浮水印移除工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 
-  <!-- 引入開源高效能 PDF 結構重構程式庫 pdf-lib -->
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
-
-  <style>
-    /* ==========================================
+    <style>
+        /* ==========================================
        專案核心設計系統與 CSS 自訂變數定義
        ========================================== */
-    :root {
-      --bg: #f4f7fb;
-      /* 頁面背景色：柔和的淡藍灰 */
-      --surface: #ffffff;
-      /* 卡片與元件表面色：純白 */
-      --primary: #2f6beb;
-      /* 品牌主色調：湛藍 */
-      --primary-dark: #254f9a;
-      /* 主色懸停與點擊效果 */
-      --text: #1f2937;
-      /* 主要文字色：深灰黑 */
-      --muted: #6b7280;
-      /* 次要與輔助文字色：中灰色 */
-      --border: #e2e8f0;
-      /* 邊框與分隔線顏色：淡灰 */
-      --danger: #d92d20;
-      /* 警示與錯誤提示色：紅色 */
-    }
+        :root {
+            --bg: #f4f7fb;            /* 頁面背景色：柔和的淡藍灰 */
+            --surface: #ffffff;       /* 卡片與元件表面色：純白 */
+            --primary: #2f6beb;       /* 品牌主色調：湛藍 */
+            --primary-dark: #254f9a;  /* 主色懸停與點擊效果 */
+            --text: #1f2937;          /* 主要文字色：深灰黑 */
+            --muted: #6b7280;         /* 次要與輔助文字色：中灰色 */
+            --border: #e2e8f0;        /* 邊框與分隔線顏色：淡灰 */
+            --danger: #d92d20;        /* 警示與錯誤提示色：紅色 */
+        }
 
-    /* ==========================================
+        /* ==========================================
        全域樣式與 Reset 設定
        ========================================== */
-    * {
-      box-sizing: border-box;
-      /* 確保 padding 與 border 不會撐大元素寬高 */
-    }
+        * {
+            box-sizing: border-box;
+            /* 確保 padding 與 border 不會撐大元素寬高 */
+        }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      /* 優先採用現代字體，並引入 Noto Sans TC 提升字型呈現效果 */
-      font-family: Inter, "Noto Sans TC", "Segoe UI", sans-serif;
-      color: var(--text);
-      /* 使用環境漸層背景 */
-      background: radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
-        radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%),
-        var(--bg);
-    }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            /* 優先採用現代字體，並引入 Noto Sans TC 提升字型呈現效果 */
+            font-family: Inter, "Noto Sans TC", "Segoe UI", sans-serif;
+            color: var(--text);
+            /* 使用環境漸層背景 */
+            background: radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
+                radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%),
+                var(--bg);
+        }
 
-    /* ==========================================
+        /* ==========================================
        容器與排版布局
        ========================================== */
-    .container {
-      max-width: 1400px;
-      /* 響應式版面最大寬度限制為 1400px */
-      margin: 0 auto;
-      /* 置中對齊 */
-      padding: 28px 16px 48px;
-      /* 內距設定 */
-    }
+        .container {
+            max-width: 1400px;
+            /* 響應式版面最大寬度限制為 1400px */
+            margin: 0 auto;
+            /* 置中對齊 */
+            padding: 28px 16px 48px;
+            /* 內距設定 */
+        }
 
-    /* 網頁標頭區域樣式 */
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+        /* 網頁標頭區域樣式 */
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
 
-    header h1 {
-      margin: 0;
-      /* 使用 clamp 實現自適應字型大小 */
-      font-size: clamp(2rem, 3vw, 2.8rem);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+        header h1 {
+            margin: 0;
+            /* 使用 clamp 實現自適應字型大小 */
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
 
-    /* 版本號精美圓角徽章樣式 */
-    .version-badge {
-      display: inline-flex;
-      font-size: 0.9rem;
-      font-weight: 700;
-      background: rgba(47, 107, 235, 0.08);
-      color: var(--primary);
-      padding: 4px 10px;
-      border-radius: 8px;
-      letter-spacing: 0.03em;
-      border: 1px solid rgba(47, 107, 235, 0.15);
-    }
+        /* 版本號精美圓角徽章樣式 */
+        .version-badge {
+            display: inline-flex;
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: rgba(47, 107, 235, 0.08);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 8px;
+            letter-spacing: 0.03em;
+            border: 1px solid rgba(47, 107, 235, 0.15);
+        }
 
-    header p {
-      margin: 12px auto 0;
-      color: var(--muted);
-      max-width: 700px;
-    }
+        header p {
+            margin: 12px auto 0;
+            color: var(--muted);
+            max-width: 700px;
+        }
 
-    /* ==========================================
+        /* ==========================================
        卡片與功能面板樣式
        ========================================== */
-    .card,
-    .info-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      /* 現代大圓角風格 */
-      /* 卡片陰影效果 */
-      box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
-      padding: 28px;
-      margin-bottom: 24px;
-    }
+        .card,
+        .info-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            /* 現代大圓角風格 */
+            /* 卡片陰影效果 */
+            box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
+            padding: 28px;
+            margin-bottom: 24px;
+        }
 
-    /* ==========================================
+        /* ==========================================
        檔案拖曳上傳互動區域
        ========================================== */
-    .file-area {
-      position: relative;
-      border: 2px dashed var(--primary);
-      /* 湛藍虛線指示框 */
-      border-radius: 14px;
-      min-height: 85px;
-      /* 設定最小高度 */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      cursor: pointer;
-      /* 平滑的過渡動畫 */
-      transition: background 0.2s ease, border-color 0.2s ease;
-      margin-bottom: 24px;
-      background: rgba(47, 107, 235, 0.04);
-      padding: 12px 24px;
-    }
+        .file-area {
+            position: relative;
+            border: 2px dashed var(--primary);
+            /* 湛藍虛線指示框 */
+            border-radius: 14px;
+            min-height: 85px;
+            /* 設定最小高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            /* 平滑的過渡動畫 */
+            transition: background 0.2s ease, border-color 0.2s ease;
+            margin-bottom: 24px;
+            background: rgba(47, 107, 235, 0.04);
+            padding: 12px 24px;
+        }
 
-    /* 檔案拖曳滑過時的動態 hover 視覺回饋 */
-    .file-area:hover {
-      background: rgba(47, 107, 235, 0.08);
-      border-color: var(--primary-dark);
-    }
+        /* 檔案拖曳滑過時的動態 hover 視覺回饋 */
+        .file-area:hover {
+            background: rgba(47, 107, 235, 0.08);
+            border-color: var(--primary-dark);
+        }
 
-    /* 隱藏原生 input file，使其完全透明並鋪滿整個拖曳區 */
-    .file-area input[type="file"] {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
+        /* 隱藏原生 input file，使其完全透明並鋪滿整個拖曳區 */
+        .file-area input[type="file"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
 
-    /* 拖曳區內部元件排版：自動折行與置中對齊 */
-    .file-area-inner {
-      pointer-events: none;
-      /* 避免子元素干擾拖曳事件 */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+        /* 拖曳區內部元件排版：自動折行與置中對齊 */
+        .file-area-inner {
+            pointer-events: none;
+            /* 避免子元素干擾拖曳事件 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
 
-    .file-area-inner strong {
-      display: inline-block;
-      font-size: 1.05rem;
-      color: var(--primary);
-    }
+        .file-area-inner strong {
+            display: inline-block;
+            font-size: 1.05rem;
+            color: var(--primary);
+        }
 
-    .file-area-inner span {
-      display: inline-block;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
+        .file-area-inner span {
+            display: inline-block;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
 
-    /* ==========================================
+        /* ==========================================
        浮水印清理策略選項清單
        ========================================== */
-    .options {
-      display: grid;
-      gap: 14px;
-      margin-bottom: 20px;
-    }
+        .options {
+            display: grid;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
 
-    .options h2 {
-      margin: 0 0 8px;
-      font-size: 1.05rem;
-    }
+        .options h2 {
+            margin: 0 0 8px;
+            font-size: 1.05rem;
+        }
 
-    .phrase-label {
-      font-weight: 600;
-    }
+        .phrase-label {
+            font-weight: 600;
+        }
 
-    /* 選項 checkbox 文字行高與對齊調整 */
-    .options label {
-      display: block;
-      color: var(--text);
-      font-size: 0.98rem;
-    }
+        /* 選項 checkbox 文字行高與對齊調整 */
+        .options label {
+            display: block;
+            color: var(--text);
+            font-size: 0.98rem;
+        }
 
-    .options input {
-      margin-right: 10px;
-    }
+        .options input {
+            margin-right: 10px;
+        }
 
-    /* ==========================================
+        /* ==========================================
        按鈕與動態回饋
        ========================================== */
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 14px 18px;
-      border: none;
-      border-radius: 14px;
-      font-size: 1rem;
-      cursor: pointer;
-      background: var(--border);
-      color: var(--text);
-      /* hover 時的平滑位移過渡動畫 */
-      transition: transform 0.2s ease, background 0.2s ease;
-    }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: var(--border);
+            color: var(--text);
+            /* hover 時的平滑位移過渡動畫 */
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
 
-    /* 按鈕懸浮時微往上漂浮 */
-    .button:hover {
-      transform: translateY(-1px);
-    }
+        /* 按鈕懸浮時微往上漂浮 */
+        .button:hover {
+            transform: translateY(-1px);
+        }
 
-    /* 湛藍色主按鈕樣式 */
-    .button-primary {
-      background: var(--primary);
-      color: #fff;
-    }
+        /* 湛藍色主按鈕樣式 */
+        .button-primary {
+            background: var(--primary);
+            color: #fff;
+        }
 
-    /* 狀態資訊文字顯示 */
-    .status {
-      margin-top: 20px;
-      line-height: 1.65;
-      color: var(--muted);
-    }
+        /* 狀態資訊文字顯示 - 升級為高科技控制台日誌面板 */
+        .status {
+            margin-top: 20px;
+            line-height: 1.65;
+            color: var(--text);
+            background: #fafbfe;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 0.875rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+            scroll-behavior: smooth;
+        }
 
-    .download-area {
-      margin-top: 22px;
-    }
+        .status-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            animation: statusLineFadeIn 0.2s ease-out forwards;
+            word-break: break-all;
+        }
 
-    /* 公用隱藏樣式 */
-    .hidden {
-      display: none;
-    }
+        .status-line.info {
+            color: var(--muted);
+        }
 
-    /* ==========================================
+        .status-line.success {
+            color: #0f973d;
+            font-weight: 500;
+        }
+
+        .status-line.error {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        @keyframes statusLineFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .download-area {
+            margin-top: 22px;
+        }
+
+        /* 公用隱藏樣式 */
+        .hidden {
+            display: none;
+        }
+
+        /* ==========================================
        PDF Before & After 左右即時預覽雙視窗
        ========================================== */
-    .preview-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      /* 預設左右分欄 1:1 分割 */
-      gap: 20px;
-      margin-top: 30px;
-      width: 100%;
-    }
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 預設左右分欄 1:1 分割 */
+            gap: 20px;
+            margin-top: 30px;
+            width: 100%;
+        }
 
-    .preview-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: opacity 0.3s ease;
-    }
+        .preview-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
 
-    .preview-box h3 {
-      margin: 0 0 12px;
-      font-size: 1.1rem;
-      color: var(--text);
-    }
+        .preview-box h3 {
+            margin: 0 0 12px;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
 
-    /* 原生內嵌網頁預覽視窗架構 */
-    .preview-iframe {
-      width: 100%;
-      height: 550px;
-      /* 高度設計適中，方便快速檢視 */
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #f8fafc;
-      /* PDF 載入前的骨架背景底色 */
-    }
+        /* 原生內嵌網頁預覽視窗架構 */
+        .preview-iframe {
+            width: 100%;
+            height: 550px;
+            /* 高度設計適中，方便快速檢視 */
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f8fafc;
+            /* PDF 載入前的骨架背景底色 */
+        }
 
-    /* 手機與窄螢幕下，自動改為上下分開堆疊排版 */
-    @media (max-width: 768px) {
-      .preview-container {
-        grid-template-columns: 1fr;
-      }
-    }
+        /* 手機與窄螢幕下，自動改為上下分開堆疊排版 */
+        @media (max-width: 768px) {
+            .preview-container {
+                grid-template-columns: 1fr;
+            }
+        }
 
-    /* ==========================================
+        /* ==========================================
        說明文件網格雙欄排版
        ========================================== */
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 30px;
-    }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+        }
 
-    .info-column h2 {
-      font-size: 1.25rem;
-      margin-top: 0;
-      margin-bottom: 16px;
-      color: var(--text);
-    }
+        .info-column h2 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
 
-    .info-column p {
-      line-height: 1.6;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+        .info-column p {
+            line-height: 1.6;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
 
-    .info-column ul,
-    .info-column ol {
-      margin: 12px 0 0;
-      padding-left: 20px;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.6;
-    }
+        .info-column ul,
+        .info-column ol {
+            margin: 12px 0 0;
+            padding-left: 20px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
 
-    .info-column li {
-      margin-bottom: 8px;
-    }
+        .info-column li {
+            margin-bottom: 8px;
+        }
 
-    /* 免責聲明左側標誌性警告粗線條設計 */
-    .disclaimer-column {
-      border-left: 3px solid #f1c40f;
-      padding-left: 24px;
-    }
+        /* 免責聲明左側標誌性警告粗線條設計 */
+        .disclaimer-column {
+            border-left: 3px solid #f1c40f;
+            padding-left: 24px;
+        }
 
-    /* 行動端自動取消左側線條並改為上側線條 */
-    @media (max-width: 768px) {
-      .info-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
+        /* 行動端自動取消左側線條並改為上側線條 */
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
 
-      .disclaimer-column {
-        border-left: none;
-        border-top: 3px solid #f1c40f;
-        padding-left: 0;
-        padding-top: 20px;
-      }
-    }
+            .disclaimer-column {
+                border-left: none;
+                border-top: 3px solid #f1c40f;
+                padding-left: 0;
+                padding-top: 20px;
+            }
+        }
 
-    @media (max-width: 640px) {
-      .container {
-        padding: 18px 14px 32px;
-      }
-    }
+        @media (max-width: 640px) {
+            .container {
+                padding: 18px 14px 32px;
+            }
+        }
 
-    /* ==========================================
+        /* ==========================================
        頁尾與創用 CC BY-NC-SA 4.0 授權徽章
        ========================================== */
-    .footer {
-      margin-top: 40px;
-      padding-top: 30px;
-      padding-bottom: 30px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-    }
+        .footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            padding-bottom: 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
 
-    .footer-content {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
+        .footer-content {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
 
-    /* GitHub 開源專案連結樣式 */
-    .github-link {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: color 0.2s ease;
-    }
+        /* GitHub 開源專案連結樣式 */
+        .github-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
 
-    .github-link:hover {
-      color: var(--primary);
-    }
+        .github-link:hover {
+            color: var(--primary);
+        }
 
-    .github-icon {
-      width: 16px;
-      height: 16px;
-      color: var(--primary);
-      transition: color 0.2s ease;
-    }
+        .github-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--primary);
+            transition: color 0.2s ease;
+        }
 
-    .github-link:hover .github-icon {
-      color: var(--primary-dark);
-    }
+        .github-link:hover .github-icon {
+            color: var(--primary-dark);
+        }
 
-    /* CC BY-NC-SA 圓角氣泡膠囊徽章（完美契合名片快手設計） */
-    .cc-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 9999px;
-      /* 極致的膠囊大圓角 */
-      padding: 8px 20px;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
-      text-decoration: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
+        /* CC BY-NC-SA 圓角氣泡膠囊徽章（完美契合名片快手設計） */
+        .cc-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            /* 極致的膠囊大圓角 */
+            padding: 8px 20px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+            text-decoration: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    /* 懸浮時邊框變為淡藍，並帶有精緻微陰影提升立體感 */
-    .cc-badge:hover {
-      border-color: rgba(47, 107, 235, 0.2);
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-    }
+        /* 懸浮時邊框變為淡藍，並帶有精緻微陰影提升立體感 */
+        .cc-badge:hover {
+            border-color: rgba(47, 107, 235, 0.2);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+        }
 
-    .cc-icons {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--primary);
-      transition: color 0.2s ease;
-    }
+        .cc-icons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--primary);
+            transition: color 0.2s ease;
+        }
 
-    .cc-badge:hover .cc-icons {
-      color: var(--primary-dark);
-    }
+        .cc-badge:hover .cc-icons {
+            color: var(--primary-dark);
+        }
 
-    .cc-icon {
-      width: 18px;
-      height: 18px;
-    }
+        .cc-icon {
+            width: 18px;
+            height: 18px;
+        }
 
-    .cc-icon-sm {
-      width: 14px;
-      height: 14px;
-    }
+        .cc-icon-sm {
+            width: 14px;
+            height: 14px;
+        }
 
-    /* 授權標章文字粗體與間距控制 */
-    .cc-text {
-      font-size: 0.8rem;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: 0.05em;
-      transition: color 0.2s ease;
-    }
+        /* 授權標章文字粗體與間距控制 */
+        .cc-text {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: 0.05em;
+            transition: color 0.2s ease;
+        }
 
-    .cc-badge:hover .cc-text {
-      color: var(--primary);
-    }
+        .cc-badge:hover .cc-text {
+            color: var(--primary);
+        }
 
-    /* ==========================================
+        /* ==========================================
        密碼輸入彈窗 Modal 樣式 (磨砂玻璃科技感)
        ========================================== */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      /* Safari 相容性 */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            /* Safari 相容性 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
 
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
-    .modal-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 32px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
-      transform: scale(0.95);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
 
-    .modal-overlay.active .modal-card {
-      transform: scale(1);
-    }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
 
-    .modal-card h3 {
-      margin: 0 0 12px;
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        .modal-card h3 {
+            margin: 0 0 12px;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .modal-card p {
-      margin: 0 0 20px;
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
+        .modal-card p {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
 
-    .modal-card input[type="password"] {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 1rem;
-      margin-bottom: 12px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
+        .modal-card input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
 
-    .modal-card input[type="password"]:focus {
-      border-color: var(--primary);
-    }
+        .modal-card input[type="password"]:focus {
+            border-color: var(--primary);
+        }
 
-    .modal-error {
-      color: var(--danger);
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-      font-weight: 500;
-    }
+        .modal-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
 
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-    }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
 
-    .modal-actions .button {
-      width: auto;
-      min-width: 100px;
-      padding: 10px 16px;
-      font-size: 0.95rem;
-    }
-  </style>
+        .modal-actions .button {
+            width: auto;
+            min-width: 100px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 
 <body>
-  <!-- 主容器，限制最大寬度並集中排版 -->
-  <div class="container">
-    <!-- 頁面頭部標題區 -->
-    <header>
-      <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.0.0</span></h1>
-      <p>所有處理在瀏覽器端執行，檔案不會上傳到伺服器。</p>
-    </header>
+    <!-- 主容器，限制最大寬度並集中排版 -->
+    <div class="container">
+        <!-- 頁面頭部標題區 -->
+        <header>
+            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.0.0</span></h1>
+            <p>所有處理在瀏覽器端執行，檔案不會上傳到伺服器。</p>
+        </header>
 
-    <!-- 主互動控制卡片 -->
-    <section class="card">
-      <!-- 檔案拖曳與上傳互動區域 -->
-      <div class="file-area" id="fileArea">
-        <!-- 隱藏的真實 file input，透過拖曳或點擊觸發 -->
-        <input type="file" id="fileInput" accept="application/pdf" />
-        <div class="file-area-inner">
-          <strong>點擊或拖曳 PDF 檔案到此處</strong>
-          <span>僅支援 PDF，最大建議 50MB</span>
-        </div>
-      </div>
+        <!-- 主互動控制卡片 -->
+        <section class="card">
+            <!-- 檔案拖曳與上傳互動區域 -->
+            <div class="file-area" id="fileArea">
+                <!-- 隱藏的真實 file input，透過拖曳或點擊觸發 -->
+                <input type="file" id="fileInput" accept="application/pdf" />
+                <div class="file-area-inner">
+                    <strong>點擊或拖曳 PDF 檔案到此處</strong>
+                    <span>僅支援 PDF，最大建議 50MB</span>
+                </div>
+            </div>
 
-      <!-- 浮水印清理策略選項（依據業界常見度排序） -->
-      <div class="options">
-        <h2>選擇移除項目（依常見度排序）</h2>
-        <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
-        <label><input type="checkbox" id="removeFormXObject" checked /> 移除 Form XObject（最常見）</label>
-        <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
-        <label><input type="checkbox" id="removeAnnotations" checked /> 移除註解 (Annots)</label>
-        <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
-        <label><input type="checkbox" id="removeDirectContent" checked /> 檢查並清空可疑內容流</label>
-        <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
-        <label><input type="checkbox" id="removeExtGState" checked /> 移除 ExtGState</label>
-        <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
-        <label><input type="checkbox" id="removeOCG" /> 移除 OCG / 圖層名稱</label>
-        <!-- Image XObject：當浮水印是外部圖片且命名含特徵字眼時進行移除 -->
-        <label><input type="checkbox" id="removeImageXObject" /> 移除 Image XObject</label>
-      </div>
+            <!-- 浮水印清理策略選項（依據業界常見度排序） -->
+            <div class="options">
+                <h2>選擇移除項目（依常見度排序）</h2>
+                <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
+                <label><input type="checkbox" id="removeFormXObject" checked /> 移除 Form XObject（最常見）</label>
+                <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
+                <label><input type="checkbox" id="removeAnnotations" checked /> 移除註解 (Annots)</label>
+                <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
+                <label><input type="checkbox" id="removeDirectContent" checked /> 檢查並清空可疑內容流</label>
+                <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
+                <label><input type="checkbox" id="removeExtGState" checked /> 移除 ExtGState</label>
+                <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
+                <label><input type="checkbox" id="removeOCG" /> 移除 OCG / 圖層名稱</label>
+                <!-- Image XObject：當浮水印是外部圖片且命名含特徵字眼時進行移除 -->
+                <label><input type="checkbox" id="removeImageXObject" /> 移除 Image XObject</label>
+            </div>
 
-      <!-- 執行動作按鈕 -->
-      <button id="processButton" class="button">開始移除浮水印</button>
+            <!-- 執行動作按鈕 -->
+            <button id="processButton" class="button">開始移除浮水印</button>
 
-      <!-- 狀態提示語與進度回饋 -->
-      <div id="status" class="status">請選擇 PDF 檔案後開始處理。</div>
+            <!-- 狀態提示語與進度回饋 -->
+            <div id="status" class="status">
+                <div class="status-line info">請選擇 PDF 檔案後開始處理。</div>
+            </div>
 
-      <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
-      <div id="downloadArea" class="download-area hidden">
-        <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
-      </div>
+            <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
+            <div id="downloadArea" class="download-area hidden">
+                <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
+            </div>
 
-      <!-- 實時 Before & After 即時預覽區（預設隱藏） -->
-      <div id="previewContainer" class="preview-container hidden">
-        <!-- 原始 PDF 預覽窗格 -->
-        <div class="preview-box">
-          <h3>原始 PDF 預覽</h3>
-          <iframe id="originalPreview" class="preview-iframe"></iframe>
-        </div>
-        <!-- 處理後 PDF 預覽窗格（預設隱藏，待處理完畢後與下載按鈕一同顯現） -->
-        <div class="preview-box hidden" id="processedPreviewBox">
-          <h3>處理後 PDF 預覽</h3>
-          <iframe id="processedPreview" class="preview-iframe"></iframe>
-        </div>
-      </div>
-    </section>
+            <!-- 實時 Before & After 即時預覽區（預設隱藏） -->
+            <div id="previewContainer" class="preview-container hidden">
+                <!-- 原始 PDF 預覽窗格 -->
+                <div class="preview-box">
+                    <h3>原始 PDF 預覽</h3>
+                    <iframe id="originalPreview" class="preview-iframe"></iframe>
+                </div>
+                <!-- 處理後 PDF 預覽窗格（預設隱藏，待處理完畢後與下載按鈕一同顯現） -->
+                <div class="preview-box hidden" id="processedPreviewBox">
+                    <h3>處理後 PDF 預覽</h3>
+                    <iframe id="processedPreview" class="preview-iframe"></iframe>
+                </div>
+            </div>
+        </section>
 
-    <!-- 教學說明與法律安全宣告區（雙欄排版） -->
-    <section class="info-card">
-      <div class="info-grid">
-        <!-- 欄位一：深入淺出的技術與功能說明 -->
-        <div class="info-column">
-          <h2>💡 功能說明</h2>
-          <p>這個小工具完全是在您的瀏覽器裡直接處理 PDF 檔案，處理過程中您的檔案<strong>「絕對不會」上傳到任何伺服器</strong>，100% 守護您的文件隱私與資安安全，用起來超放心！</p>
-          <ul>
-            <li><strong>清除常見浮水印 (Form XObject)</strong>：最常用來對付那些藏在文件背景裡的惱人文字或圖案。</li>
-            <li><strong>拔除疊加註解 (Annots)</strong>：直接拿掉像印章那樣蓋在文件最上層的標記、浮水印或附註。</li>
-            <li><strong>消滅嵌入字樣 (Direct Content)</strong>：如果浮水印直接寫在內文裡，會幫您把它們找出來並擦乾淨。</li>
-            <li><strong>清理半透明效果 (ExtGState)</strong>：專門收拾那些淡淡的、半透明的浮水印效果。</li>
-            <li><strong>關閉浮水印圖層 (OCG)</strong>：如果浮水印被藏在特定的隱形圖層裡，會幫您把它們關掉。</li>
-            <li><strong>拔掉浮水印圖片 (Image XObject)</strong>：有些浮水印是一張張的圖片，只要圖片名字包含 watermark 或 wm 就會被清空。</li>
-          </ul>
-        </div>
-        <!-- 欄位二：免責聲明與備份安全指引 -->
-        <div class="info-column disclaimer-column">
-          <h2>⚠️ 免責聲明</h2>
-          <p>開始使用前，有幾件重要的小事要提醒您喔：</p>
-          <ol>
-            <li><strong>不保證包治百病</strong>：因為每個 PDF 檔案的製作方式都不太一樣，本工具無法保證 100% 能成功處理所有的檔案，有些加密或特殊格式可能處理不了。</li>
-            <li><strong>記得先留備份</strong>：移除浮水印會修改 PDF 的內部底層結構。<strong>請您一定要先複製一份原始檔案當備份</strong>，以免萬一處理失敗導致檔案損壞或資料遺失。
-            </li>
-            <li><strong>合法合理的使用</strong>：請確認您擁有這份文件移除浮水印的合法權利（比如個人學習、合理使用或已獲得原作者授權）。如果因為移除浮水印而產生任何版權糾紛或法律責任，需要由使用者自行承擔喔！
-            </li>
-          </ol>
-        </div>
-      </div>
-    </section>
+        <!-- 教學說明與法律安全宣告區（雙欄排版） -->
+        <section class="info-card">
+            <div class="info-grid">
+                <!-- 欄位一：深入淺出的技術與功能說明 -->
+                <div class="info-column">
+                    <h2>💡 功能說明</h2>
+                    <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳到任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
+                    <ul>
+                        <li><strong>清除背景浮水印 (Form XObject)</strong>：用於移除隱藏在文件背景中的文字或圖形元件。</li>
+                        <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註。</li>
+                        <li><strong>清除嵌入字樣 (Direct Content)</strong>：若浮水印直接寫入在內文頁面中，可進行特徵比對並予以清除。</li>
+                        <li><strong>清理半透明效果 (ExtGState)</strong>：移除透明度設定中與浮水印相關的半透明組態。</li>
+                        <li><strong>關閉浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層中，可將該圖層名稱清除使其失效。</li>
+                        <li><strong>清除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可比對圖片名稱（包含 watermark 或 wm 等特徵）並予以清除。</li>
+                        <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
+                        <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印移除。</li>
+                    </ul>
+                </div>
+                <!-- 欄位二：免責聲明與備份安全指引 -->
+                <div class="info-column disclaimer-column">
+                    <h2>⚠️ 免責聲明</h2>
+                    <p>開始使用前，請詳閱以下說明：</p>
+                    <ol>
+                        <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
+                        <li><strong>請務必備份原始檔案</strong>：移除浮水印需要變更 PDF
+                            內部底層結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。
+                        </li>
+                        <li><strong>合法使用授權</strong>：請確認您擁有該文件移除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因移除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </section>
 
-    <!-- 頁尾宣告與版權資訊 -->
-    <footer class="footer">
-      <div class="footer-content">
-        <!-- 導向 GitHub 開源倉庫連結 -->
-        <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" class="github-link group">
-          <svg xmlns="http://www.w3.org/2000/svg" class="github-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-          </svg>
-          mfhsieh at github
-        </a>
+        <!-- 頁尾宣告與版權資訊 -->
+        <footer class="footer">
+            <div class="footer-content">
+                <!-- 導向 GitHub 開源倉庫連結 -->
+                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" class="github-link group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    mfhsieh at github
+                </a>
 
-        <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
-        <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" target="_blank" class="cc-badge group">
-          <div class="cc-icons">
-            <!-- CC (Creative Commons) 圖標 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
-              <path
-                d="M14.972 0c4.196 0 7.769 1.465 10.715 4.393A14.426 14.426 0 0128.9 9.228C29.633 11.04 30 12.964 30 15c0 2.054-.363 3.978-1.085 5.772a13.77 13.77 0 01-3.2 4.754 15.417 15.417 0 01-4.983 3.322A14.932 14.932 0 0114.973 30c-1.982 0-3.88-.38-5.692-1.14a15.087 15.087 0 01-4.875-3.293c-1.437-1.437-2.531-3.058-3.281-4.862A14.71 14.71 0 010 15c0-1.982.38-3.888 1.138-5.719a15.062 15.062 0 013.308-4.915C7.303 1.456 10.812 0 14.972 0zm.055 2.706c-3.429 0-6.313 1.196-8.652 3.589a12.896 12.896 0 00-2.72 4.031 11.814 11.814 0 00-.95 4.675c0 1.607.316 3.156.95 4.646a12.428 12.428 0 002.72 3.992 12.362 12.362 0 003.99 2.679c1.483.616 3.037.924 4.662.924 1.607 0 3.164-.312 4.675-.937a12.954 12.954 0 004.084-2.705c2.339-2.286 3.508-5.152 3.508-8.6 0-1.66-.304-3.231-.91-4.713a11.994 11.994 0 00-2.651-3.965c-2.412-2.41-5.314-3.616-8.706-3.616zm-.188 9.803l-2.01 1.045c-.215-.445-.477-.758-.79-.937-.312-.178-.602-.268-.87-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.509 1.928.34.482.84.724 1.5.724.876 0 1.492-.43 1.85-1.286l1.847.937a4.407 4.407 0 01-1.634 1.728c-.696.42-1.464.63-2.303.63-1.34 0-2.42-.41-3.242-1.233-.821-.82-1.232-1.964-1.232-3.428 0-1.428.416-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.858 0 3.188.723 3.992 2.17zm8.652 0l-1.983 1.045c-.214-.445-.478-.758-.79-.937-.313-.178-.613-.268-.897-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.51 1.928.338.482.838.724 1.5.724.874 0 1.49-.43 1.847-1.286l1.875.937a4.606 4.606 0 01-1.66 1.728c-.696.42-1.455.63-2.277.63-1.357 0-2.441-.41-3.253-1.233-.814-.82-1.22-1.964-1.22-3.428 0-1.428.415-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.857 0 3.18.723 3.965 2.17z" />
-            </svg>
-            <!-- BY (姓名標示) 圖標 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30" fill="currentColor">
-              <path
-                d="M14.973 0c4.213 0 7.768 1.446 10.66 4.34C28.544 7.25 30 10.803 30 15c0 4.215-1.43 7.723-4.287 10.526C22.678 28.51 19.098 30 14.973 30c-4.054 0-7.571-1.474-10.553-4.42C1.474 22.633 0 19.107 0 15S1.474 7.34 4.42 4.34C7.313 1.446 10.83 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.196-8.652 3.589-2.447 2.5-3.67 5.402-3.67 8.706 0 3.321 1.214 6.196 3.642 8.624 2.429 2.429 5.322 3.642 8.679 3.642 3.339 0 6.25-1.222 8.732-3.67 2.358-2.267 3.536-5.133 3.536-8.598 0-3.41-1.197-6.311-3.589-8.705-2.392-2.392-5.285-3.588-8.678-3.588zm4.018 8.57v6.134H17.33v7.286h-4.66V17.41h-1.714v-6.134a.93.93 0 01.28-.683.933.933 0 01.684-.281h6.161c.25 0 .474.093.67.28a.912.912 0 01.294.684zM12.91 7.42c0-1.41.696-2.116 2.09-2.116s2.09.705 2.09 2.116c0 1.393-.697 2.09-2.09 2.09-1.393 0-2.09-.697-2.09-2.09z" />
-            </svg>
-            <!-- NC (非商業性) 圖標 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30" fill="currentColor">
-              <path
-                d="M14.973 0c4.214 0 7.768 1.446 10.66 4.339C28.544 7.232 30 10.786 30 15c0 4.215-1.429 7.723-4.287 10.527C22.678 28.51 19.097 30 14.973 30c-4.072 0-7.59-1.482-10.553-4.446C1.474 22.607 0 19.09 0 15c0-4.107 1.474-7.66 4.42-10.66C7.313 1.446 10.83 0 14.973 0zM3.375 10.956c-.446 1.232-.67 2.58-.67 4.045 0 3.321 1.214 6.196 3.642 8.624 2.447 2.412 5.34 3.617 8.679 3.617 3.375 0 6.285-1.223 8.733-3.67.875-.839 1.561-1.714 2.061-2.626l-5.651-2.518a3.866 3.866 0 01-1.433 2.317c-.76.598-1.657.943-2.693 1.031v2.304h-1.74v-2.304c-1.661-.017-3.18-.615-4.554-1.794l2.063-2.089c.981.91 2.098 1.366 3.348 1.366.517 0 .96-.116 1.326-.349.366-.231.55-.615.55-1.151 0-.376-.135-.68-.402-.911l-1.447-.617-1.767-.804-2.384-1.044-7.661-3.427zm11.652-8.278c-3.41 0-6.295 1.206-8.652 3.616-.59.59-1.143 1.26-1.66 2.01l5.732 2.571a3.513 3.513 0 011.42-1.888c.695-.473 1.508-.737 2.437-.79V5.893h1.741v2.304c1.376.071 2.625.535 3.75 1.392L17.84 11.6c-.84-.59-1.697-.884-2.572-.884-.464 0-.88.09-1.245.267-.366.179-.55.483-.55.911 0 .125.045.25.134.375l1.902.858 1.313.59 2.41 1.07 7.687 3.429c.25-1.054.375-2.125.375-3.214 0-3.447-1.196-6.349-3.588-8.707-2.375-2.41-5.27-3.616-8.68-3.616z" />
-            </svg>
-            <!-- SA (相同方式分享) 圖標 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30" fill="currentColor">
-              <path
-                d="M14.973 0c4.196 0 7.75 1.455 10.66 4.366C28.544 7.26 30 10.804 30 15c0 4.197-1.43 7.714-4.287 10.553C22.696 28.51 19.115 30 14.973 30c-4.054 0-7.571-1.473-10.553-4.42C1.474 22.634 0 19.108 0 15c0-4.088 1.474-7.633 4.42-10.633C7.33 1.455 10.848 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.205-8.652 3.616-2.447 2.483-3.67 5.375-3.67 8.678 0 3.34 1.214 6.214 3.642 8.625 2.429 2.43 5.322 3.643 8.679 3.643 3.339 0 6.25-1.223 8.732-3.67 2.358-2.285 3.536-5.151 3.536-8.598 0-3.428-1.197-6.321-3.589-8.678-2.375-2.412-5.268-3.616-8.678-3.616zM8.33 12.884c.286-1.84 1.026-3.264 2.223-4.273 1.196-1.008 2.651-1.513 4.366-1.513 2.356 0 4.232.76 5.625 2.277 1.393 1.517 2.09 3.464 2.09 5.839 0 2.304-.724 4.219-2.17 5.745-1.447 1.526-3.321 2.29-5.626 2.29-1.696 0-3.16-.508-4.392-1.527-1.233-1.018-1.973-2.464-2.224-4.339H12c.09 1.822 1.187 2.733 3.295 2.733 1.053 0 1.902-.456 2.544-1.366.644-.91.965-2.126.965-3.643 0-1.59-.294-2.799-.883-3.63-.59-.83-1.437-1.245-2.545-1.245-2.001 0-3.126.884-3.375 2.651h1.098l-2.973 2.973-2.973-2.973H8.33z" />
-            </svg>
-          </div>
-          <span class="cc-text">CC BY-NC-SA 4.0</span>
-        </a>
-      </div>
-    </footer>
-  </div>
-
-  <!-- 密碼輸入彈窗 Modal -->
-  <div id="passwordModal" class="modal-overlay">
-    <div class="modal-card">
-      <h3>🔒 此 PDF 檔案已受密碼保護</h3>
-      <p>請輸入文件密碼以進行解密與浮水印移除：</p>
-      <input type="password" id="pdfPasswordInput" placeholder="請輸入 PDF 密碼" />
-      <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
-      <div class="modal-actions">
-        <button id="modalCancelButton" class="button">取消</button>
-        <button id="modalSubmitButton" class="button button-primary">確認</button>
-      </div>
+                <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
+                <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" target="_blank"
+                    class="cc-badge group">
+                    <div class="cc-icons">
+                        <!-- CC (Creative Commons) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
+                            <path
+                                d="M14.972 0c4.196 0 7.769 1.465 10.715 4.393A14.426 14.426 0 0128.9 9.228C29.633 11.04 30 12.964 30 15c0 2.054-.363 3.978-1.085 5.772a13.77 13.77 0 01-3.2 4.754 15.417 15.417 0 01-4.983 3.322A14.932 14.932 0 0114.973 30c-1.982 0-3.88-.38-5.692-1.14a15.087 15.087 0 01-4.875-3.293c-1.437-1.437-2.531-3.058-3.281-4.862A14.71 14.71 0 010 15c0-1.982.38-3.888 1.138-5.719a15.062 15.062 0 013.308-4.915C7.303 1.456 10.812 0 14.972 0zm.055 2.706c-3.429 0-6.313 1.196-8.652 3.589a12.896 12.896 0 00-2.72 4.031 11.814 11.814 0 00-.95 4.675c0 1.607.316 3.156.95 4.646a12.428 12.428 0 002.72 3.992 12.362 12.362 0 003.99 2.679c1.483.616 3.037.924 4.662.924 1.607 0 3.164-.312 4.675-.937a12.954 12.954 0 004.084-2.705c2.339-2.286 3.508-5.152 3.508-8.6 0-1.66-.304-3.231-.91-4.713a11.994 11.994 0 00-2.651-3.965c-2.412-2.41-5.314-3.616-8.706-3.616zm-.188 9.803l-2.01 1.045c-.215-.445-.477-.758-.79-.937-.312-.178-.602-.268-.87-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.509 1.928.34.482.84.724 1.5.724.876 0 1.492-.43 1.85-1.286l1.847.937a4.407 4.407 0 01-1.634 1.728c-.696.42-1.464.63-2.303.63-1.34 0-2.42-.41-3.242-1.233-.821-.82-1.232-1.964-1.232-3.428 0-1.428.416-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.858 0 3.188.723 3.992 2.17zm8.652 0l-1.983 1.045c-.214-.445-.478-.758-.79-.937-.313-.178-.613-.268-.897-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.51 1.928.338.482.838.724 1.5.724.874 0 1.49-.43 1.847-1.286l1.875.937a4.606 4.606 0 01-1.66 1.728c-.696.42-1.455.63-2.277.63-1.357 0-2.441-.41-3.253-1.233-.814-.82-1.22-1.964-1.22-3.428 0-1.428.415-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.857 0 3.18.723 3.965 2.17z" />
+                        </svg>
+                        <!-- BY (姓名標示) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
+                            fill="currentColor">
+                            <path
+                                d="M14.973 0c4.213 0 7.768 1.446 10.66 4.34C28.544 7.25 30 10.803 30 15c0 4.215-1.43 7.723-4.287 10.526C22.678 28.51 19.098 30 14.973 30c-4.054 0-7.571-1.474-10.553-4.42C1.474 22.633 0 19.107 0 15S1.474 7.34 4.42 4.34C7.313 1.446 10.83 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.196-8.652 3.589-2.447 2.5-3.67 5.402-3.67 8.706 0 3.321 1.214 6.196 3.642 8.624 2.429 2.429 5.322 3.642 8.679 3.642 3.339 0 6.25-1.222 8.732-3.67 2.358-2.267 3.536-5.133 3.536-8.598 0-3.41-1.197-6.311-3.589-8.705-2.392-2.392-5.285-3.588-8.678-3.588zm4.018 8.57v6.134H17.33v7.286h-4.66V17.41h-1.714v-6.134a.93.93 0 01.28-.683.933.933 0 01.684-.281h6.161c.25 0 .474.093.67.28a.912.912 0 01.294.684zM12.91 7.42c0-1.41.696-2.116 2.09-2.116s2.09.705 2.09 2.116c0 1.393-.697 2.09-2.09 2.09-1.393 0-2.09-.697-2.09-2.09z" />
+                        </svg>
+                        <!-- NC (非商業性) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
+                            fill="currentColor">
+                            <path
+                                d="M14.973 0c4.214 0 7.768 1.446 10.66 4.339C28.544 7.232 30 10.786 30 15c0 4.215-1.429 7.723-4.287 10.527C22.678 28.51 19.097 30 14.973 30c-4.072 0-7.59-1.482-10.553-4.446C1.474 22.607 0 19.09 0 15c0-4.107 1.474-7.66 4.42-10.66C7.313 1.446 10.83 0 14.973 0zM3.375 10.956c-.446 1.232-.67 2.58-.67 4.045 0 3.321 1.214 6.196 3.642 8.624 2.447 2.412 5.34 3.617 8.679 3.617 3.375 0 6.285-1.223 8.733-3.67.875-.839 1.561-1.714 2.061-2.626l-5.651-2.518a3.866 3.866 0 01-1.433 2.317c-.76.598-1.657.943-2.693 1.031v2.304h-1.74v-2.304c-1.661-.017-3.18-.615-4.554-1.794l2.063-2.089c.981.91 2.098 1.366 3.348 1.366.517 0 .96-.116 1.326-.349.366-.231.55-.615.55-1.151 0-.376-.135-.68-.402-.911l-1.447-.617-1.767-.804-2.384-1.044-7.661-3.427zm11.652-8.278c-3.41 0-6.295 1.206-8.652 3.616-.59.59-1.143 1.26-1.66 2.01l5.732 2.571a3.513 3.513 0 011.42-1.888c.695-.473 1.508-.737 2.437-.79V5.893h1.741v2.304c1.376.071 2.625.535 3.75 1.392L17.84 11.6c-.84-.59-1.697-.884-2.572-.884-.464 0-.88.09-1.245.267-.366.179-.55.483-.55.911 0 .125.045.25.134.375l1.902.858 1.313.59 2.41 1.07 7.687 3.429c.25-1.054.375-2.125.375-3.214 0-3.447-1.196-6.349-3.588-8.707-2.375-2.41-5.27-3.616-8.68-3.616z" />
+                        </svg>
+                        <!-- SA (相同方式分享) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
+                            fill="currentColor">
+                            <path
+                                d="M14.973 0c4.196 0 7.75 1.455 10.66 4.366C28.544 7.26 30 10.804 30 15c0 4.197-1.43 7.714-4.287 10.553C22.696 28.51 19.115 30 14.973 30c-4.054 0-7.571-1.473-10.553-4.42C1.474 22.634 0 19.108 0 15c0-4.088 1.474-7.633 4.42-10.633C7.33 1.455 10.848 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.205-8.652 3.616-2.447 2.483-3.67 5.375-3.67 8.678 0 3.34 1.214 6.214 3.642 8.625 2.429 2.43 5.322 3.643 8.679 3.643 3.339 0 6.25-1.223 8.732-3.67 2.358-2.285 3.536-5.151 3.536-8.598 0-3.428-1.197-6.321-3.589-8.678-2.375-2.412-5.268-3.616-8.678-3.616zM8.33 12.884c.286-1.84 1.026-3.264 2.223-4.273 1.196-1.008 2.651-1.513 4.366-1.513 2.356 0 4.232.76 5.625 2.277 1.393 1.517 2.09 3.464 2.09 5.839 0 2.304-.724 4.219-2.17 5.745-1.447 1.526-3.321 2.29-5.626 2.29-1.696 0-3.16-.508-4.392-1.527-1.233-1.018-1.973-2.464-2.224-4.339H12c.09 1.822 1.187 2.733 3.295 2.733 1.053 0 1.902-.456 2.544-1.366.644-.91.965-2.126.965-3.643 0-1.59-.294-2.799-.883-3.63-.59-.83-1.437-1.245-2.545-1.245-2.001 0-3.126.884-3.375 2.651h1.098l-2.973 2.973-2.973-2.973H8.33z" />
+                        </svg>
+                    </div>
+                    <span class="cc-text">CC BY-NC-SA 4.0</span>
+                </a>
+            </div>
+        </footer>
     </div>
-  </div>
 
-  <script>
-    // 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
-    const {
-      PDFDocument,    // 代表整個 PDF 文件物件
-      PDFName,        // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
-      PDFDict,        // 代表 PDF 的字典結構（Dictionary）
-      PDFArray,       // 代表 PDF 的陣列結構（Array）
-      PDFRawStream,   // 代表 PDF 的二進制原始串流（Raw Stream，如內容流、圖片數據）
-      PDFString,      // 代表 PDF 的常規字串實體
-      PDFHexString,   // 代表 PDF 的十六進制編碼字串
-    } = PDFLib;
+    <!-- 密碼輸入彈窗 Modal -->
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>🔒 此 PDF 檔案已受密碼保護</h3>
+            <p>請輸入文件密碼以進行解密與浮水印移除：</p>
+            <input type="password" id="pdfPasswordInput" placeholder="請輸入 PDF 密碼" />
+            <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
+            <div class="modal-actions">
+                <button id="modalCancelButton" class="button">取消</button>
+                <button id="modalSubmitButton" class="button button-primary">確認</button>
+            </div>
+        </div>
+    </div>
 
-    // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的英文特徵關鍵字列表
-    const TRIGGER_WORDS = ["watermark", "confidential", "draft", "sample"];
+    <script>
+        // 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
+        const {
+            PDFDocument,    // 代表整個 PDF 文件物件
+            PDFName,        // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
+            PDFDict,        // 代表 PDF 的字典結構（Dictionary）
+            PDFArray,       // 代表 PDF 的陣列結構（Array）
+            PDFRawStream,   // 代表 PDF 的二進制原始串流（Raw Stream，如內容流、圖片數據）
+            PDFString,      // 代表 PDF 的常規字串實體
+            PDFHexString,   // 代表 PDF 的十六進制編碼字串
+        } = PDFLib;
 
+        // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的英文特徵關鍵字列表
+        const TRIGGER_WORDS = ["watermark", "confidential", "draft", "sample"];
 
-
-    /**
-     * 使用 qpdf-wasm 引擎解密 PDF（延遲載入，僅在需要時從 CDN 載入約 1.8MB）
-     * 支援所有 PDF 加密格式：AES-256、AES-128、RC4-128、RC4-40
-     * 能正確處理 XRef Stream、Object Stream 等複雜的 PDF 1.5+ 格式
-     *
-     * @param {Uint8Array} pdfBytes - 原始 PDF 位元組
-     * @param {string} password - 密碼（預設空字串）
-     * @returns {Promise<Uint8Array>} - 解密後的 PDF 位元組
-     */
-    async function decryptWithQpdfWasm(pdfBytes, password = '') {
-      // 延遲載入 qpdf-wasm（僅在第一次解密時載入）
-      if (!window._qpdfWasmModule) {
-        statusEl.textContent = '⏳ 首次使用加密 PDF 解密功能，正在載入 QPDF 引擎（約 1.8MB）...';
-        try {
-          // 使用動態 import 從 CDN 載入
-          const { default: QPDF } = await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
-          window._qpdfWasmModule = await QPDF();
-          statusEl.textContent = '✅ QPDF 引擎載入完成！正在解密 PDF...';
-        } catch (loadErr) {
-          throw new Error(`無法載入 QPDF 引擎: ${loadErr.message}`);
-        }
-      }
-
-      const qpdf = window._qpdfWasmModule;
-
-      // 寫入虛擬檔案系統
-      const inputPath = '/decrypt_input.pdf';
-      const outputPath = '/decrypt_output.pdf';
-      qpdf.FS.writeFile(inputPath, pdfBytes);
-
-      try {
-        // 執行解密命令
-        // qpdf --decrypt --password=<pwd> input.pdf -- output.pdf
-        const args = password
-          ? ['--decrypt', `--password=${password}`, inputPath, '--', outputPath]
-          : ['--decrypt', inputPath, '--', outputPath];
-
-        const exitCode = qpdf.callMain(args);
-
-        if (exitCode !== 0 && exitCode !== 3) {
-          // exit code 3 = 解密成功但有警告（可接受）
-          throw new Error(`QPDF 解密失敗（exit code: ${exitCode}）`);
+        /**
+         * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
+         * @param {string} text - 日誌文字內容
+         * @param {string} type - 日誌類型 ('info', 'success', 'error')
+         */
+        function addStatusMessage(text, type = 'info') {
+            if (!statusEl) return;
+            const line = document.createElement("div");
+            line.className = `status-line ${type}`;
+            line.textContent = text;
+            statusEl.appendChild(line);
+            // 自動平滑滾動到最底端，確保使用者能看到最新日誌
+            statusEl.scrollTop = statusEl.scrollHeight;
         }
 
-        // 讀取解密後的輸出
-        const decryptedBytes = qpdf.FS.readFile(outputPath);
-
-        // 清理虛擬檔案系統
-        try { qpdf.FS.unlink(inputPath); } catch { }
-        try { qpdf.FS.unlink(outputPath); } catch { }
-
-        return new Uint8Array(decryptedBytes);
-
-      } catch (err) {
-        // 清理
-        try { qpdf.FS.unlink(inputPath); } catch { }
-        try { qpdf.FS.unlink(outputPath); } catch { }
-        throw err;
-      }
-    }
-
-
-
-    /**
-     * 顯示密碼彈窗並等待使用者輸入，回傳 Promise 解決為密碼字串或 null (取消)
-     */
-    function promptForPassword(isRetry = false) {
-      return new Promise((resolve) => {
-        const modal = document.getElementById("passwordModal");
-        const input = document.getElementById("pdfPasswordInput");
-        const errorEl = document.getElementById("modalError");
-        const submitBtn = document.getElementById("modalSubmitButton");
-        const cancelBtn = document.getElementById("modalCancelButton");
-
-        // 重置輸入與錯誤提示
-        input.value = "";
-        if (isRetry) {
-          errorEl.classList.remove("hidden");
-        } else {
-          errorEl.classList.add("hidden");
+        /**
+         * 清空控制台面板的所有日誌
+         */
+        function clearStatusMessages() {
+            if (statusEl) {
+                statusEl.innerHTML = '';
+            }
         }
 
-        // 顯示 Modal
-        modal.classList.add("active");
-        input.focus();
 
-        function cleanup() {
-          modal.classList.remove("active");
-          submitBtn.removeEventListener("click", onSubmit);
-          cancelBtn.removeEventListener("click", onCancel);
-          input.removeEventListener("keydown", onKeyDown);
-        }
 
-        function onSubmit() {
-          const password = input.value;
-          cleanup();
-          resolve(password);
-        }
+        /**
+         * 使用 qpdf-wasm 引擎解密 PDF（延遲載入，僅在需要時從 CDN 載入約 1.8MB）
+         * 支援所有 PDF 加密格式：AES-256、AES-128、RC4-128、RC4-40
+         * 能正確處理 XRef Stream、Object Stream 等複雜的 PDF 1.5+ 格式
+         *
+         * @param {Uint8Array} pdfBytes - 原始 PDF 位元組
+         * @param {string} password - 密碼（預設空字串）
+         * @returns {Promise<Uint8Array>} - 解密後的 PDF 位元組
+         */
+        async function decryptWithQpdfWasm(pdfBytes, password = '') {
+            // 延遲載入 qpdf-wasm（僅在第一次解密時載入）
+            if (!window._qpdfWasmModule) {
+                addStatusMessage('⏳ 首次使用加密 PDF 解密功能，正在載入 QPDF 引擎（約 1.8MB）...', 'info');
+                try {
+                    // 使用動態 import 從 CDN 載入
+                    const { default: QPDF } = await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
+                    window._qpdfWasmModule = await QPDF();
+                    addStatusMessage('✅ QPDF 引擎載入完成！正在解密 PDF...', 'success');
+                } catch (loadErr) {
+                    throw new Error(`無法載入 QPDF 引擎: ${loadErr.message}`);
+                }
+            }
 
-        function onCancel() {
-          cleanup();
-          resolve(null);
-        }
+            const qpdf = window._qpdfWasmModule;
 
-        function onKeyDown(e) {
-          if (e.key === "Enter") {
-            onSubmit();
-          } else if (e.key === "Escape") {
-            onCancel();
-          }
-        }
+            // 寫入虛擬檔案系統
+            const inputPath = '/decrypt_input.pdf';
+            const outputPath = '/decrypt_output.pdf';
+            qpdf.FS.writeFile(inputPath, pdfBytes);
 
-        submitBtn.addEventListener("click", onSubmit);
-        cancelBtn.addEventListener("click", onCancel);
-        input.addEventListener("keydown", onKeyDown);
-      });
-    }
-
-    // ==========================================
-    //  DOM 元素選取與控制
-    // ==========================================
-    const fileInput = document.getElementById("fileInput");
-    const fileArea = document.getElementById("fileArea");
-    const statusEl = document.getElementById("status");
-    const processButton = document.getElementById("processButton");
-    const downloadArea = document.getElementById("downloadArea");
-    const downloadLink = document.getElementById("downloadLink");
-
-    // Before & After 預覽元件
-    const previewContainer = document.getElementById("previewContainer");
-    const originalPreview = document.getElementById("originalPreview");
-    const processedPreviewBox = document.getElementById("processedPreviewBox");
-    const processedPreview = document.getElementById("processedPreview");
-
-    // ==========================================
-    // 全域狀態變數與暫存快取
-    // ==========================================
-    let selectedFile = null;  // 目前使用者選取上傳的 PDF 檔案實體 (File)
-    let originalUrl = null;   // 原始 PDF 在瀏覽器暫存生成的 Blob URL
-    let processedUrl = null;  // 處理後 PDF 在瀏覽器暫存生成的 Blob URL
-
-    /**
-     * 重置處理後的狀態與暫存，確保新檔案載入時不殘留舊狀態
-     */
-    function resetProcessedState() {
-      // 1. 釋放處理後的舊 Blob URL 記憶體，防止洩漏
-      if (processedUrl) {
-        URL.revokeObjectURL(processedUrl);
-        processedUrl = null;
-      }
-
-      // 2. 隱藏下載按鈕並重置連結
-      downloadArea.classList.add("hidden");
-      downloadLink.href = "#";
-      downloadLink.download = "";
-
-      // 3. 隱藏並清空處理後的預覽視窗
-      processedPreviewBox.classList.add("hidden");
-      processedPreview.src = "";
-    }
-
-    /**
-     * 顯示原始 PDF 預覽，並妥善管理瀏覽器記憶體
-     * @param {File} file - 使用者上傳的原始 PDF 檔案
-     */
-    function showOriginalPreview(file) {
-      // 0. 主動清空並重置處理後的舊狀態
-      resetProcessedState();
-
-      // 1. 若先前已有建立好的 Blob URL，必須主動將其釋放 (Revoke)，避免記憶體洩漏 (Memory Leak)
-      if (originalUrl) {
-        URL.revokeObjectURL(originalUrl);
-      }
-      // 2. 為檔案建立一個專屬的臨時 Blob URL，並掛載至 iframe
-      originalUrl = URL.createObjectURL(file);
-      originalPreview.src = originalUrl;
-
-      // 3. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
-      previewContainer.classList.remove("hidden");
-      processedPreviewBox.classList.add("hidden");
-    }
-
-    // 監聽傳統點擊選擇檔案事件
-    fileInput.addEventListener("change", (event) => {
-      if (event.target.files.length > 0) {
-        selectedFile = event.target.files[0];
-        statusEl.textContent = `已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`;
-        downloadArea.classList.add("hidden");
-        showOriginalPreview(selectedFile);
-      }
-    });
-
-    // 監聽檔案拖曳滑過拖曳區事件
-    fileArea.addEventListener("dragover", (event) => {
-      event.preventDefault(); // 必須阻擋瀏覽器預設開啟 PDF 的行為
-      fileArea.classList.add("dragging");
-    });
-
-    // 監聽檔案拖曳離開拖曳區事件
-    fileArea.addEventListener("dragleave", () => {
-      fileArea.classList.remove("dragging");
-    });
-
-    // 監聽檔案釋放拖曳事件
-    fileArea.addEventListener("drop", (event) => {
-      event.preventDefault();
-      fileArea.classList.remove("dragging");
-
-      const file = event.dataTransfer.files[0];
-      if (file && file.type === "application/pdf") {
-        selectedFile = file;
-        fileInput.files = event.dataTransfer.files; // 將拖曳檔案與 input 同步
-        statusEl.textContent = `已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`;
-        downloadArea.classList.add("hidden");
-        showOriginalPreview(selectedFile);
-      } else {
-        statusEl.textContent = "僅支援 PDF 檔案格式。";
-      }
-    });
-
-    // 監聽開始處理按鈕事件（使用 Async-Await 避免瀏覽器卡頓）
-    processButton.addEventListener("click", async () => {
-      if (!selectedFile) {
-        statusEl.textContent = "請先選擇 PDF 檔案。";
-        return;
-      }
-
-      downloadArea.classList.add("hidden");
-      statusEl.textContent = "正在處理 PDF，請稍候...";
-      processButton.disabled = true; // 鎖定按鈕防止重複觸發
-
-      try {
-        // 1. 讀取檔案至記憶體
-        const rawBuffer = await selectedFile.arrayBuffer();
-        let pdfBytes = new Uint8Array(rawBuffer);
-        let pdfDoc;
-
-        // 2. 先嘗試直接載入（無加密情況）
-        let isEncryptedPdf = false;
-        try {
-          pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
-          pdfDoc.getPageCount(); // 觸發 lazy-parsing，提早攔截加密錯誤
-        } catch (loadError) {
-          // 偵測到加密 PDF，啟動前端解密流程
-          console.log("偵測到加密 PDF，啟動前端解密流程...", loadError.message);
-          isEncryptedPdf = true;
-        }
-
-        if (isEncryptedPdf) {
-          statusEl.textContent = "⏳ 偵測到加密 PDF，正在分析解密策略...";
-
-          let decryptedBytes = null;
-          let password = "";
-          let attempts = 0;
-
-          while (true) {
             try {
-              // 直接調用 qpdf-wasm 進行解密（第一次 attempts = 0 時使用空字串密碼）
-              decryptedBytes = await decryptWithQpdfWasm(pdfBytes, password);
+                // 執行解密命令
+                // qpdf --decrypt --password=<pwd> input.pdf -- output.pdf
+                const args = password
+                    ? ['--decrypt', `--password=${password}`, inputPath, '--', outputPath]
+                    : ['--decrypt', inputPath, '--', outputPath];
 
-              // 驗證解密後 PDF 的結構完整性與可讀性
-              pdfDoc = await PDFDocument.load(decryptedBytes, { updateMetadata: false });
-              pdfDoc.getPageCount();
+                const exitCode = qpdf.callMain(args);
 
-              // 成功解密並加載，更新 bytes 以供後續流程處理與寫出
-              pdfBytes = decryptedBytes;
-              statusEl.textContent = "✅ 解密成功！正在分析浮水印結構...";
-              break; // 跳出嘗試迴圈
-            } catch (decryptError) {
-              console.warn(`解密嘗試失敗 (第 ${attempts + 1} 次):`, decryptError.message);
+                if (exitCode !== 0 && exitCode !== 3) {
+                    // exit code 3 = 解密成功但有警告（可接受）
+                    throw new Error(`QPDF 解密失敗（exit code: ${exitCode}）`);
+                }
 
-              // 密碼無效或需要開檔密碼，彈窗詢問使用者輸入
-              const pwd = await promptForPassword(attempts > 0);
-              if (pwd === null) {
-                throw new Error("使用者已取消密碼輸入，無法處理加密的文件。");
-              }
+                // 讀取解密後的輸出
+                const decryptedBytes = qpdf.FS.readFile(outputPath);
 
-              password = pwd;
-              attempts++;
+                // 清理虛擬檔案系統
+                try { qpdf.FS.unlink(inputPath); } catch { }
+                try { qpdf.FS.unlink(outputPath); } catch { }
+
+                return new Uint8Array(decryptedBytes);
+
+            } catch (err) {
+                // 清理
+                try { qpdf.FS.unlink(inputPath); } catch { }
+                try { qpdf.FS.unlink(outputPath); } catch { }
+                throw err;
             }
-          }
         }
 
-        // 3. 取得目前畫面中 checkbox 勾選的清理選項
-        const options = getOptions();
 
-        // 4. 開始重構 PDF 物件樹
-        const result = processPdf(pdfDoc, options);
 
-        // 5. 更新狀態列文字
-        if (result.modifiedObjects === 0) {
-          statusEl.textContent = "未偵測到可移除的浮水印物件。請嘗試使用更多選項或更換檔案。";
-        } else {
-          statusEl.textContent = `已處理 ${result.modifiedObjects} 個可疑物件，正在產生下載檔案...`;
+        /**
+         * 顯示密碼彈窗並等待使用者輸入，回傳 Promise 解決為密碼字串或 null (取消)
+         */
+        function promptForPassword(isRetry = false) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById("passwordModal");
+                const input = document.getElementById("pdfPasswordInput");
+                const errorEl = document.getElementById("modalError");
+                const submitBtn = document.getElementById("modalSubmitButton");
+                const cancelBtn = document.getElementById("modalCancelButton");
+
+                // 重置輸入與錯誤提示
+                input.value = "";
+                if (isRetry) {
+                    errorEl.classList.remove("hidden");
+                } else {
+                    errorEl.classList.add("hidden");
+                }
+
+                // 顯示 Modal
+                modal.classList.add("active");
+                input.focus();
+
+                function cleanup() {
+                    modal.classList.remove("active");
+                    submitBtn.removeEventListener("click", onSubmit);
+                    cancelBtn.removeEventListener("click", onCancel);
+                    input.removeEventListener("keydown", onKeyDown);
+                }
+
+                function onSubmit() {
+                    const password = input.value;
+                    cleanup();
+                    resolve(password);
+                }
+
+                function onCancel() {
+                    cleanup();
+                    resolve(null);
+                }
+
+                function onKeyDown(e) {
+                    if (e.key === "Enter") {
+                        onSubmit();
+                    } else if (e.key === "Escape") {
+                        onCancel();
+                    }
+                }
+
+                submitBtn.addEventListener("click", onSubmit);
+                cancelBtn.addEventListener("click", onCancel);
+                input.addEventListener("keydown", onKeyDown);
+            });
         }
 
-        // 6. 將重構後的 PDF 文件保存回二進制陣列 (Uint8Array)
-        const bytes = await pdfDoc.save();
+        // ==========================================
+        //  DOM 元素選取與控制
+        // ==========================================
+        const fileInput = document.getElementById("fileInput");
+        const fileArea = document.getElementById("fileArea");
+        const statusEl = document.getElementById("status");
+        const processButton = document.getElementById("processButton");
+        const downloadArea = document.getElementById("downloadArea");
+        const downloadLink = document.getElementById("downloadLink");
 
-        // 7. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
-        const blob = new Blob([bytes], { type: "application/pdf" });
-        if (processedUrl) {
-          URL.revokeObjectURL(processedUrl); // 釋放舊 URL 記憶體
-        }
-        processedUrl = URL.createObjectURL(blob);
-        downloadLink.href = processedUrl;
-        // 下載檔案名稱尾碼自動加上 _removed
-        downloadLink.download = selectedFile.name.replace(/\.pdf$/i, "") + "_removed.pdf";
-        downloadArea.classList.remove("hidden");
-        statusEl.textContent += " 已完成。請點擊下方按鈕下載。";
+        // Before & After 預覽元件
+        const previewContainer = document.getElementById("previewContainer");
+        const originalPreview = document.getElementById("originalPreview");
+        const processedPreviewBox = document.getElementById("processedPreviewBox");
+        const processedPreview = document.getElementById("processedPreview");
 
-        // 8. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
-        processedPreview.src = processedUrl;
-        processedPreviewBox.classList.remove("hidden");
-      } catch (error) {
-        console.error(error);
-        statusEl.textContent = "處理過程發生錯誤，無法完成浮水印移除。請嘗試其他檔案。";
-      } finally {
-        processButton.disabled = false; // 無論成功與否，皆解鎖按鈕
-      }
-    });
+        // ==========================================
+        // 全域狀態變數與暫存快取
+        // ==========================================
+        let selectedFile = null;  // 目前使用者選取上傳的 PDF 檔案實體 (File)
+        let originalUrl = null;   // 原始 PDF 在瀏覽器暫存生成的 Blob URL
+        let processedUrl = null;  // 處理後 PDF 在瀏覽器暫存生成的 Blob URL
 
-    /**
-     * 輔助函數：格式化檔案大小單位
-     * @param {number} bytes - 檔案位元組大小
-     * @returns {string} 可讀性佳的格式化檔案大小 (如 1.25 MB)
-     */
-    function formatBytes(bytes) {
-      if (bytes === 0) return "0 B";
-      const units = ["B", "KB", "MB", "GB"];
-      const index = Math.floor(Math.log(bytes) / Math.log(1024));
-      return `${(bytes / 1024 ** index).toFixed(2)} ${units[index]}`;
-    }
+        /**
+         * 重置處理後的狀態與暫存，確保新檔案載入時不殘留舊狀態
+         */
+        function resetProcessedState() {
+            // 1. 釋放處理後的舊 Blob URL 記憶體，防止洩漏
+            if (processedUrl) {
+                URL.revokeObjectURL(processedUrl);
+                processedUrl = null;
+            }
 
-    /**
-     * 輔助函數：獲取當前前端 checkbox 的勾選狀態
-     * @returns {Object} 包含各項清理選項之布林值的對象
-     */
-    function getOptions() {
-      return {
-        removeAnnotations: document.getElementById("removeAnnotations").checked,
-        removeFormXObject: document.getElementById("removeFormXObject").checked,
-        removeExtGState: document.getElementById("removeExtGState").checked,
-        removeImageXObject: document.getElementById("removeImageXObject").checked,
-        removeDirectContent: document.getElementById("removeDirectContent").checked,
-        removeOCG: document.getElementById("removeOCG").checked,
-      };
-    }
+            // 2. 隱藏下載按鈕並重置連結
+            downloadArea.classList.add("hidden");
+            downloadLink.href = "#";
+            downloadLink.download = "";
 
-    /**
-     * 在 PDF 中建立一個「空串流」置換浮水印物件，避免直接刪除導致結構損壞
-     * 
-     * @param {PDFDocument} pdfDoc - PDF 文件物件
-     * @param {PDFRawStream} originalStream - 原始串流
-     * @param {string} subtype - 子類型
-     * @param {string[]} keepKeys - 需保留的屬性鍵值
-     * @returns {PDFRef} 註冊後的空 XObject 參照
-     */
-    function createBlankXObjectStream(pdfDoc, originalStream, subtype, keepKeys = []) {
-      const dict = pdfDoc.context.obj({
-        Type: PDFName.of("XObject"),
-        Subtype: PDFName.of(subtype),
-      });
-
-      // 保留維持 PDF 正常顯示渲染所需的必要關鍵字字典（如尺寸）
-      for (const keyName of keepKeys) {
-        const key = PDFName.of(keyName);
-        const value = originalStream.dict.lookup(key);
-        if (value) {
-          dict.set(key, value);
-        }
-      }
-
-      // 寫入空數據 (Uint8Array) 並在上下文註冊，供 pdf-lib 重組 xref 表
-      const stream = pdfDoc.context.stream(new Uint8Array(), dict);
-      return pdfDoc.context.register(stream);
-    }
-
-    /**
-     * 依據設定依序處理每一頁的底層結構
-     * @param {PDFDocument} pdfDoc - PDF 文件物件
-     * @param {Object} options - 清理選項
-     * @returns {Object} 處理結果統計
-     */
-    function processPdf(pdfDoc, options) {
-      let modifiedObjects = 0;
-
-      // 循序處理每一頁
-      for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
-        const page = pdfDoc.getPage(pageIndex);
-
-        // 複製 Contents 陣列以進行單頁隔離，避免多頁共享時的修改互相干擾
-        const contentsKey = PDFName.of("Contents");
-        const contents = page.node.lookup(contentsKey);
-        if (contents instanceof PDFArray) {
-          page.node.set(contentsKey, contents.clone(pdfDoc.context));
+            // 3. 隱藏並清空處理後的預覽視窗
+            processedPreviewBox.classList.add("hidden");
+            processedPreview.src = "";
         }
 
-        // 選項 2：移除 Annotation 註解
-        if (options.removeAnnotations) {
-          modifiedObjects += removeAnnotations(page);
+        /**
+         * 顯示原始 PDF 預覽，並妥善管理瀏覽器記憶體
+         * @param {File} file - 使用者上傳的原始 PDF 檔案
+         */
+        function showOriginalPreview(file) {
+            // 0. 主動清空並重置處理後的舊狀態
+            resetProcessedState();
+
+            // 1. 若先前已有建立好的 Blob URL，必須主動將其釋放 (Revoke)，避免記憶體洩漏 (Memory Leak)
+            if (originalUrl) {
+                URL.revokeObjectURL(originalUrl);
+            }
+            // 2. 為檔案建立一個專屬的臨時 Blob URL，並掛載至 iframe
+            originalUrl = URL.createObjectURL(file);
+            originalPreview.src = originalUrl;
+
+            // 3. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
+            previewContainer.classList.remove("hidden");
+            processedPreviewBox.classList.add("hidden");
         }
 
-        // 取得當前頁面的 Resources 資源字典以分析 XObject 等子物件
-        let resources = page.node.lookup(PDFName.of("Resources"));
-        if (!(resources instanceof PDFDict)) {
-          continue;
-        }
+        // 監聽傳統點擊選擇檔案事件
+        fileInput.addEventListener("change", (event) => {
+            if (event.target.files.length > 0) {
+                selectedFile = event.target.files[0];
+                clearStatusMessages();
+                addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
+                downloadArea.classList.add("hidden");
+                showOriginalPreview(selectedFile);
+            }
+        });
 
-        // 複製 Resources 字典以進行單頁隔離，避免共用資源導致修改影響其他頁面
-        if (resources.clone) {
-          resources = resources.clone(pdfDoc.context);
-          page.node.set(PDFName.of("Resources"), resources);
-        }
+        // 監聽檔案拖曳滑過拖曳區事件
+        fileArea.addEventListener("dragover", (event) => {
+            event.preventDefault(); // 必須阻擋瀏覽器預設開啟 PDF 的行為
+            fileArea.classList.add("dragging");
+        });
 
-        // 選項 1：清理 Form XObject
-        if (options.removeFormXObject) {
-          modifiedObjects += removeFormXObjects(pdfDoc, resources);
-        }
-        // 選項 6：清理圖片 Image XObject
-        if (options.removeImageXObject) {
-          modifiedObjects += removeImageXObjects(pdfDoc, resources);
-        }
-        // 選項 3：清理 Direct Content
-        if (options.removeDirectContent) {
-          modifiedObjects += removeDirectContent(pdfDoc, page, pageIndex, options);
-        }
-        // 選項 4：清理 ExtGState 半透明狀態
-        if (options.removeExtGState) {
-          modifiedObjects += removeExtGState(pdfDoc, resources);
-        }
-      }
+        // 監聽檔案拖曳離開拖曳區事件
+        fileArea.addEventListener("dragleave", () => {
+            fileArea.classList.remove("dragging");
+        });
 
-      // 選項 5：清理 OCG 圖層（定義於 Catalog 全域，於分頁迴圈外處理）
-      if (options.removeOCG) {
-        modifiedObjects += removeOCG(pdfDoc);
-      }
+        // 監聽檔案釋放拖曳事件
+        fileArea.addEventListener("drop", (event) => {
+            event.preventDefault();
+            fileArea.classList.remove("dragging");
 
-      return { modifiedObjects };
-    }
-
-    /**
-     * 策略一：清除 Form XObject 浮水印
-     * Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
-     * 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
-     * 逐一檢視 Resources 下的所有 XObject，若 Subtype 為 /Form，則建立空串流將其置換。
-     * 
-     * @param {PDFDocument} pdfDoc - PDF 文件物件
-     * @param {PDFDict} resources - 頁面資源字典
-     * @returns {number} 清除的 Form XObject 數量
-     */
-    function removeFormXObjects(pdfDoc, resources) {
-      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
-      if (!(xObjects instanceof PDFDict)) return 0;
-
-      let count = 0;
-      for (const key of xObjects.keys()) {
-        const xObject = pdfDoc.context.lookup(xObjects.get(key));
-        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
-
-        if (subtype instanceof PDFName && subtype.toString() === "/Form") {
-          // 替換為空 Form，但必須保留 BBox 等定位參數以防渲染引擎出錯
-          const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
-            "BBox",
-            "Matrix",
-            "Group",
-            "Resources",
-          ]);
-          xObjects.set(key, blankedStream);
-          count += 1;
-        }
-      }
-      return count;
-    }
-
-    /**
-     * 策略二：移除 Annots 註解
-     * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
-     * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
-     * 
-     * @param {PDFPage} page - 目標頁面物件
-     * @returns {number} 移除成功與否的統計計數 (0 或 1)
-     */
-    function removeAnnotations(page) {
-      const annotsKey = PDFName.of("Annots");
-      if (page.node.has(annotsKey)) {
-        const originalAnnots = page.node.lookup(annotsKey);
-        page.node.delete(annotsKey);
-        console.log(`Removed Annots from page. Ref: ${originalAnnots.ref ? originalAnnots.ref.objectNumber : 'no ref'}`);
-        return 1;
-      }
-      return 0;
-    }
-
-    /**
-     * 策略三：檢查並清空可疑內容流
-     * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字 (例如: /Tj "CONFIDENTIAL")。
-     * 由於 PDF 串流通常已被壓縮 (FlateDecode)，此處透過 stream.getContents() 在記憶體解壓縮，
-     * 轉為 UTF-8 明文字串比對特徵關鍵字。
-     * 若命中，則清空該內容流。
-     * 
-     * 【技術細節】在先前我們特別在自訂測試 PDF 生成時，傳入了 `compress_streams=False` 
-     * 或是保持無渲染衝突的 `% watermark` 註解流，讓 TextDecoder 能夠順利偵測特徵。
-     * 
-     * @param {PDFDocument} pdfDoc - 文件物件
-     * @param {PDFPage} page - 頁面物件
-     * @param {number} pageIndex - 當前頁碼
-     * @param {Object} options - 設定選項
-     * @returns {number} 處理掉的 Direct Content 流數量
-     */
-    function removeDirectContent(pdfDoc, page, pageIndex, options) {
-      const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
-      if (!contents) return 0;
-
-      // 彙整該頁面所有的內容流物件（可能是單個 Stream，也可能是 Stream 陣列）
-      const streams = [];
-      if (contents instanceof PDFArray) {
-        for (let idx = 0; idx < contents.size(); idx += 1) {
-          streams.push({ item: contents.lookup(idx), index: idx });
-        }
-      } else {
-        streams.push({ item: contents, index: null });
-      }
-
-      let count = 0;
-      streams.forEach((entry) => {
-        const stream = entry.item;
-        if (!(stream instanceof PDFRawStream)) return;
-
-        try {
-          // 1. 取得解壓後的明文二進制位元陣列
-          const data = stream.getContents();
-          // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
-          const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
-
-          // 3. 比對觸發字眼
-          const containsTriggerWord = TRIGGER_WORDS.some((word) => text.includes(word));
-          if (containsTriggerWord) {
-            // 複製原字典 (以繼承長度、壓縮等設定)，但寫入空內容數據 (Uint8Array)
-            const clonedDict = stream.dict.clone(pdfDoc.context);
-            const emptyStream = pdfDoc.context.stream(new Uint8Array(), clonedDict);
-            const ref = pdfDoc.context.register(emptyStream);
-
-            // 寫回 PDF 結構樹
-            if (entry.index === null) {
-              page.node.set(PDFName.of("Contents"), ref);
+            const file = event.dataTransfer.files[0];
+            if (file && file.type === "application/pdf") {
+                selectedFile = file;
+                fileInput.files = event.dataTransfer.files; // 將拖曳檔案與 input 同步
+                clearStatusMessages();
+                addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
+                downloadArea.classList.add("hidden");
+                showOriginalPreview(selectedFile);
             } else {
-              contents.set(entry.index, ref);
+                clearStatusMessages();
+                addStatusMessage("僅支援 PDF 檔案格式。", 'error');
             }
-            count += 1;
-          }
-        } catch (error) {
-          console.error("Direct content scan failed", error);
+        });
+
+        // 監聽開始處理按鈕事件（使用 Async-Await 避免瀏覽器卡頓）
+        processButton.addEventListener("click", async () => {
+            if (!selectedFile) {
+                clearStatusMessages();
+                addStatusMessage("請先選擇 PDF 檔案。", "error");
+                return;
+            }
+
+            downloadArea.classList.add("hidden");
+            clearStatusMessages();
+            addStatusMessage("🚀 開始處理 PDF 文件，請稍候...", "info");
+            processButton.disabled = true; // 鎖定按鈕防止重複觸發
+
+            try {
+                // 1. 讀取檔案至記憶體
+                addStatusMessage("讀取檔案至記憶體...", "info");
+                const rawBuffer = await selectedFile.arrayBuffer();
+                let pdfBytes = new Uint8Array(rawBuffer);
+                let pdfDoc;
+
+                // 2. 先嘗試直接載入並分析加密狀態
+                let isEncryptedPdf = false;
+                let encryptionType = null; // 'password' (開啟密碼限制) 或 'permissions' (編輯權限限制)
+                let decryptedBytes = null;
+
+                try {
+                    pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+                    pdfDoc.getPageCount(); // 觸發 lazy-parsing，提早攔截加密錯誤
+
+                    // 如果可以直接加載成功，檢查 trailer 中是否帶有 Encrypt 鍵
+                    if (pdfDoc.context.trailerInfo && pdfDoc.context.trailerInfo.Encrypt) {
+                        isEncryptedPdf = true;
+                        encryptionType = "permissions";
+                    }
+                } catch (loadError) {
+                    // PDF 載入失敗拋錯，代表有加密
+                    isEncryptedPdf = true;
+
+                    // 關鍵精準判定：先嘗試用「空密碼」進行自動解密，藉以區分是開檔密碼還是權限限制
+                    try {
+                        decryptedBytes = await decryptWithQpdfWasm(pdfBytes, "");
+
+                        // 驗證解密後 PDF
+                        pdfDoc = await PDFDocument.load(decryptedBytes, { updateMetadata: false });
+                        pdfDoc.getPageCount();
+
+                        // 成功解開，代表為「編輯權限限制」（免密碼開啟但限制編輯）
+                        encryptionType = "permissions";
+                        pdfBytes = decryptedBytes; // 更新為已解密的 bytes
+                    } catch (decryptError) {
+                        // 空密碼解密失敗，代表為「開啟密碼限制」（需要使用者輸入開檔密碼）
+                        encryptionType = "password";
+                    }
+                }
+
+                if (isEncryptedPdf) {
+                    if (encryptionType === "permissions") {
+                        addStatusMessage("⚠️ 偵測到編輯權限限制（無開啟密碼，但限制編輯與複製權限），正在進行權限解鎖...", "info");
+                        addStatusMessage("🔓 編輯權限限制已成功解除！正在分析浮水印結構...", "success");
+                    } else {
+                        addStatusMessage("🔒 偵測到開啟密碼限制（此檔案設有開檔密碼保護）...", "info");
+
+                        let password = "";
+                        let attempts = 0;
+
+                        while (true) {
+                            try {
+                                if (attempts > 0) {
+                                    addStatusMessage(`嘗試使用密碼進行解密 (第 ${attempts} 次)...`, "info");
+                                }
+
+                                // 彈窗詢問使用者輸入
+                                const pwd = await promptForPassword(attempts > 0);
+                                if (pwd === null) {
+                                    throw new Error("使用者已取消密碼輸入，無法處理加密的文件。");
+                                }
+                                password = pwd;
+                                attempts++;
+
+                                // 調用 qpdf-wasm 進行解密
+                                decryptedBytes = await decryptWithQpdfWasm(pdfBytes, password);
+
+                                // 驗證解密後 PDF
+                                pdfDoc = await PDFDocument.load(decryptedBytes, { updateMetadata: false });
+                                pdfDoc.getPageCount();
+
+                                // 成功解密並加載，更新 bytes 以供後續流程處理與寫出
+                                pdfBytes = decryptedBytes;
+                                addStatusMessage("🔓 開啟密碼限制已成功解除！正在分析浮水印結構...", "success");
+                                break; // 跳出嘗試迴圈
+                            } catch (decryptError) {
+                                console.warn(`解密嘗試失敗 (第 ${attempts} 次):`, decryptError.message);
+                            }
+                        }
+                    }
+                } else {
+                    addStatusMessage("📄 載入無加密 PDF 成功，正在分析浮水印結構...", "info");
+                }
+
+                // 3. 取得目前畫面中 checkbox 勾選的清理選項
+                addStatusMessage("載入浮水印移除選項設定...", "info");
+                const options = getOptions();
+
+                // 4. 開始重構 PDF 物件樹
+                addStatusMessage("開始掃描並重構 PDF 物件樹，套用清理策略...", "info");
+                const result = processPdf(pdfDoc, options);
+
+                // 5. 更新狀態列文字
+                if (result.modifiedObjects === 0) {
+                    addStatusMessage("未偵測到可移除的浮水印物件。請嘗試使用更多選項或更換檔案。", "info");
+                } else {
+                    addStatusMessage(`已成功置換或修改了 ${result.modifiedObjects} 個可疑浮水印物件。`, "success");
+                }
+
+                // 6. 將重構後的 PDF 文件保存回二進制陣列 (Uint8Array)
+                addStatusMessage("正在封裝保存 PDF 結構，生成無損 PDF 位元組流...", "info");
+                const bytes = await pdfDoc.save();
+
+                // 7. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
+                const blob = new Blob([bytes], { type: "application/pdf" });
+                if (processedUrl) {
+                    URL.revokeObjectURL(processedUrl); // 釋放舊 URL 記憶體
+                }
+                processedUrl = URL.createObjectURL(blob);
+                downloadLink.href = processedUrl;
+                // 下載檔案名稱尾碼自動加上 _removed
+                downloadLink.download = selectedFile.name.replace(/\.pdf$/i, "") + "_removed.pdf";
+                downloadArea.classList.remove("hidden");
+
+                addStatusMessage("🎉 浮水印移除已完成！請點擊下方按鈕下載處理後的 PDF。", "success");
+
+                // 8. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
+                processedPreview.src = processedUrl;
+                processedPreviewBox.classList.remove("hidden");
+            } catch (error) {
+                console.error(error);
+                addStatusMessage(`❌ 處理過程發生錯誤: ${error.message || "未知錯誤"}。無法完成浮水印移除，請嘗試其他檔案。`, "error");
+            } finally {
+                processButton.disabled = false; // 無論成功與否，皆解鎖按鈕
+            }
+        });
+
+        /**
+         * 輔助函數：格式化檔案大小單位
+         * @param {number} bytes - 檔案位元組大小
+         * @returns {string} 可讀性佳的格式化檔案大小 (如 1.25 MB)
+         */
+        function formatBytes(bytes) {
+            if (bytes === 0) return "0 B";
+            const units = ["B", "KB", "MB", "GB"];
+            const index = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / 1024 ** index).toFixed(2)} ${units[index]}`;
         }
-      });
-      return count;
-    }
 
-    /**
-     * 策略四：清理 ExtGState 半透明狀態
-     * ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
-     * 遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
-     * 
-     * @param {PDFDocument} pdfDoc - 文件物件
-     * @param {PDFDict} resources - 資源字典
-     * @returns {number} 處理掉的 ExtGState 數量
-     */
-    function removeExtGState(pdfDoc, resources) {
-      const extGState = resources.lookup(PDFName.of("ExtGState"));
-      if (!(extGState instanceof PDFDict)) return 0;
-
-      let count = 0;
-      for (const key of extGState.keys()) {
-        if (key.value().toLowerCase().includes("watermark")) {
-          // 重置為無透明度的預設空 ExtGState 字典
-          extGState.set(key, pdfDoc.context.obj({ Type: PDFName.of("ExtGState") }));
-          count += 1;
+        /**
+         * 輔助函數：獲取當前前端 checkbox 的勾選狀態
+         * @returns {Object} 包含各項清理選項之布林值的對象
+         */
+        function getOptions() {
+            return {
+                removeAnnotations: document.getElementById("removeAnnotations").checked,
+                removeFormXObject: document.getElementById("removeFormXObject").checked,
+                removeExtGState: document.getElementById("removeExtGState").checked,
+                removeImageXObject: document.getElementById("removeImageXObject").checked,
+                removeDirectContent: document.getElementById("removeDirectContent").checked,
+                removeOCG: document.getElementById("removeOCG").checked,
+            };
         }
-      }
-      return count;
-    }
 
-    /**
-     * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
-     * OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
-     * 找到所有的圖層清單 (/OCGs Array)，比對圖層名稱解碼後的字串。
-     * 若符合，則將該 OCG 圖層的 Name 清空使其實效，達到隱藏消除的目的。
-     * 
-     * @param {PDFDocument} pdfDoc - PDF 文件物件
-     * @returns {number} 清除的 OCG 圖層數量
-     */
-    function removeOCG(pdfDoc) {
-      const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));
-      if (!ocPropertiesRef) return 0;
+        /**
+         * 在 PDF 中建立一個「空串流」置換浮水印物件，避免直接刪除導致結構損壞
+         * 
+         * @param {PDFDocument} pdfDoc - PDF 文件物件
+         * @param {PDFRawStream} originalStream - 原始串流
+         * @param {string} subtype - 子類型
+         * @param {string[]} keepKeys - 需保留的屬性鍵值
+         * @returns {PDFRef} 註冊後的空 XObject 參照
+         */
+        function createBlankXObjectStream(pdfDoc, originalStream, subtype, keepKeys = []) {
+            const dict = pdfDoc.context.obj({
+                Type: PDFName.of("XObject"),
+                Subtype: PDFName.of(subtype),
+            });
 
-      const ocProperties = pdfDoc.context.lookup(ocPropertiesRef);
-      if (!(ocProperties instanceof PDFDict)) return 0;
+            // 保留維持 PDF 正常顯示渲染所需的必要關鍵字字典（如尺寸）
+            for (const keyName of keepKeys) {
+                const key = PDFName.of(keyName);
+                const value = originalStream.dict.lookup(key);
+                if (value) {
+                    dict.set(key, value);
+                }
+            }
 
-      const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
-      if (!ocgsRef) return 0;
+            // 寫入標記，表示此物件已完成清除以供後續進行冪等性檢查
+            dict.set(PDFName.of("IsWatermarkRemoved"), pdfDoc.context.obj(true));
 
-      const ocgs = pdfDoc.context.lookup(ocgsRef);
-      if (!(ocgs instanceof PDFArray)) return 0;
-
-      let count = 0;
-      for (let idx = 0; idx < ocgs.size(); idx += 1) {
-        const ocg = ocgs.lookup(idx);
-        if (!(ocg instanceof PDFDict)) continue;
-        // OCG 名稱可能是普通 String，也可能是 HexString 二進位十六進位編碼，在此進行解包相容
-        const nameObject = ocg.lookup(PDFName.of("Name"));
-        if (!(nameObject instanceof PDFString || nameObject instanceof PDFHexString)) continue;
-
-        // 解碼名稱明文
-        const name = nameObject.decodeText().toLowerCase();
-        if (name.includes("watermark")) {
-          // 清空圖層名稱，使其失效不顯示
-          ocg.set(PDFName.of("Name"), PDFString.of(""));
-          count += 1;
+            // 寫入空數據 (Uint8Array) 並在上下文註冊，供 pdf-lib 重組 xref 表
+            const stream = pdfDoc.context.stream(new Uint8Array(), dict);
+            return pdfDoc.context.register(stream);
         }
-      }
-      return count;
-    }
 
-    /**
-     * 策略六：清除圖片型浮水印 (Image XObject)
-     * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
-     * 為避免誤刪正常插圖，我們會檢查圖片元件的命名特徵鍵值（如 /Watermark1, /wm2 等）。
-     * 若符合，則建立空 Image 串流置換。
-     * 
-     * @param {PDFDocument} pdfDoc - 文件物件
-     * @param {PDFDict} resources - 頁面資源字典
-     * @returns {number} 處理掉的 Image 數量
-     */
-    function removeImageXObjects(pdfDoc, resources) {
-      const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
-      if (!(xObjects instanceof PDFDict)) return 0;
+        /**
+         * 依據設定依序處理每一頁的底層結構
+         * @param {PDFDocument} pdfDoc - PDF 文件物件
+         * @param {Object} options - 清理選項
+         * @returns {Object} 處理結果統計
+         */
+        function processPdf(pdfDoc, options) {
+            let modifiedObjects = 0;
 
-      let count = 0;
-      for (const key of xObjects.keys()) {
-        const xObject = pdfDoc.context.lookup(xObjects.get(key));
-        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+            // 循序處理每一頁
+            for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
+                const page = pdfDoc.getPage(pageIndex);
 
-        if (subtype instanceof PDFName && subtype.toString() === "/Image") {
-          const name = key.value().toLowerCase();
-          // 比對特徵命名字串
-          if (name.includes("watermark") || name.includes("wm")) {
-            // 替換為空 Image，保留寬高尺寸與色彩空間等硬性參數
-            const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
-              "Width",
-              "Height",
-              "ColorSpace",
-              "BitsPerComponent",
-              "Decode",
-              "Intent",
-            ]);
-            xObjects.set(key, blankedStream);
-            count += 1;
-          }
+                // 複製 Contents 陣列以進行單頁隔離，避免多頁共享時的修改互相干擾
+                const contentsKey = PDFName.of("Contents");
+                const contents = page.node.lookup(contentsKey);
+                if (contents instanceof PDFArray) {
+                    page.node.set(contentsKey, contents.clone(pdfDoc.context));
+                }
+
+                // 取得當前頁面的 Resources 資源字典以分析 XObject 等子物件
+                let resources = page.node.lookup(PDFName.of("Resources"));
+                if (!(resources instanceof PDFDict)) {
+                    continue;
+                }
+
+                // 複製 Resources 字典以進行單頁隔離，避免共用資源導致修改影響其他頁面
+                if (resources.clone) {
+                    resources = resources.clone(pdfDoc.context);
+                    page.node.set(PDFName.of("Resources"), resources);
+                }
+
+                // 策略一：清理 Form XObject 浮水印
+                if (options.removeFormXObject) {
+                    modifiedObjects += removeFormXObjects(pdfDoc, resources);
+                }
+
+                // 策略二：移除 Annotation 註解
+                if (options.removeAnnotations) {
+                    modifiedObjects += removeAnnotations(page);
+                }
+
+                // 策略三：清理 Direct Content 內容流
+                if (options.removeDirectContent) {
+                    modifiedObjects += removeDirectContent(pdfDoc, page, pageIndex, options);
+                }
+
+                // 策略四：清理 ExtGState 半透明狀態
+                if (options.removeExtGState) {
+                    modifiedObjects += removeExtGState(pdfDoc, resources);
+                }
+
+                // 策略六：清除圖片型浮水印 Image XObject
+                if (options.removeImageXObject) {
+                    modifiedObjects += removeImageXObjects(pdfDoc, resources);
+                }
+            }
+
+            // 策略五：清理 OCG 圖層（定義於 Catalog 全域，於分頁迴圈外處理）
+            if (options.removeOCG) {
+                modifiedObjects += removeOCG(pdfDoc);
+            }
+
+            return { modifiedObjects };
         }
-      }
-      return count;
-    }
-  </script>
+
+        /**
+         * 策略一：清除 Form XObject 浮水印
+         * Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
+         * 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
+         * 逐一檢視 Resources 下的所有 XObject，若 Subtype 為 /Form，則建立空串流將其置換。
+         * 
+         * @param {PDFDocument} pdfDoc - PDF 文件物件
+         * @param {PDFDict} resources - 頁面資源字典
+         * @returns {number} 清除的 Form XObject 數量
+         */
+        function removeFormXObjects(pdfDoc, resources) {
+            const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+            if (!(xObjects instanceof PDFDict)) return 0;
+
+            let count = 0;
+            for (const key of xObjects.keys()) {
+                const xObject = pdfDoc.context.lookup(xObjects.get(key));
+                const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+
+                if (subtype instanceof PDFName && subtype.toString() === "/Form") {
+                    // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
+                    if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) {
+                        continue;
+                    }
+
+                    // 替換為空 Form，但必須保留 BBox 等定位參數以防渲染引擎出錯
+                    const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
+                        "BBox",
+                        "Matrix",
+                        "Group",
+                        "Resources",
+                    ]);
+                    xObjects.set(key, blankedStream);
+                    count += 1;
+                }
+            }
+            return count;
+        }
+
+        /**
+         * 策略二：移除 Annots 註解
+         * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
+         * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
+         * 
+         * @param {PDFPage} page - 目標頁面物件
+         * @returns {number} 移除成功與否的統計計數 (0 或 1)
+         */
+        function removeAnnotations(page) {
+            const annotsKey = PDFName.of("Annots");
+            if (page.node.has(annotsKey)) {
+                const originalAnnots = page.node.lookup(annotsKey);
+                page.node.delete(annotsKey);
+                console.log(`Removed Annots from page. Ref: ${originalAnnots.ref ? originalAnnots.ref.objectNumber : 'no ref'}`);
+                return 1;
+            }
+            return 0;
+        }
+
+        /**
+         * 策略三：檢查並清空可疑內容流
+         * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字 (例如: /Tj "CONFIDENTIAL")。
+         * 由於 PDF 串流通常已被壓縮 (FlateDecode)，此處透過 stream.getContents() 在記憶體解壓縮，
+         * 轉為 UTF-8 明文字串比對特徵關鍵字。
+         * 若命中，則清空該內容流。
+         * 
+         * 【技術細節】在先前我們特別在自訂測試 PDF 生成時，傳入了 `compress_streams=False` 
+         * 或是保持無渲染衝突的 `% watermark` 註解流，讓 TextDecoder 能夠順利偵測特徵。
+         * 
+         * @param {PDFDocument} pdfDoc - 文件物件
+         * @param {PDFPage} page - 頁面物件
+         * @param {number} pageIndex - 當前頁碼
+         * @param {Object} options - 設定選項
+         * @returns {number} 處理掉的 Direct Content 流數量
+         */
+        function removeDirectContent(pdfDoc, page, pageIndex, options) {
+            const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
+            if (!contents) return 0;
+
+            // 彙整該頁面所有的內容流物件（可能是單個 Stream，也可能是 Stream 陣列）
+            const streams = [];
+            if (contents instanceof PDFArray) {
+                for (let idx = 0; idx < contents.size(); idx += 1) {
+                    streams.push({ item: contents.lookup(idx), index: idx });
+                }
+            } else {
+                streams.push({ item: contents, index: null });
+            }
+
+            let count = 0;
+            streams.forEach((entry) => {
+                const stream = entry.item;
+                if (!(stream instanceof PDFRawStream)) return;
+
+                try {
+                    // 1. 取得解壓後的明文二進制位元陣列
+                    const data = stream.getContents();
+                    // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
+                    const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
+
+                    // 3. 比對觸發字眼
+                    const containsTriggerWord = TRIGGER_WORDS.some((word) => text.includes(word));
+                    if (containsTriggerWord) {
+                        // 複製原字典 (以繼承長度、壓縮等設定)，但寫入空內容數據 (Uint8Array)
+                        const clonedDict = stream.dict.clone(pdfDoc.context);
+                        const emptyStream = pdfDoc.context.stream(new Uint8Array(), clonedDict);
+                        const ref = pdfDoc.context.register(emptyStream);
+
+                        // 寫回 PDF 結構樹
+                        if (entry.index === null) {
+                            page.node.set(PDFName.of("Contents"), ref);
+                        } else {
+                            contents.set(entry.index, ref);
+                        }
+                        count += 1;
+                    }
+                } catch (error) {
+                    console.error("Direct content scan failed", error);
+                }
+            });
+            return count;
+        }
+
+        /**
+         * 策略四：清理 ExtGState 半透明狀態
+         * ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
+         * 遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
+         * 
+         * @param {PDFDocument} pdfDoc - 文件物件
+         * @param {PDFDict} resources - 資源字典
+         * @returns {number} 處理掉的 ExtGState 數量
+         */
+        function removeExtGState(pdfDoc, resources) {
+            const extGState = resources.lookup(PDFName.of("ExtGState"));
+            if (!(extGState instanceof PDFDict)) return 0;
+
+            let count = 0;
+            for (const key of extGState.keys()) {
+                if (key.value().toLowerCase().includes("watermark")) {
+                    // 重置為無透明度的預設空 ExtGState 字典
+                    extGState.set(key, pdfDoc.context.obj({ Type: PDFName.of("ExtGState") }));
+                    count += 1;
+                }
+            }
+            return count;
+        }
+
+        /**
+         * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
+         * OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
+         * 找到所有的圖層清單 (/OCGs Array)，比對圖層名稱解碼後的字串。
+         * 若符合，則將該 OCG 圖層的 Name 清空使其實效，達到隱藏消除的目的。
+         * 
+         * @param {PDFDocument} pdfDoc - PDF 文件物件
+         * @returns {number} 清除的 OCG 圖層數量
+         */
+        function removeOCG(pdfDoc) {
+            const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));
+            if (!ocPropertiesRef) return 0;
+
+            const ocProperties = pdfDoc.context.lookup(ocPropertiesRef);
+            if (!(ocProperties instanceof PDFDict)) return 0;
+
+            const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
+            if (!ocgsRef) return 0;
+
+            const ocgs = pdfDoc.context.lookup(ocgsRef);
+            if (!(ocgs instanceof PDFArray)) return 0;
+
+            let count = 0;
+            for (let idx = 0; idx < ocgs.size(); idx += 1) {
+                const ocg = ocgs.lookup(idx);
+                if (!(ocg instanceof PDFDict)) continue;
+                // OCG 名稱可能是普通 String，也可能是 HexString 二進位十六進位編碼，在此進行解包相容
+                const nameObject = ocg.lookup(PDFName.of("Name"));
+                if (!(nameObject instanceof PDFString || nameObject instanceof PDFHexString)) continue;
+
+                // 解碼名稱明文
+                const name = nameObject.decodeText().toLowerCase();
+                if (name.includes("watermark")) {
+                    // 清空圖層名稱，使其失效不顯示
+                    ocg.set(PDFName.of("Name"), PDFString.of(""));
+                    count += 1;
+                }
+            }
+            return count;
+        }
+
+        /**
+         * 策略六：清除圖片型浮水印 (Image XObject)
+         * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
+         * 為避免誤刪正常插圖，我們會檢查圖片元件的命名特徵鍵值（如 /Watermark1, /wm2 等）。
+         * 若符合，則建立空 Image 串流置換。
+         * 
+         * @param {PDFDocument} pdfDoc - 文件物件
+         * @param {PDFDict} resources - 頁面資源字典
+         * @returns {number} 處理掉的 Image 數量
+         */
+        function removeImageXObjects(pdfDoc, resources) {
+            const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+            if (!(xObjects instanceof PDFDict)) return 0;
+
+            let count = 0;
+            for (const key of xObjects.keys()) {
+                const xObject = pdfDoc.context.lookup(xObjects.get(key));
+                const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+
+                if (subtype instanceof PDFName && subtype.toString() === "/Image") {
+                    const name = key.value().toLowerCase();
+                    // 比對特徵命名字串
+                    if (name.includes("watermark") || name.includes("wm")) {
+                        // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
+                        if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) {
+                            continue;
+                        }
+
+                        // 替換為空 Image，保留寬高尺寸與色彩空間等硬性參數
+                        const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
+                            "Width",
+                            "Height",
+                            "ColorSpace",
+                            "BitsPerComponent",
+                            "Decode",
+                            "Intent",
+                        ]);
+                        xObjects.set(key, blankedStream);
+                        count += 1;
+                    }
+                }
+            }
+            return count;
+        }
+    </script>
 </body>
 
 </html>
