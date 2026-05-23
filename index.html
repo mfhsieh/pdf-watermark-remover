@@ -1042,7 +1042,7 @@
      * 若符合，則將該 OCG 圖層的 Name 清空，使該圖層永遠失去渲染條件，達到徹底隱藏消除的目的。
      * 
      * @param {PDFDocument} pdfDoc - 文件物件
-     * @returns {number} 處理掉 the OCG 圖層數量
+     * @returns {number} 處理掉的 OCG 圖層數量
      */
     function removeOCG(pdfDoc) {
       const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));

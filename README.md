@@ -1,10 +1,10 @@
 # 純前端 PDF 浮水印移除工具 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 
-這是一個輕量、免安裝且 100% 在本機瀏覽器端執行的 PDF 浮水印與雜物移除工具。
+這是一個輕量、免安裝且 100% 在本機瀏覽器端執行的 [純前端 PDF 浮水印移除工具](https://mfhsieh.github.io/pdf-watermark-remover/)。
 
 ## 📌 專案簡介
 
-本專案採用純前端靜態解析技術，透過 `pdf-lib` 庫直接在瀏覽器記憶體中重構 PDF 結構。由於所有處理皆在使用者本機端完成，**檔案絕對不會上傳至任何後端伺服器**，能有效保障個人文件的資安與隱私安全。
+本專案採用純前端靜態解析技術，透過 `pdf-lib` 庫直接在瀏覽器記憶體中重構 PDF 結構。由於所有處理皆在使用者本機端完成，**檔案絕對不會上傳至任何後端伺服器**，能有效保障個人文件的資訊與隱私安全。
 
 本工具提供「Before & After 雙欄對照預覽」排版，方便您在下載前直接對照浮水印移除前後的視覺效果。
 
@@ -52,3 +52,13 @@ python3 -m http.server 8080
 * **姓名標示 (BY)**：您必須提供適當的姓名標示，並提供授權條款連結。
 * **非商業性 (NC)**：您不得將本素材進行商業目的之使用。
 * **相同方式分享 (SA)**：如果您改作、編寫本素材，您必須採用與原創相同的授權條款來釋出您的貢獻。
+
+作者：[mfhsieh at github](https://github.com/mfhsieh)
+
+## 📢 訊息揭露
+
+本應用程式採 vibe coding 方式開發，多數程式碼由 Gemini Antigravity 完成。
+
+## 📦 Release Notes
+
+- v1.0.0 (2026-05-24)
