@@ -5,7 +5,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>純前端 PDF 浮水印移除工具</title>
-    <!-- TODO(security): 引入 pdf-lib 時加上特定版本及次資源完整性 (SRI) 保護以防止 CDN 供應鏈攻擊 -->
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
         crossorigin="anonymous"></script>
@@ -423,7 +422,7 @@
             color: var(--primary-dark);
         }
 
-        /* CC BY-NC-SA 圓角氣泡膠囊徽章（完美契合名片快手設計） */
+        /* CC BY-NC-SA 圓角氣泡膠囊徽章 */
         .cc-badge {
             display: flex;
             align-items: center;
@@ -656,7 +655,7 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.1</span></h1>
+            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.2</span></h1>
             <p>所有處理在瀏覽器端執行，檔案不會上傳至伺服器</p>
         </header>
 
@@ -672,9 +671,9 @@
                 </div>
             </div>
 
-            <!-- 浮水印清理策略選項（依功能說明六種策略順序） -->
+            <!-- 浮水印清理策略選項 -->
             <div class="options">
-                <h2>選擇移除項目（依功能說明順序）</h2>
+                <h2>選擇清理策略</h2>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <label><input type="checkbox" id="removeFormXObject" checked /> 移除背景浮水印 (Form XObject)（最常見）</label>
                 <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
@@ -718,7 +717,7 @@
                 <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
             </div>
 
-            <!-- 實時 Before & After 即時預覽區（預設隱藏） -->
+            <!-- Before & After 對照預覽區（預設隱藏） -->
             <div id="previewContainer" class="preview-container hidden" hidden>
                 <!-- 原始 PDF 預覽窗格 -->
                 <div class="preview-box">
@@ -748,7 +747,6 @@
                         <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content
                             Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
                         <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可透過自訂命名關鍵字比對 XObject 名稱並予以清除。</li>
-                        </li>
                         <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
                         <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印移除。</li>
                     </ul>
@@ -1047,7 +1045,6 @@
          */
         function clearStatusMessages() {
             if (statusEl) {
-                // TODO(security): 遵循安全開發指南，改用 replaceChildren() 安全清空 DOM
                 statusEl.replaceChildren();
             }
         }
@@ -1283,11 +1280,20 @@
         });
 
         // ==========================================
-        // 圖片命名關鍵字 Modal 初始化與事件
+        // 圖片命名、ExtGState、OCG 關鍵字 Modal 初始化與事件
         // ==========================================
+        // 讀取已儲存的狀態並填入輸入框與勾選框
         imageKeywordsInput.value = imageKeywords.join(", ");
+        imageKeywordsUseRegexInput.checked = imageKeywordsUseRegex;
+        imageKeywordsExactMatchInput.checked = imageKeywordsExactMatch;
+
         extGStateKeywordsInput.value = extGStateKeywords.join(", ");
+        extGStateKeywordsUseRegexInput.checked = extGStateKeywordsUseRegex;
+        extGStateKeywordsExactMatchInput.checked = extGStateKeywordsExactMatch;
+
         ocgKeywordsInput.value = ocgKeywords.join(", ");
+        ocgKeywordsUseRegexInput.checked = ocgKeywordsUseRegex;
+        ocgKeywordsExactMatchInput.checked = ocgKeywordsExactMatch;
 
         // 互斥事件綁定
         imageKeywordsUseRegexInput.addEventListener("change", () => {
@@ -1337,7 +1343,7 @@
 
         applyImageKeywordsBtn.addEventListener("click", () => {
             const raw = imageKeywordsInput.value;
-            const parsed = raw.split(/[\,\n]/).map(w => w.trim()).filter(w => w);
+            const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 imageKeywords = parsed;
                 imageKeywordsUseRegex = imageKeywordsUseRegexInput.checked;
@@ -1442,7 +1448,6 @@
 
         // Before & After 預覽元件
         const previewContainer = document.getElementById("previewContainer");
-        previewContainer.classList.add("hidden");
         const originalPreview = document.getElementById("originalPreview");
         const processedPreviewBox = document.getElementById("processedPreviewBox");
         const processedPreview = document.getElementById("processedPreview");
@@ -1780,7 +1785,6 @@
          * 依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。
          */
         function updateFileAreaDisplay() {
-            // TODO(security): 避免使用 innerHTML 直接拼接外部檔名以防範 DOM-based XSS 攻擊，改用安全的 DOM APIs
             fileAreaInner.replaceChildren();
 
             const strongEl = document.createElement("strong");
@@ -1889,7 +1893,7 @@
 
                 // 策略三：清理 Direct Content 內容流
                 if (options.removeDirectContent) {
-                    modifiedObjects += removeDirectContent(pdfDoc, page, pageIndex, options);
+                    modifiedObjects += removeDirectContent(pdfDoc, page, options);
                 }
 
                 // 策略四：清理 ExtGState 半透明狀態
@@ -1897,7 +1901,7 @@
                     modifiedObjects += removeExtGState(pdfDoc, resources);
                 }
 
-                // 策略六：清除圖片型浮水印 Image XObject
+                // 策略六：清除圖片型浮水印 Image XObject（在迴圈內執行，OCG 策略五則在迴圈外）
                 if (options.removeImageXObject) {
                     modifiedObjects += removeImageXObjects(pdfDoc, resources);
                 }
@@ -1961,9 +1965,7 @@
         function removeAnnotations(page) {
             const annotsKey = PDFName.of("Annots");
             if (page.node.has(annotsKey)) {
-                const originalAnnots = page.node.lookup(annotsKey);
                 page.node.delete(annotsKey);
-                console.log(`Removed Annots from page. Ref: ${originalAnnots.ref ? originalAnnots.ref.objectNumber : 'no ref'}`);
                 return 1;
             }
             return 0;
@@ -1971,21 +1973,16 @@
 
         /**
          * 策略三：檢查並清空可疑內容流
-         * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字 (例如: /Tj "CONFIDENTIAL")。
-         * 由於 PDF 串流通常已被壓縮 (FlateDecode)，此處透過 stream.getContents() 在記憶體解壓縮，
-         * 轉為 UTF-8 明文字串比對特徵關鍵字。
-         * 若命中，則清空該內容流。
-         * 
-         * 【技術細節】在先前我們特別在自訂測試 PDF 生成時，傳入了 `compress_streams=False` 
-         * 或是保持無渲染衝突的 `% watermark` 註解流，讓 TextDecoder 能夠順利偵測特徵。
-         * 
+         * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
+         * 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 stream.getContents() 在記憶體中解壓縮，
+         * 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。
+         *
          * @param {PDFDocument} pdfDoc - 文件物件
          * @param {PDFPage} page - 頁面物件
-         * @param {number} pageIndex - 當前頁碼
          * @param {Object} options - 設定選項
          * @returns {number} 處理掉的 Direct Content 流數量
          */
-        function removeDirectContent(pdfDoc, page, pageIndex, options) {
+        function removeDirectContent(pdfDoc, page, options) {
             const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
             if (!contents) return 0;
 
