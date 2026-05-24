@@ -699,7 +699,7 @@
             </div>
 
             <!-- 執行動作按鈕 -->
-            <button id="processButton" class="button">開始移除浮水印</button>
+            <button id="processButton" class="button hidden">開始移除浮水印</button>
 
             <!-- 狀態提示語與進度回饋 -->
             <div id="status" class="status">
@@ -1156,6 +1156,7 @@
         // ==========================================
         const fileInput = document.getElementById("fileInput");
         const fileArea = document.getElementById("fileArea");
+        const fileAreaInner = document.querySelector(".file-area-inner");
         const statusEl = document.getElementById("status");
         const processButton = document.getElementById("processButton");
         const downloadArea = document.getElementById("downloadArea");
@@ -1433,6 +1434,7 @@
         let processedUrl = null;    // 處理後 PDF 於瀏覽器端動態建立的 Blob URL
         let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
+        let lastSuccessPassword = null;  // 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存）
 
         /**
          * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
@@ -1456,6 +1458,9 @@
             // 4. 清除密碼快取與解密後的位元組快取
             cachedPassword = null;
             cachedDecryptedBytes = null;
+
+            // 5. 隱藏開始處理按鈕
+            processButton.classList.add("hidden");
         }
 
         /**
@@ -1479,6 +1484,7 @@
 
             let previewBytes = rawBytes; // 預設使用原始位元組作為預覽來源
             let needsPassword = false;
+            let decryptedSuccessfully = false; // 用於在 showOriginalPreview 函式末端判斷是否成功解密，以決定是否顯示按鈕
 
             try {
                 // 先嘗試直接用 pdf-lib 載入；若有加密會拋錯
@@ -1499,30 +1505,57 @@
             }
 
             if (needsPassword) {
-                // 3. 詢問使用者輸入開啟密碼，直到成功或取消
-                addStatusMessage("🔒 此 PDF 設有開啟密碼，請輸入密碼以繼續。", "info");
-                let attempts = 0;
-                while (true) {
-                    const pwd = await promptForPassword(attempts > 0);
-                    if (pwd === null) {
-                        // 使用者取消：仍以原始未解密的 PDF 顯示預覽（瀏覽器內建會彈窗詢問密碼）
-                        addStatusMessage("已取消密碼輸入，預覽將顯示加密的原始文件。", "info");
-                        break;
-                    }
-                    attempts++;
+
+                // 優先在記憶體中嘗試上一次成功解密的密碼 (lastSuccessPassword)
+                if (lastSuccessPassword) {
                     try {
-                        const decrypted = await decryptWithQpdfWasm(rawBytes, pwd);
+                        addStatusMessage("🔒 偵測到開啟密碼保護，嘗試套用前次成功解密的記憶體密碼...", "info");
+                        const decrypted = await decryptWithQpdfWasm(rawBytes, lastSuccessPassword);
                         // 驗證解密成功
                         const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
                         testDoc.getPageCount();
-                        // 成功：快取密碼與解密後的位元組
-                        cachedPassword = pwd;
+
+                        // 成功！
+                        cachedPassword = lastSuccessPassword;
                         cachedDecryptedBytes = decrypted;
                         previewBytes = decrypted;
-                        addStatusMessage("🔓 密碼驗證成功，已解除開啟密碼保護。", "success");
-                        break;
-                    } catch {
-                        // 密碼錯誤，繼續迴圈
+                        decryptedSuccessfully = true;
+                        addStatusMessage("🔓 已自動套用前次使用的密碼並解密成功！", "success");
+                    } catch (e) {
+                        // 嘗試失敗，提示使用者需要重新輸入
+                        addStatusMessage("⚠️ 前次密碼不適用於此檔案，請重新輸入密碼。", "info");
+                    }
+                }
+
+                // 若未成功（無前次密碼，或前次密碼錯誤），則詢問使用者
+                if (!decryptedSuccessfully) {
+                    addStatusMessage("🔒 此 PDF 設有開啟密碼，請輸入密碼以繼續。", "info");
+                    let attempts = 0;
+                    while (true) {
+                        const pwd = await promptForPassword(attempts > 0);
+                        if (pwd === null) {
+                            // 使用者取消：仍以原始未解密的 PDF 顯示預覽（瀏覽器內建會彈窗詢問密碼）
+                            addStatusMessage("已取消密碼輸入，預覽將顯示加密的原始文件。", "info");
+                            break;
+                        }
+                        attempts++;
+                        try {
+                            const decrypted = await decryptWithQpdfWasm(rawBytes, pwd);
+                            // 驗證解密成功
+                            const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
+                            testDoc.getPageCount();
+                            
+                            // 成功：快取密碼與解密後的位元組，並儲存為 lastSuccessPassword 以供下次使用
+                            cachedPassword = pwd;
+                            lastSuccessPassword = pwd; // 更新跨檔案記憶體暫存密碼
+                            cachedDecryptedBytes = decrypted;
+                            previewBytes = decrypted;
+                            decryptedSuccessfully = true;
+                            addStatusMessage("🔓 密碼驗證成功，已解除開啟密碼保護。", "success");
+                            break;
+                        } catch {
+                            // 密碼錯誤，繼續迴圈
+                        }
                     }
                 }
             }
@@ -1535,12 +1568,18 @@
             // 5. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
             previewContainer.classList.remove("hidden");
             processedPreviewBox.classList.add("hidden");
+
+            // 6. 只有在無加密，或已成功解密的情況下，才顯示「開始移除浮水印」按鈕
+            if (!needsPassword || decryptedSuccessfully) {
+                processButton.classList.remove("hidden");
+            }
         }
 
         // 監聽傳統點擊選擇檔案事件
         fileInput.addEventListener("change", (event) => {
             if (event.target.files.length > 0) {
                 selectedFile = event.target.files[0];
+                updateFileAreaDisplay();
                 clearStatusMessages();
                 addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
                 downloadArea.classList.add("hidden");
@@ -1575,6 +1614,7 @@
                     console.warn("無法同步 fileInput.files，將僅使用 selectedFile 變數維持選檔狀態:", err);
                 }
 
+                updateFileAreaDisplay();
                 clearStatusMessages();
                 addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
                 downloadArea.classList.add("hidden");
@@ -1713,6 +1753,23 @@
             const units = ["B", "KB", "MB", "GB"];
             const index = Math.floor(Math.log(bytes) / Math.log(1024));
             return `${(bytes / 1024 ** index).toFixed(2)} ${units[index]}`;
+        }
+
+        /**
+         * 依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。
+         */
+        function updateFileAreaDisplay() {
+            if (selectedFile) {
+                fileAreaInner.innerHTML = `
+                    <strong>📄 ${selectedFile.name} (${formatBytes(selectedFile.size)})</strong>
+                    <span>點擊或拖曳以更換檔案</span>
+                `;
+            } else {
+                fileAreaInner.innerHTML = `
+                    <strong>點擊或拖曳 PDF 檔案到此處</strong>
+                    <span>僅支援 PDF，最大建議 50MB</span>
+                `;
+            }
         }
 
         /**
