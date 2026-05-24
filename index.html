@@ -5,7 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>純前端 PDF 浮水印移除工具</title>
-    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+    <!-- TODO(security): 引入 pdf-lib 時加上特定版本及次資源完整性 (SRI) 保護以防止 CDN 供應鏈攻擊 -->
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+        integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
+        crossorigin="anonymous"></script>
 
     <style>
         /* ==========================================
@@ -653,7 +656,7 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.0</span></h1>
+            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.1</span></h1>
             <p>所有處理在瀏覽器端執行，檔案不會上傳至伺服器</p>
         </header>
 
@@ -679,22 +682,26 @@
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row">
                     <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
-                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字" aria-label="設定特徵關鍵字">⚙</button>
+                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字"
+                        aria-label="設定特徵關鍵字">⚙</button>
                 </div>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
                 <div class="option-row">
                     <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
-                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字" aria-label="設定 ExtGState 關鍵字">⚙</button>
+                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字"
+                        aria-label="設定 ExtGState 關鍵字">⚙</button>
                 </div>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
                 <div class="option-row">
                     <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
-                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字" aria-label="設定 OCG 關鍵字">⚙</button>
+                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字"
+                        aria-label="設定 OCG 關鍵字">⚙</button>
                 </div>
                 <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
                 <div class="option-row">
                     <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
-                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字" aria-label="設定圖片命名關鍵字">⚙</button>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字"
+                        aria-label="設定圖片命名關鍵字">⚙</button>
                 </div>
             </div>
 
@@ -738,7 +745,8 @@
                         <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註型浮水印。</li>
                         <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
                         <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。</li>
-                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
+                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content
+                            Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
                         <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可透過自訂命名關鍵字比對 XObject 名稱並予以清除。</li>
                         </li>
                         <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
@@ -826,13 +834,16 @@
         <div class="modal-card">
             <h3>⚙ 設定特徵關鍵字</h3>
             <p>輸入用於掃描嵌入內容的關鍵字，以逗號分隔。僅影響「掃描並清除嵌入內容 (Direct Content)」功能。</p>
-            <textarea id="triggerWordsInput" rows="4" placeholder="例如：watermark, confidential, draft, sample, trial, 機密, 草稿, 浮水印"></textarea>
+            <textarea id="triggerWordsInput" rows="4"
+                placeholder="例如：watermark, confidential, draft, sample, trial, 機密, 草稿, 浮水印"></textarea>
             <div class="modal-options">
                 <label><input type="checkbox" id="triggerWordsUseRegex" /> 啟用正規表示式 (Regex)</label>
-                <label><input type="checkbox" id="triggerWordsExactMatch" /> 精確完全匹配</label>
+                <label><input type="checkbox" id="triggerWordsExactMatch" /> 精確完全比對</label>
             </div>
-            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button id="resetTriggerWordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetTriggerWordsBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
                 <div style="display: flex; gap: 12px;">
                     <button id="closeTriggerWordsModalBtn" class="button">取消</button>
                     <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
@@ -846,13 +857,16 @@
         <div class="modal-card">
             <h3>⚙ 設定圖片命名關鍵字</h3>
             <p>輸入用於辨識圖片型浮水印的命名關鍵字，以逗號分隔。僅影響「移除圖片型浮水印 (Image XObject)」功能。</p>
-            <textarea id="imageKeywordsInput" rows="4" placeholder="例如：watermark, wm, stamp, logo, bg, background, sign, signature, shuiyin"></textarea>
+            <textarea id="imageKeywordsInput" rows="4"
+                placeholder="例如：watermark, wm, stamp, logo, bg, background, sign, signature, shuiyin"></textarea>
             <div class="modal-options">
                 <label><input type="checkbox" id="imageKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
-                <label><input type="checkbox" id="imageKeywordsExactMatch" /> 精確完全匹配</label>
+                <label><input type="checkbox" id="imageKeywordsExactMatch" /> 精確完全比對</label>
             </div>
-            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button id="resetImageKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetImageKeywordsBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
                 <div style="display: flex; gap: 12px;">
                     <button id="closeImageKeywordsModalBtn" class="button">取消</button>
                     <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
@@ -866,13 +880,16 @@
         <div class="modal-card">
             <h3>⚙ 設定 ExtGState 關鍵字</h3>
             <p>輸入用於辨識 ExtGState 半透明設定名稱的關鍵字，以逗號分隔。僅影響「清理半透明效果 (ExtGState)」功能。</p>
-            <textarea id="extGStateKeywordsInput" rows="4" placeholder="例如：watermark, wm, trans, opacity, gs, alpha, blend, adbe, adobe"></textarea>
+            <textarea id="extGStateKeywordsInput" rows="4"
+                placeholder="例如：watermark, wm, trans, opacity, gs, alpha, blend, adbe, adobe"></textarea>
             <div class="modal-options">
                 <label><input type="checkbox" id="extGStateKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
-                <label><input type="checkbox" id="extGStateKeywordsExactMatch" /> 精確完全匹配</label>
+                <label><input type="checkbox" id="extGStateKeywordsExactMatch" /> 精確完全比對</label>
             </div>
-            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button id="resetExtGStateKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetExtGStateKeywordsBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
                 <div style="display: flex; gap: 12px;">
                     <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
                     <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
@@ -886,13 +903,16 @@
         <div class="modal-card">
             <h3>⚙ 設定 OCG 關鍵字</h3>
             <p>輸入用於辨識 OCG 圖層名稱的關鍵字，以逗號分隔。僅影響「清除浮水印圖層 (OCG)」功能。</p>
-            <textarea id="ocgKeywordsInput" rows="4" placeholder="例如：watermark, wm, layer, stamp, print, overlay, shuiyin, 浮水印, 水印"></textarea>
+            <textarea id="ocgKeywordsInput" rows="4"
+                placeholder="例如：watermark, wm, layer, stamp, print, overlay, shuiyin, 浮水印, 水印"></textarea>
             <div class="modal-options">
                 <label><input type="checkbox" id="ocgKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
-                <label><input type="checkbox" id="ocgKeywordsExactMatch" /> 精確完全匹配</label>
+                <label><input type="checkbox" id="ocgKeywordsExactMatch" /> 精確完全比對</label>
             </div>
-            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button id="resetOCGKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetOCGKeywordsBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
                 <div style="display: flex; gap: 12px;">
                     <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
                     <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
@@ -967,11 +987,11 @@
         function matchKeyword(target, keywords, useRegex, exactMatch) {
             if (!target) return false;
             const lowerTarget = target.toLowerCase();
-            
+
             return keywords.some(kw => {
                 if (!kw) return false;
                 const lowerKw = kw.toLowerCase();
-                
+
                 if (useRegex) {
                     try {
                         const regex = new RegExp(kw, 'i');
@@ -1027,7 +1047,8 @@
          */
         function clearStatusMessages() {
             if (statusEl) {
-                statusEl.innerHTML = '';
+                // TODO(security): 遵循安全開發指南，改用 replaceChildren() 安全清空 DOM
+                statusEl.replaceChildren();
             }
         }
 
@@ -1249,11 +1270,11 @@
                 userTriggerWords = parsed;
                 triggerWordsUseRegex = triggerWordsUseRegexInput.checked;
                 triggerWordsExactMatch = triggerWordsExactMatchInput.checked;
-                
+
                 saveKeywordList("triggerWords", userTriggerWords);
                 saveKeywordSetting("triggerWords_useRegex", triggerWordsUseRegex);
                 saveKeywordSetting("triggerWords_exactMatch", triggerWordsExactMatch);
-                
+
                 triggerWordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字（比對模式：${triggerWordsUseRegex ? "正規表示式" : (triggerWordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
@@ -1321,11 +1342,11 @@
                 imageKeywords = parsed;
                 imageKeywordsUseRegex = imageKeywordsUseRegexInput.checked;
                 imageKeywordsExactMatch = imageKeywordsExactMatchInput.checked;
-                
+
                 saveKeywordList("imageKeywords", imageKeywords);
                 saveKeywordSetting("imageKeywords_useRegex", imageKeywordsUseRegex);
                 saveKeywordSetting("imageKeywords_exactMatch", imageKeywordsExactMatch);
-                
+
                 imageKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${imageKeywords.length} 個圖片命名關鍵字（比對模式：${imageKeywordsUseRegex ? "正規表示式" : (imageKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
@@ -1388,11 +1409,11 @@
                 extGStateKeywords = parsed;
                 extGStateKeywordsUseRegex = extGStateKeywordsUseRegexInput.checked;
                 extGStateKeywordsExactMatch = extGStateKeywordsExactMatchInput.checked;
-                
+
                 saveKeywordList("extGStateKeywords", extGStateKeywords);
                 saveKeywordSetting("extGStateKeywords_useRegex", extGStateKeywordsUseRegex);
                 saveKeywordSetting("extGStateKeywords_exactMatch", extGStateKeywordsExactMatch);
-                
+
                 extGStateKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${extGStateKeywords.length} 個 ExtGState 關鍵字（比對模式：${extGStateKeywordsUseRegex ? "正規表示式" : (extGStateKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
@@ -1407,11 +1428,11 @@
                 ocgKeywords = parsed;
                 ocgKeywordsUseRegex = ocgKeywordsUseRegexInput.checked;
                 ocgKeywordsExactMatch = ocgKeywordsExactMatchInput.checked;
-                
+
                 saveKeywordList("ocgKeywords", ocgKeywords);
                 saveKeywordSetting("ocgKeywords_useRegex", ocgKeywordsUseRegex);
                 saveKeywordSetting("ocgKeywords_exactMatch", ocgKeywordsExactMatch);
-                
+
                 ocgKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${ocgKeywords.length} 個 OCG 關鍵字（比對模式：${ocgKeywordsUseRegex ? "正規表示式" : (ocgKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
@@ -1544,7 +1565,7 @@
                             // 驗證解密成功
                             const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
                             testDoc.getPageCount();
-                            
+
                             // 成功：快取密碼與解密後的位元組，並儲存為 lastSuccessPassword 以供下次使用
                             cachedPassword = pwd;
                             lastSuccessPassword = pwd; // 更新跨檔案記憶體暫存密碼
@@ -1606,7 +1627,7 @@
             const file = event.dataTransfer.files[0];
             if (file && file.type === "application/pdf") {
                 selectedFile = file;
-                
+
                 // 嘗試將拖曳檔案與 input 同步（相容性處理，部分舊瀏覽器 input.files 為唯讀）
                 try {
                     fileInput.files = event.dataTransfer.files;
@@ -1759,17 +1780,22 @@
          * 依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。
          */
         function updateFileAreaDisplay() {
+            // TODO(security): 避免使用 innerHTML 直接拼接外部檔名以防範 DOM-based XSS 攻擊，改用安全的 DOM APIs
+            fileAreaInner.replaceChildren();
+
+            const strongEl = document.createElement("strong");
+            const spanEl = document.createElement("span");
+
             if (selectedFile) {
-                fileAreaInner.innerHTML = `
-                    <strong>📄 ${selectedFile.name} (${formatBytes(selectedFile.size)})</strong>
-                    <span>點擊或拖曳以更換檔案</span>
-                `;
+                strongEl.textContent = `📄 ${selectedFile.name} (${formatBytes(selectedFile.size)})`;
+                spanEl.textContent = "點擊或拖曳以更換檔案";
             } else {
-                fileAreaInner.innerHTML = `
-                    <strong>點擊或拖曳 PDF 檔案到此處</strong>
-                    <span>僅支援 PDF，最大建議 50MB</span>
-                `;
+                strongEl.textContent = "點擊或拖曳 PDF 檔案到此處";
+                spanEl.textContent = "僅支援 PDF，最大建議 50MB";
             }
+
+            fileAreaInner.appendChild(strongEl);
+            fileAreaInner.appendChild(spanEl);
         }
 
         /**

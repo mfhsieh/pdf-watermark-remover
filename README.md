@@ -1,5 +1,5 @@
 # 純前端 PDF 浮水印移除工具
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 在瀏覽器端執行的 PDF 浮水印移除工具，**檔案不會上傳至伺服器**。
@@ -96,5 +96,5 @@
 
 ## 📦 Release Notes
 
-- v1.1.0 (2026-05-24) 新增開啟密碼解密、檔案權限解除與跨檔案密碼安全沿用；自訂關鍵字新增「回復預設值」並預設啟用 Regex。
+- v1.1.1 (2026-05-24) 新增開啟密碼解密、檔案權限解除與跨檔案密碼安全沿用；自訂關鍵字新增「回復預設值」並預設啟用 Regex。
 - v1.0.0 (2026-05-23) 初始版本發布
