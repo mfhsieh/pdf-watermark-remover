@@ -564,6 +564,57 @@
             padding: 10px 16px;
             font-size: 0.95rem;
         }
+
+        /* 關鍵字 Modal 內的 textarea */
+        .modal-card textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 8px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .modal-card textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* 選項列：checkbox + 齒輪按鈕並排 */
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-row label {
+            /* 不撐滿整行，讓按鈕緊貼在文字旁 */
+            flex: 0 0 auto;
+        }
+
+        /* 齒輪小按鈕 */
+        .icon-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--muted);
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+            line-height: 1.5;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.06);
+        }
     </style>
 </head>
 
@@ -588,21 +639,33 @@
                 </div>
             </div>
 
-            <!-- 浮水印清理策略選項（依據業界常見度排序） -->
+            <!-- 浮水印清理策略選項（依功能說明六種策略順序） -->
             <div class="options">
-                <h2>選擇移除項目（依常見度排序）</h2>
+                <h2>選擇移除項目（依功能說明順序）</h2>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <label><input type="checkbox" id="removeFormXObject" checked /> 移除背景浮水印 (Form XObject)（最常見）</label>
                 <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
                 <label><input type="checkbox" id="removeAnnotations" checked /> 移除疊加註解 (Annots)</label>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
-                <label><input type="checkbox" id="removeDirectContent" checked /> 掃描並清除嵌入內容 (Direct Content)</label>
+                <div class="option-row">
+                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
+                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字" aria-label="設定特徵關鍵字">⚙</button>
+                </div>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
-                <label><input type="checkbox" id="removeExtGState" checked /> 清理半透明效果 (ExtGState)</label>
+                <div class="option-row">
+                    <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
+                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字" aria-label="設定 ExtGState 關鍵字">⚙</button>
+                </div>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
-                <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
+                <div class="option-row">
+                    <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
+                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字" aria-label="設定 OCG 關鍵字">⚙</button>
+                </div>
                 <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
-                <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
+                <div class="option-row">
+                    <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字" aria-label="設定圖片命名關鍵字">⚙</button>
+                </div>
             </div>
 
             <!-- 執行動作按鈕 -->
@@ -643,10 +706,10 @@
                     <ul>
                         <li><strong>移除背景浮水印 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型浮水印，為最常見的浮水印格式。</li>
                         <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註型浮水印。</li>
-                        <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可進行特徵比對並予以清除。</li>
-                        <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的半透明圖形狀態。</li>
-                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可將該圖層清除使其失效。</li>
-                        <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可比對圖片名稱（包含 watermark、wm 等特徵關鍵字）並予以清除。
+                        <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
+                        <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。</li>
+                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
+                        <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可透過自訂命名關鍵字比對 XObject 名稱並予以清除。</li>
                         </li>
                         <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
                         <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印移除。</li>
@@ -728,6 +791,58 @@
         </div>
     </div>
 
+    <!-- 特徵關鍵字設定 Modal -->
+    <div id="triggerWordsModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>⚙ 設定特徵關鍵字</h3>
+            <p>輸入用於掃描嵌入內容的關鍵字，以逗號分隔。僅影響「掃描並清除嵌入內容 (Direct Content)」功能。</p>
+            <textarea id="triggerWordsInput" rows="4" placeholder="例如：watermark, confidential, draft, sample"></textarea>
+            <div class="modal-actions">
+                <button id="closeTriggerWordsModalBtn" class="button">取消</button>
+                <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖片命名關鍵字設定 Modal -->
+    <div id="imageKeywordsModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>⚙ 設定圖片命名關鍵字</h3>
+            <p>輸入用於辨識圖片型浮水印的命名關鍵字，以逗號分隔。僅影響「移除圖片型浮水印 (Image XObject)」功能。</p>
+            <textarea id="imageKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
+            <div class="modal-actions">
+                <button id="closeImageKeywordsModalBtn" class="button">取消</button>
+                <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ExtGState 關鍵字設定 Modal -->
+    <div id="extGStateKeywordsModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>⚙ 設定 ExtGState 關鍵字</h3>
+            <p>輸入用於辨識 ExtGState 半透明設定名稱的關鍵字，以逗號分隔。僅影響「清理半透明效果 (ExtGState)」功能。</p>
+            <textarea id="extGStateKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
+            <div class="modal-actions">
+                <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
+                <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OCG 關鍵字設定 Modal -->
+    <div id="ocgKeywordsModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>⚙ 設定 OCG 關鍵字</h3>
+            <p>輸入用於辨識 OCG 圖層名稱的關鍵字，以逗號分隔。僅影響「清除浮水印圖層 (OCG)」功能。</p>
+            <textarea id="ocgKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
+            <div class="modal-actions">
+                <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
+                <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
         const {
@@ -741,7 +856,10 @@
         } = PDFLib;
 
         // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的英文特徵關鍵字列表
-        const TRIGGER_WORDS = ["watermark", "confidential", "draft", "sample"];
+        // 使用者可自訂的觸發關鍵字，預設值為常見浮水印關鍵字
+        let userTriggerWords = ["watermark", "wm", "confidential", "draft", "sample"];
+        // 圖片型浮水印典型命名關鍵字
+        let imageKeywords = ["watermark", "wm"];
 
         /**
          * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
@@ -896,6 +1014,191 @@
         const processButton = document.getElementById("processButton");
         const downloadArea = document.getElementById("downloadArea");
         const downloadLink = document.getElementById("downloadLink");
+        const triggerWordsInput = document.getElementById("triggerWordsInput");
+        const applyTriggerWordsBtn = document.getElementById("applyTriggerWordsBtn");
+        const openTriggerWordsModalBtn = document.getElementById("openTriggerWordsModalBtn");
+        const closeTriggerWordsModalBtn = document.getElementById("closeTriggerWordsModalBtn");
+        const triggerWordsModal = document.getElementById("triggerWordsModal");
+        const imageKeywordsInput = document.getElementById("imageKeywordsInput");
+        const applyImageKeywordsBtn = document.getElementById("applyImageKeywordsBtn");
+        const openImageKeywordsModalBtn = document.getElementById("openImageKeywordsModalBtn");
+        const closeImageKeywordsModalBtn = document.getElementById("closeImageKeywordsModalBtn");
+        const imageKeywordsModal = document.getElementById("imageKeywordsModal");
+        const extGStateKeywordsInput = document.getElementById("extGStateKeywordsInput");
+        const applyExtGStateKeywordsBtn = document.getElementById("applyExtGStateKeywordsBtn");
+        const openExtGStateKeywordsModalBtn = document.getElementById("openExtGStateKeywordsModalBtn");
+        const closeExtGStateKeywordsModalBtn = document.getElementById("closeExtGStateKeywordsModalBtn");
+        const extGStateKeywordsModal = document.getElementById("extGStateKeywordsModal");
+        const ocgKeywordsInput = document.getElementById("ocgKeywordsInput");
+        const applyOCGKeywordsBtn = document.getElementById("applyOCGKeywordsBtn");
+        const openOCGKeywordsModalBtn = document.getElementById("openOCGKeywordsModalBtn");
+        const closeOCGKeywordsModalBtn = document.getElementById("closeOCGKeywordsModalBtn");
+        const ocgKeywordsModal = document.getElementById("ocgKeywordsModal");
+
+        // ==========================================
+        // 觸發關鍵字 Modal 初始化與事件
+        // ==========================================
+        // 讀取已儲存的關鍵字（若有）並填入 textarea
+        const _storedWords = localStorage.getItem("triggerWords");
+        if (_storedWords) {
+            userTriggerWords = _storedWords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+        }
+        triggerWordsInput.value = userTriggerWords.join(", ");
+
+        // 開啟關鍵字 Modal
+        openTriggerWordsModalBtn.addEventListener("click", () => {
+            triggerWordsInput.value = userTriggerWords.join(", ");
+            triggerWordsModal.classList.add("active");
+            triggerWordsInput.focus();
+        });
+
+        // 關閉關鍵字 Modal（取消）
+        closeTriggerWordsModalBtn.addEventListener("click", () => {
+            triggerWordsModal.classList.remove("active");
+        });
+
+        // 點擊 overlay 背景關閉 Modal
+        triggerWordsModal.addEventListener("click", (e) => {
+            if (e.target === triggerWordsModal) {
+                triggerWordsModal.classList.remove("active");
+            }
+        });
+
+        // ESC 關閉 Modal
+        triggerWordsInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") triggerWordsModal.classList.remove("active");
+        });
+
+        // 套用關鍵字
+        applyTriggerWordsBtn.addEventListener("click", () => {
+            const raw = triggerWordsInput.value;
+            const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+            if (parsed.length > 0) {
+                userTriggerWords = parsed;
+                localStorage.setItem("triggerWords", userTriggerWords.join("\n"));
+                triggerWordsModal.classList.remove("active");
+                addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字`, "success");
+            } else {
+                addStatusMessage("關鍵字清單為空，保留原設定", "error");
+            }
+        });
+
+        // ==========================================
+        // 圖片命名關鍵字 Modal 初始化與事件
+        // ==========================================
+        const _storedImageKeywords = localStorage.getItem("imageKeywords");
+        if (_storedImageKeywords) {
+            imageKeywords = _storedImageKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+        }
+        imageKeywordsInput.value = imageKeywords.join(", ");
+
+        let extGStateKeywords = ["watermark", "wm"];
+        let ocgKeywords = ["watermark", "wm"];
+
+        const _storedExtGStateKeywords = localStorage.getItem("extGStateKeywords");
+        if (_storedExtGStateKeywords) {
+            extGStateKeywords = _storedExtGStateKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+        }
+        extGStateKeywordsInput.value = extGStateKeywords.join(", ");
+
+        const _storedOCGKeywords = localStorage.getItem("ocgKeywords");
+        if (_storedOCGKeywords) {
+            ocgKeywords = _storedOCGKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+        }
+        ocgKeywordsInput.value = ocgKeywords.join(", ");
+
+        openImageKeywordsModalBtn.addEventListener("click", () => {
+            imageKeywordsInput.value = imageKeywords.join(", ");
+            imageKeywordsModal.classList.add("active");
+            imageKeywordsInput.focus();
+        });
+
+        closeImageKeywordsModalBtn.addEventListener("click", () => {
+            imageKeywordsModal.classList.remove("active");
+        });
+
+        imageKeywordsModal.addEventListener("click", (e) => {
+            if (e.target === imageKeywordsModal) imageKeywordsModal.classList.remove("active");
+        });
+
+        imageKeywordsInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") imageKeywordsModal.classList.remove("active");
+        });
+
+        applyImageKeywordsBtn.addEventListener("click", () => {
+            const raw = imageKeywordsInput.value;
+            const parsed = raw.split(/[\,\n]/).map(w => w.trim()).filter(w => w);
+            if (parsed.length > 0) {
+                imageKeywords = parsed;
+                localStorage.setItem("imageKeywords", imageKeywords.join("\n"));
+                imageKeywordsModal.classList.remove("active");
+                addStatusMessage(`已套用 ${imageKeywords.length} 個圖片命名關鍵字`, "success");
+            } else {
+                addStatusMessage("關鍵字清單為空，保留原設定", "error");
+            }
+        });
+
+        openExtGStateKeywordsModalBtn.addEventListener("click", () => {
+            extGStateKeywordsInput.value = extGStateKeywords.join(", ");
+            extGStateKeywordsModal.classList.add("active");
+            extGStateKeywordsInput.focus();
+        });
+
+        closeExtGStateKeywordsModalBtn.addEventListener("click", () => {
+            extGStateKeywordsModal.classList.remove("active");
+        });
+
+        extGStateKeywordsModal.addEventListener("click", (e) => {
+            if (e.target === extGStateKeywordsModal) extGStateKeywordsModal.classList.remove("active");
+        });
+
+        extGStateKeywordsInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") extGStateKeywordsModal.classList.remove("active");
+        });
+
+        openOCGKeywordsModalBtn.addEventListener("click", () => {
+            ocgKeywordsInput.value = ocgKeywords.join(", ");
+            ocgKeywordsModal.classList.add("active");
+            ocgKeywordsInput.focus();
+        });
+
+        closeOCGKeywordsModalBtn.addEventListener("click", () => {
+            ocgKeywordsModal.classList.remove("active");
+        });
+
+        ocgKeywordsModal.addEventListener("click", (e) => {
+            if (e.target === ocgKeywordsModal) ocgKeywordsModal.classList.remove("active");
+        });
+
+        ocgKeywordsInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") ocgKeywordsModal.classList.remove("active");
+        });
+
+        applyExtGStateKeywordsBtn.addEventListener("click", () => {
+            const raw = extGStateKeywordsInput.value;
+            const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+            if (parsed.length > 0) {
+                extGStateKeywords = parsed;
+                localStorage.setItem("extGStateKeywords", extGStateKeywords.join("\n"));
+                extGStateKeywordsModal.classList.remove("active");
+                addStatusMessage(`已套用 ${extGStateKeywords.length} 個 ExtGState 關鍵字`, "success");
+            } else {
+                addStatusMessage("關鍵字清單為空，保留原設定", "error");
+            }
+        });
+
+        applyOCGKeywordsBtn.addEventListener("click", () => {
+            const raw = ocgKeywordsInput.value;
+            const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
+            if (parsed.length > 0) {
+                ocgKeywords = parsed;
+                localStorage.setItem("ocgKeywords", ocgKeywords.join("\n"));
+                ocgKeywordsModal.classList.remove("active");
+                addStatusMessage(`已套用 ${ocgKeywords.length} 個 OCG 關鍵字`, "success");
+            } else {
+                addStatusMessage("關鍵字清單為空，保留原設定", "error");
+            }
+        });
 
         // Before & After 預覽元件
         const previewContainer = document.getElementById("previewContainer");
@@ -1400,7 +1703,7 @@
                     const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
 
                     // 3. 比對觸發關鍵字
-                    const containsTriggerWord = TRIGGER_WORDS.some((word) => text.includes(word));
+                    const containsTriggerWord = userTriggerWords.some((word) => text.includes(word));
                     if (containsTriggerWord) {
                         // 複製原字典 (以繼承長度、壓縮等設定)，但寫入空內容數據 (Uint8Array)
                         const clonedDict = stream.dict.clone(pdfDoc.context);
@@ -1437,7 +1740,8 @@
 
             let count = 0;
             for (const key of extGState.keys()) {
-                if (key.value().toLowerCase().includes("watermark")) {
+                const keyName = key.value().toLowerCase();
+                if (extGStateKeywords.some((kw) => keyName.includes(kw))) {
                     // 重置為無透明度的預設空 ExtGState 字典
                     extGState.set(key, pdfDoc.context.obj({ Type: PDFName.of("ExtGState") }));
                     count += 1;
@@ -1478,7 +1782,7 @@
 
                 // 解碼名稱明文
                 const name = nameObject.decodeText().toLowerCase();
-                if (name.includes("watermark")) {
+                if (ocgKeywords.some((kw) => name.includes(kw))) {
                     // 清空圖層名稱，使其失效不顯示
                     ocg.set(PDFName.of("Name"), PDFString.of(""));
                     count += 1;
@@ -1508,8 +1812,8 @@
 
                 if (subtype instanceof PDFName && subtype.toString() === "/Image") {
                     const name = key.value().toLowerCase();
-                    // 比對特徵命名字串
-                    if (name.includes("watermark") || name.includes("wm")) {
+                    // 比對使用者自訂的圖片命名關鍵字
+                    if (imageKeywords.some(kw => name.includes(kw))) {
                         // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
                         if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) {
                             continue;
