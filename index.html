@@ -12,22 +12,22 @@
        專案核心設計系統與 CSS 自訂變數定義
        ========================================== */
         :root {
-            --bg: #f4f7fb;
             /* 頁面背景色：柔和的淡藍灰 */
-            --surface: #ffffff;
+            --bg: #f4f7fb;
             /* 卡片與元件表面色：純白 */
-            --primary: #2f6beb;
+            --surface: #ffffff;
             /* 品牌主色調：湛藍 */
-            --primary-dark: #254f9a;
+            --primary: #2f6beb;
             /* 主色懸停與點擊效果 */
-            --text: #1f2937;
+            --primary-dark: #254f9a;
             /* 主要文字色：深灰黑 */
-            --muted: #6b7280;
+            --text: #1f2937;
             /* 次要與輔助文字色：中灰色 */
-            --border: #e2e8f0;
+            --muted: #6b7280;
             /* 邊框與分隔線顏色：淡灰 */
-            --danger: #d92d20;
+            --border: #e2e8f0;
             /* 警示與錯誤提示色：紅色 */
+            --danger: #d92d20;
         }
 
         /* ==========================================
@@ -35,16 +35,13 @@
        ========================================== */
         * {
             box-sizing: border-box;
-            /* 確保 padding 與 border 不會撐大元素寬高 */
         }
 
         body {
             margin: 0;
             min-height: 100vh;
-            /* 優先採用現代字體，並引入 Noto Sans TC 提升字型呈現效果 */
             font-family: Inter, "Noto Sans TC", "Segoe UI", sans-serif;
             color: var(--text);
-            /* 使用環境漸層背景 */
             background: radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
                 radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%),
                 var(--bg);
@@ -55,11 +52,8 @@
        ========================================== */
         .container {
             max-width: 1400px;
-            /* 響應式版面最大寬度限制為 1400px */
             margin: 0 auto;
-            /* 置中對齊 */
             padding: 28px 16px 48px;
-            /* 內距設定 */
         }
 
         /* 網頁標頭區域樣式 */
@@ -70,8 +64,7 @@
 
         header h1 {
             margin: 0;
-            /* 使用 clamp 實現自適應字型大小 */
-            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-size: clamp(1.5rem, 3vw, 2.8rem);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -79,7 +72,6 @@
             flex-wrap: wrap;
         }
 
-        /* 版本號精美圓角徽章樣式 */
         .version-badge {
             display: inline-flex;
             font-size: 0.9rem;
@@ -106,8 +98,6 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 22px;
-            /* 現代大圓角風格 */
-            /* 卡片陰影效果 */
             box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
             padding: 28px;
             margin-bottom: 24px;
@@ -119,16 +109,13 @@
         .file-area {
             position: relative;
             border: 2px dashed var(--primary);
-            /* 湛藍虛線指示框 */
             border-radius: 14px;
             min-height: 85px;
-            /* 設定最小高度 */
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             cursor: pointer;
-            /* 平滑的過渡動畫 */
             transition: background 0.2s ease, border-color 0.2s ease;
             margin-bottom: 24px;
             background: rgba(47, 107, 235, 0.04);
@@ -153,8 +140,8 @@
 
         /* 拖曳區內部元件排版：自動折行與置中對齊 */
         .file-area-inner {
-            pointer-events: none;
             /* 避免子元素干擾拖曳事件 */
+            pointer-events: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -218,7 +205,6 @@
             cursor: pointer;
             background: var(--border);
             color: var(--text);
-            /* hover 時的平滑位移過渡動畫 */
             transition: transform 0.2s ease, background 0.2s ease;
         }
 
@@ -302,7 +288,6 @@
         .preview-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            /* 預設左右分欄 1:1 分割 */
             gap: 20px;
             margin-top: 30px;
             width: 100%;
@@ -330,11 +315,9 @@
         .preview-iframe {
             width: 100%;
             height: 550px;
-            /* 高度設計適中，方便快速檢視 */
             border: 1px solid var(--border);
             border-radius: 8px;
             background: #f8fafc;
-            /* PDF 載入前的骨架背景底色 */
         }
 
         /* 手機與窄螢幕下，自動改為上下分開堆疊排版 */
@@ -349,8 +332,8 @@
        ========================================== */
         .info-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 30px;
+            grid-template-columns: 1fr;
+            gap: 24px;
         }
 
         .info-column h2 {
@@ -379,26 +362,12 @@
             margin-bottom: 8px;
         }
 
-        /* 免責聲明左側標誌性警告粗線條設計 */
+        /* 免責聲明上側警告橫線設計 */
         .disclaimer-column {
-            border-left: 3px solid #f1c40f;
-            padding-left: 24px;
+            border-top: 3px solid #f1c40f;
+            padding-top: 20px;
         }
 
-        /* 行動端自動取消左側線條並改為上側線條 */
-        @media (max-width: 768px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .disclaimer-column {
-                border-left: none;
-                border-top: 3px solid #f1c40f;
-                padding-left: 0;
-                padding-top: 20px;
-            }
-        }
 
         @media (max-width: 640px) {
             .container {
@@ -459,7 +428,6 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 9999px;
-            /* 極致的膠囊大圓角 */
             padding: 8px 20px;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
             text-decoration: none;
@@ -490,8 +458,8 @@
         }
 
         .cc-icon-sm {
-            width: 14px;
-            height: 14px;
+            width: 18px;
+            height: 18px;
         }
 
         /* 授權標章文字粗體與間距控制 */
@@ -515,8 +483,8 @@
             inset: 0;
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             /* Safari 相容性 */
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -938,14 +906,16 @@
         // ==========================================
         // 全域狀態變數與暫存快取
         // ==========================================
-        let selectedFile = null;  // 目前使用者選取上傳的 PDF 檔案實體 (File)
-        let originalUrl = null;   // 原始 PDF 在瀏覽器暫存生成的 Blob URL
-        let processedUrl = null;  // 處理後 PDF 在瀏覽器暫存生成的 Blob URL
+        let selectedFile = null;    // 目前使用者選取上傳的 PDF 檔案實體 (File)
+        let originalUrl = null;     // 原始 PDF 在瀏覽器暫存生成的 Blob URL
+        let processedUrl = null;    // 處理後 PDF 在瀏覽器暫存生成的 Blob URL
+        let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
+        let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
 
         /**
-         * 重置處理後的狀態與暫存，確保新檔案載入時不殘留舊狀態
+         * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
          */
-        function resetProcessedState() {
+        function resetAllState() {
             // 1. 釋放處理後的舊 Blob URL 記憶體，防止洩漏
             if (processedUrl) {
                 URL.revokeObjectURL(processedUrl);
@@ -960,25 +930,87 @@
             // 3. 隱藏並清空處理後的預覽視窗
             processedPreviewBox.classList.add("hidden");
             processedPreview.src = "";
+
+            // 4. 清除密碼快取與解密後的位元組快取
+            cachedPassword = null;
+            cachedDecryptedBytes = null;
         }
 
         /**
-         * 顯示原始 PDF 預覽，並妥善管理瀏覽器記憶體
+         * 載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
+         * 並將解密後的位元組與密碼快取，最後顯示預覽。
          * @param {File} file - 使用者上傳的原始 PDF 檔案
          */
-        function showOriginalPreview(file) {
-            // 0. 主動清空並重置處理後的舊狀態
-            resetProcessedState();
+        async function showOriginalPreview(file) {
+            // 0. 主動清空並重置所有舊狀態（含密碼快取）
+            resetAllState();
 
             // 1. 若先前已有建立好的 Blob URL，必須主動將其釋放 (Revoke)，避免記憶體洩漏 (Memory Leak)
             if (originalUrl) {
                 URL.revokeObjectURL(originalUrl);
+                originalUrl = null;
             }
-            // 2. 為檔案建立一個專屬的臨時 Blob URL，並掛載至 iframe
-            originalUrl = URL.createObjectURL(file);
+
+            // 2. 讀取原始位元組，嘗試偵測是否有開啟密碼
+            const rawBuffer = await file.arrayBuffer();
+            const rawBytes = new Uint8Array(rawBuffer);
+
+            let previewBytes = rawBytes; // 預設使用原始位元組作為預覽來源
+            let needsPassword = false;
+
+            try {
+                // 先嘗試直接用 pdf-lib 載入；若有加密會拋錯
+                const testDoc = await PDFDocument.load(rawBytes, { updateMetadata: false });
+                testDoc.getPageCount(); // 觸發 lazy-parsing
+            } catch (e) {
+                // 進一步確認：嘗試以空密碼解密（空密碼可解開「僅有編輯權限限制」的 PDF）
+                try {
+                    const decrypted = await decryptWithQpdfWasm(rawBytes, "");
+                    // 空密碼成功→僅有權限限制，直接快取解密後的位元組
+                    cachedDecryptedBytes = decrypted;
+                    previewBytes = decrypted;
+                    addStatusMessage("⚠️ 偵測到編輯權限限制，已自動解除。", "info");
+                } catch {
+                    // 空密碼失敗→需要開啟密碼
+                    needsPassword = true;
+                }
+            }
+
+            if (needsPassword) {
+                // 3. 詢問使用者輸入開啟密碼，直到成功或取消
+                addStatusMessage("🔒 此 PDF 設有開啟密碼，請輸入密碼以繼續。", "info");
+                let attempts = 0;
+                while (true) {
+                    const pwd = await promptForPassword(attempts > 0);
+                    if (pwd === null) {
+                        // 使用者取消：仍以原始未解密的 PDF 顯示預覽（瀏覽器內建會彈窗詢問密碼）
+                        addStatusMessage("已取消密碼輸入，預覽將顯示加密的原始文件。", "info");
+                        break;
+                    }
+                    attempts++;
+                    try {
+                        const decrypted = await decryptWithQpdfWasm(rawBytes, pwd);
+                        // 驗證解密成功
+                        const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
+                        testDoc.getPageCount();
+                        // 成功：快取密碼與解密後的位元組
+                        cachedPassword = pwd;
+                        cachedDecryptedBytes = decrypted;
+                        previewBytes = decrypted;
+                        addStatusMessage("🔓 密碼驗證成功，已解除開啟密碼保護。", "success");
+                        break;
+                    } catch {
+                        // 密碼錯誤，繼續迴圈
+                    }
+                }
+            }
+
+            // 4. 建立 Blob URL 並顯示預覽
+            const blob = new Blob([previewBytes], { type: "application/pdf" });
+            originalUrl = URL.createObjectURL(blob);
             originalPreview.src = originalUrl;
 
-            // 3. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
+            // 5. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
             previewContainer.classList.remove("hidden");
             processedPreviewBox.classList.add("hidden");
         }
@@ -990,7 +1022,7 @@
                 clearStatusMessages();
                 addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
                 downloadArea.classList.add("hidden");
-                showOriginalPreview(selectedFile);
+                showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
             }
         });
 
@@ -1017,7 +1049,7 @@
                 clearStatusMessages();
                 addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
                 downloadArea.classList.add("hidden");
-                showOriginalPreview(selectedFile);
+                showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
             } else {
                 clearStatusMessages();
                 addStatusMessage("僅支援 PDF 檔案格式。", 'error');
@@ -1038,89 +1070,65 @@
             processButton.disabled = true; // 鎖定按鈕防止重複觸發
 
             try {
-                // 1. 讀取檔案至記憶體
-                addStatusMessage("讀取檔案至記憶體...", "info");
-                const rawBuffer = await selectedFile.arrayBuffer();
-                let pdfBytes = new Uint8Array(rawBuffer);
+                // 1. 決定本次處理要使用的 PDF 位元組來源
+                // 優先使用選檔時已解密並快取的位元組，否則重新讀取原始檔案
+                let pdfBytes;
                 let pdfDoc;
 
-                // 2. 先嘗試直接載入並分析加密狀態
-                let isEncryptedPdf = false;
-                let encryptionType = null; // 'password' (開啟密碼限制) 或 'permissions' (編輯權限限制)
-                let decryptedBytes = null;
-
-                try {
-                    pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
-                    pdfDoc.getPageCount(); // 觸發 lazy-parsing，提早攔截加密錯誤
-
-                    // 如果可以直接加載成功，檢查 trailer 中是否帶有 Encrypt 鍵
-                    if (pdfDoc.context.trailerInfo && pdfDoc.context.trailerInfo.Encrypt) {
-                        isEncryptedPdf = true;
-                        encryptionType = "permissions";
-                    }
-                } catch (loadError) {
-                    // PDF 載入失敗拋錯，代表有加密
-                    isEncryptedPdf = true;
-
-                    // 關鍵精準判定：先嘗試用「空密碼」進行自動解密，藉以區分是開檔密碼還是權限限制
-                    try {
-                        decryptedBytes = await decryptWithQpdfWasm(pdfBytes, "");
-
-                        // 驗證解密後 PDF
-                        pdfDoc = await PDFDocument.load(decryptedBytes, { updateMetadata: false });
-                        pdfDoc.getPageCount();
-
-                        // 成功解開，代表為「編輯權限限制」（免密碼開啟但限制編輯）
-                        encryptionType = "permissions";
-                        pdfBytes = decryptedBytes; // 更新為已解密的 bytes
-                    } catch (decryptError) {
-                        // 空密碼解密失敗，代表為「開啟密碼限制」（需要使用者輸入開檔密碼）
-                        encryptionType = "password";
-                    }
-                }
-
-                if (isEncryptedPdf) {
-                    if (encryptionType === "permissions") {
-                        addStatusMessage("⚠️ 偵測到編輯權限限制（無開啟密碼，但限制編輯與複製權限），正在進行權限解鎖...", "info");
-                        addStatusMessage("🔓 編輯權限限制已成功解除！正在分析浮水印結構...", "success");
+                if (cachedDecryptedBytes) {
+                    // 選檔時已完成解密（開啟密碼或編輯權限限制），直接沿用快取
+                    pdfBytes = cachedDecryptedBytes;
+                    if (cachedPassword) {
+                        addStatusMessage("🔓 使用已快取的開啟密碼，跳過重新解密。", "info");
                     } else {
-                        addStatusMessage("🔒 偵測到開啟密碼限制（此檔案設有開檔密碼保護）...", "info");
+                        addStatusMessage("🔓 使用已解除編輯權限限制的解密快取。", "info");
+                    }
+                    pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+                    pdfDoc.getPageCount();
+                } else {
+                    // 無快取：讀取原始檔案並嘗試載入
+                    addStatusMessage("讀取檔案至記憶體...", "info");
+                    const rawBuffer = await selectedFile.arrayBuffer();
+                    pdfBytes = new Uint8Array(rawBuffer);
 
-                        let password = "";
-                        let attempts = 0;
-
-                        while (true) {
-                            try {
-                                if (attempts > 0) {
-                                    addStatusMessage(`嘗試使用密碼進行解密 (第 ${attempts} 次)...`, "info");
-                                }
-
-                                // 彈窗詢問使用者輸入
+                    try {
+                        pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
+                        pdfDoc.getPageCount(); // 觸發 lazy-parsing
+                        addStatusMessage("📄 載入無加密 PDF 成功，正在分析浮水印結構...", "info");
+                    } catch (loadError) {
+                        // 載入失敗：有加密，先嘗試空密碼（僅有編輯權限限制時可成功）
+                        try {
+                            const decrypted = await decryptWithQpdfWasm(pdfBytes, "");
+                            pdfDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
+                            pdfDoc.getPageCount();
+                            pdfBytes = decrypted;
+                            cachedDecryptedBytes = decrypted;
+                            addStatusMessage("⚠️ 偵測到編輯權限限制，已自動解除。正在分析浮水印結構...", "info");
+                        } catch {
+                            // 空密碼也失敗：需要開啟密碼（理論上選檔時應已處理，此為保險機制）
+                            addStatusMessage("🔒 偵測到開啟密碼限制，請輸入密碼。", "info");
+                            let attempts = 0;
+                            while (true) {
                                 const pwd = await promptForPassword(attempts > 0);
                                 if (pwd === null) {
                                     throw new Error("使用者已取消密碼輸入，無法處理加密的文件。");
                                 }
-                                password = pwd;
                                 attempts++;
-
-                                // 調用 qpdf-wasm 進行解密
-                                decryptedBytes = await decryptWithQpdfWasm(pdfBytes, password);
-
-                                // 驗證解密後 PDF
-                                pdfDoc = await PDFDocument.load(decryptedBytes, { updateMetadata: false });
-                                pdfDoc.getPageCount();
-
-                                // 成功解密並加載，更新 bytes 以供後續流程處理與寫出
-                                pdfBytes = decryptedBytes;
-                                addStatusMessage("🔓 開啟密碼限制已成功解除！正在分析浮水印結構...", "success");
-                                break; // 跳出嘗試迴圈
-                            } catch (decryptError) {
-                                console.warn(`解密嘗試失敗 (第 ${attempts} 次):`, decryptError.message);
+                                try {
+                                    const decrypted = await decryptWithQpdfWasm(pdfBytes, pwd);
+                                    pdfDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
+                                    pdfDoc.getPageCount();
+                                    pdfBytes = decrypted;
+                                    cachedPassword = pwd;
+                                    cachedDecryptedBytes = decrypted;
+                                    addStatusMessage("🔓 密碼驗證成功，開啟密碼保護已解除！正在分析浮水印結構...", "success");
+                                    break;
+                                } catch {
+                                    // 密碼錯誤，繼續迴圈
+                                }
                             }
                         }
                     }
-                } else {
-                    addStatusMessage("📄 載入無加密 PDF 成功，正在分析浮水印結構...", "info");
                 }
 
                 // 3. 取得目前畫面中 checkbox 勾選的清理選項
