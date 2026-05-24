@@ -648,22 +648,22 @@
                 <label><input type="checkbox" id="removeAnnotations" checked /> 移除疊加註解 (Annots)</label>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
+                    <label><input type="checkbox" id="removeDirectContent" checked /> 掃描並清除嵌入內容 (Direct Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字" aria-label="設定特徵關鍵字">⚙</button>
                 </div>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
+                    <label><input type="checkbox" id="removeExtGState" checked /> 清理半透明效果 (ExtGState)</label>
                     <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字" aria-label="設定 ExtGState 關鍵字">⚙</button>
                 </div>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
+                    <label><input type="checkbox" id="removeOCG" checked /> 清除浮水印圖層 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字" aria-label="設定 OCG 關鍵字">⚙</button>
                 </div>
                 <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
+                    <label><input type="checkbox" id="removeImageXObject" checked /> 移除圖片型浮水印 (Image XObject)</label>
                     <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字" aria-label="設定圖片命名關鍵字">⚙</button>
                 </div>
             </div>
@@ -850,16 +850,42 @@
             PDFName,        // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
             PDFDict,        // 代表 PDF 的字典結構（Dictionary）
             PDFArray,       // 代表 PDF 的陣列結構（Array）
-            PDFRawStream,   // 代表 PDF 的二進制原始串流（Raw Stream，如內容流、圖片數據）
+            PDFRawStream,   // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
             PDFString,      // 代表 PDF 的常規字串實體
             PDFHexString,   // 代表 PDF 的十六進制編碼字串
         } = PDFLib;
 
+        // ==========================================
+        // 關鍵字清單初始化與 localStorage 讀寫 helper
+        // ==========================================
+        function loadKeywordList(key, defaultList) {
+            try {
+                const stored = localStorage.getItem(`pdf_remover_${key}`);
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error(`無法讀取關鍵字清單 ${key}:`, e);
+            }
+            return defaultList;
+        }
+
+        function saveKeywordList(key, array) {
+            try {
+                localStorage.setItem(`pdf_remover_${key}`, JSON.stringify(array));
+            } catch (e) {
+                console.error(`無法儲存關鍵字清單 ${key}:`, e);
+            }
+        }
+
         // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的英文特徵關鍵字列表
-        // 使用者可自訂的觸發關鍵字，預設值為常見浮水印關鍵字
-        let userTriggerWords = ["watermark", "wm", "confidential", "draft", "sample"];
+        let userTriggerWords = loadKeywordList("triggerWords", ["watermark", "wm", "confidential", "draft", "sample"]);
         // 圖片型浮水印典型命名關鍵字
-        let imageKeywords = ["watermark", "wm"];
+        let imageKeywords = loadKeywordList("imageKeywords", ["watermark", "wm"]);
+        // ExtGState 半透明設定命名關鍵字
+        let extGStateKeywords = loadKeywordList("extGStateKeywords", ["watermark", "wm"]);
+        // OCG 圖層名稱關鍵字
+        let ocgKeywords = loadKeywordList("ocgKeywords", ["watermark", "wm"]);
 
         /**
          * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
@@ -1039,10 +1065,6 @@
         // 觸發關鍵字 Modal 初始化與事件
         // ==========================================
         // 讀取已儲存的關鍵字（若有）並填入 textarea
-        const _storedWords = localStorage.getItem("triggerWords");
-        if (_storedWords) {
-            userTriggerWords = _storedWords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-        }
         triggerWordsInput.value = userTriggerWords.join(", ");
 
         // 開啟關鍵字 Modal
@@ -1057,13 +1079,6 @@
             triggerWordsModal.classList.remove("active");
         });
 
-        // 點擊 overlay 背景關閉 Modal
-        triggerWordsModal.addEventListener("click", (e) => {
-            if (e.target === triggerWordsModal) {
-                triggerWordsModal.classList.remove("active");
-            }
-        });
-
         // ESC 關閉 Modal
         triggerWordsInput.addEventListener("keydown", (e) => {
             if (e.key === "Escape") triggerWordsModal.classList.remove("active");
@@ -1075,7 +1090,7 @@
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 userTriggerWords = parsed;
-                localStorage.setItem("triggerWords", userTriggerWords.join("\n"));
+                saveKeywordList("triggerWords", userTriggerWords);
                 triggerWordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字`, "success");
             } else {
@@ -1086,25 +1101,8 @@
         // ==========================================
         // 圖片命名關鍵字 Modal 初始化與事件
         // ==========================================
-        const _storedImageKeywords = localStorage.getItem("imageKeywords");
-        if (_storedImageKeywords) {
-            imageKeywords = _storedImageKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-        }
         imageKeywordsInput.value = imageKeywords.join(", ");
-
-        let extGStateKeywords = ["watermark", "wm"];
-        let ocgKeywords = ["watermark", "wm"];
-
-        const _storedExtGStateKeywords = localStorage.getItem("extGStateKeywords");
-        if (_storedExtGStateKeywords) {
-            extGStateKeywords = _storedExtGStateKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-        }
         extGStateKeywordsInput.value = extGStateKeywords.join(", ");
-
-        const _storedOCGKeywords = localStorage.getItem("ocgKeywords");
-        if (_storedOCGKeywords) {
-            ocgKeywords = _storedOCGKeywords.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-        }
         ocgKeywordsInput.value = ocgKeywords.join(", ");
 
         openImageKeywordsModalBtn.addEventListener("click", () => {
@@ -1117,10 +1115,6 @@
             imageKeywordsModal.classList.remove("active");
         });
 
-        imageKeywordsModal.addEventListener("click", (e) => {
-            if (e.target === imageKeywordsModal) imageKeywordsModal.classList.remove("active");
-        });
-
         imageKeywordsInput.addEventListener("keydown", (e) => {
             if (e.key === "Escape") imageKeywordsModal.classList.remove("active");
         });
@@ -1130,7 +1124,7 @@
             const parsed = raw.split(/[\,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 imageKeywords = parsed;
-                localStorage.setItem("imageKeywords", imageKeywords.join("\n"));
+                saveKeywordList("imageKeywords", imageKeywords);
                 imageKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${imageKeywords.length} 個圖片命名關鍵字`, "success");
             } else {
@@ -1148,10 +1142,6 @@
             extGStateKeywordsModal.classList.remove("active");
         });
 
-        extGStateKeywordsModal.addEventListener("click", (e) => {
-            if (e.target === extGStateKeywordsModal) extGStateKeywordsModal.classList.remove("active");
-        });
-
         extGStateKeywordsInput.addEventListener("keydown", (e) => {
             if (e.key === "Escape") extGStateKeywordsModal.classList.remove("active");
         });
@@ -1166,10 +1156,6 @@
             ocgKeywordsModal.classList.remove("active");
         });
 
-        ocgKeywordsModal.addEventListener("click", (e) => {
-            if (e.target === ocgKeywordsModal) ocgKeywordsModal.classList.remove("active");
-        });
-
         ocgKeywordsInput.addEventListener("keydown", (e) => {
             if (e.key === "Escape") ocgKeywordsModal.classList.remove("active");
         });
@@ -1179,7 +1165,7 @@
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 extGStateKeywords = parsed;
-                localStorage.setItem("extGStateKeywords", extGStateKeywords.join("\n"));
+                saveKeywordList("extGStateKeywords", extGStateKeywords);
                 extGStateKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${extGStateKeywords.length} 個 ExtGState 關鍵字`, "success");
             } else {
@@ -1192,7 +1178,7 @@
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 ocgKeywords = parsed;
-                localStorage.setItem("ocgKeywords", ocgKeywords.join("\n"));
+                saveKeywordList("ocgKeywords", ocgKeywords);
                 ocgKeywordsModal.classList.remove("active");
                 addStatusMessage(`已套用 ${ocgKeywords.length} 個 OCG 關鍵字`, "success");
             } else {
@@ -1349,7 +1335,14 @@
             const file = event.dataTransfer.files[0];
             if (file && file.type === "application/pdf") {
                 selectedFile = file;
-                fileInput.files = event.dataTransfer.files; // 將拖曳檔案與 input 同步
+                
+                // 嘗試將拖曳檔案與 input 同步（相容性處理，部分舊瀏覽器 input.files 為唯讀）
+                try {
+                    fileInput.files = event.dataTransfer.files;
+                } catch (err) {
+                    console.warn("無法同步 fileInput.files，將僅使用 selectedFile 變數維持選檔狀態:", err);
+                }
+
                 clearStatusMessages();
                 addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
                 downloadArea.classList.add("hidden");
@@ -1450,8 +1443,8 @@
                     addStatusMessage(`已成功置換或修改了 ${result.modifiedObjects} 個可疑浮水印物件。`, "success");
                 }
 
-                // 6. 將重構後的 PDF 文件保存回二進制陣列 (Uint8Array)
-                addStatusMessage("正在封裝保存 PDF 結構，產生無損 PDF 位元組串流...", "info");
+                // 6. 將重構後的 PDF 文件儲存回二進位陣列 (Uint8Array)
+                addStatusMessage("正在封裝儲存 PDF 結構，產生無損 PDF 位元組串流...", "info");
                 const bytes = await pdfDoc.save();
 
                 // 7. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
@@ -1492,7 +1485,7 @@
 
         /**
          * 輔助函數：獲取當前前端 checkbox 的勾選狀態
-         * @returns {Object} 包含各項清理選項之布林值的對象
+         * @returns {Object} 包含各項清理選項之布林值的物件
          */
         function getOptions() {
             return {
@@ -1532,7 +1525,7 @@
             // 寫入標記，表示此物件已完成清除以供後續進行冪等性檢查
             dict.set(PDFName.of("IsWatermarkRemoved"), pdfDoc.context.obj(true));
 
-            // 寫入空數據 (Uint8Array) 並在上下文註冊，供 pdf-lib 重組 xref 表
+            // 寫入空資料 (Uint8Array) 並在上下文註冊，供 pdf-lib 重組 xref 表
             const stream = pdfDoc.context.stream(new Uint8Array(), dict);
             return pdfDoc.context.register(stream);
         }
@@ -1697,7 +1690,7 @@
                 if (!(stream instanceof PDFRawStream)) return;
 
                 try {
-                    // 1. 取得解壓後的明文二進制位元陣列
+                    // 1. 取得解壓後的明文二進位位元陣列
                     const data = stream.getContents();
                     // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
                     const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
@@ -1705,9 +1698,9 @@
                     // 3. 比對觸發關鍵字
                     const containsTriggerWord = userTriggerWords.some((word) => text.includes(word));
                     if (containsTriggerWord) {
-                        // 複製原字典 (以繼承長度、壓縮等設定)，但寫入空內容數據 (Uint8Array)
-                        const clonedDict = stream.dict.clone(pdfDoc.context);
-                        const emptyStream = pdfDoc.context.stream(new Uint8Array(), clonedDict);
+                        // 建立一個完全乾淨的空字典，只包含 Length=0，不殘留舊的 /Filter 等壓縮格式，確保 PDF 合規性
+                        const emptyDict = pdfDoc.context.obj({});
+                        const emptyStream = pdfDoc.context.stream(new Uint8Array(), emptyDict);
                         const ref = pdfDoc.context.register(emptyStream);
 
                         // 寫回 PDF 結構樹
