@@ -4,7 +4,7 @@
 
 在瀏覽器端執行的 PDF 浮水印移除工具，**檔案不會上傳至伺服器**。
 
-[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載單頁版本](https://github.com/mfhsieh/pdf-watermark-remover/releases)
+[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載單頁版本](https://github.com/mfhsieh/pdf-watermark-remover/raw/main/index.html)
 
 ## 📌 專案簡介
 
