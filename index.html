@@ -585,6 +585,36 @@
             border-color: var(--primary);
         }
 
+        /* Modal 中的進階比對選項 */
+        .modal-options {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .modal-options label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .modal-options label:hover {
+            color: var(--text);
+        }
+
+        .modal-options input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: var(--primary);
+            width: 14px;
+            height: 14px;
+            margin: 0;
+        }
+
         /* 選項列：checkbox + 齒輪按鈕並排 */
         .option-row {
             display: flex;
@@ -648,22 +678,22 @@
                 <label><input type="checkbox" id="removeAnnotations" checked /> 移除疊加註解 (Annots)</label>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeDirectContent" checked /> 掃描並清除嵌入內容 (Direct Content)</label>
+                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字" aria-label="設定特徵關鍵字">⚙</button>
                 </div>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeExtGState" checked /> 清理半透明效果 (ExtGState)</label>
+                    <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
                     <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字" aria-label="設定 ExtGState 關鍵字">⚙</button>
                 </div>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeOCG" checked /> 清除浮水印圖層 (OCG)</label>
+                    <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字" aria-label="設定 OCG 關鍵字">⚙</button>
                 </div>
                 <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
                 <div class="option-row">
-                    <label><input type="checkbox" id="removeImageXObject" checked /> 移除圖片型浮水印 (Image XObject)</label>
+                    <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
                     <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字" aria-label="設定圖片命名關鍵字">⚙</button>
                 </div>
             </div>
@@ -796,10 +826,17 @@
         <div class="modal-card">
             <h3>⚙ 設定特徵關鍵字</h3>
             <p>輸入用於掃描嵌入內容的關鍵字，以逗號分隔。僅影響「掃描並清除嵌入內容 (Direct Content)」功能。</p>
-            <textarea id="triggerWordsInput" rows="4" placeholder="例如：watermark, confidential, draft, sample"></textarea>
-            <div class="modal-actions">
-                <button id="closeTriggerWordsModalBtn" class="button">取消</button>
-                <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
+            <textarea id="triggerWordsInput" rows="4" placeholder="例如：watermark, confidential, draft, sample, trial, 機密, 草稿, 浮水印"></textarea>
+            <div class="modal-options">
+                <label><input type="checkbox" id="triggerWordsUseRegex" /> 啟用正規表示式 (Regex)</label>
+                <label><input type="checkbox" id="triggerWordsExactMatch" /> 精確完全匹配</label>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetTriggerWordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeTriggerWordsModalBtn" class="button">取消</button>
+                    <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
+                </div>
             </div>
         </div>
     </div>
@@ -809,10 +846,17 @@
         <div class="modal-card">
             <h3>⚙ 設定圖片命名關鍵字</h3>
             <p>輸入用於辨識圖片型浮水印的命名關鍵字，以逗號分隔。僅影響「移除圖片型浮水印 (Image XObject)」功能。</p>
-            <textarea id="imageKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
-            <div class="modal-actions">
-                <button id="closeImageKeywordsModalBtn" class="button">取消</button>
-                <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
+            <textarea id="imageKeywordsInput" rows="4" placeholder="例如：watermark, wm, stamp, logo, bg, background, sign, signature, shuiyin"></textarea>
+            <div class="modal-options">
+                <label><input type="checkbox" id="imageKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
+                <label><input type="checkbox" id="imageKeywordsExactMatch" /> 精確完全匹配</label>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetImageKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeImageKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
+                </div>
             </div>
         </div>
     </div>
@@ -822,10 +866,17 @@
         <div class="modal-card">
             <h3>⚙ 設定 ExtGState 關鍵字</h3>
             <p>輸入用於辨識 ExtGState 半透明設定名稱的關鍵字，以逗號分隔。僅影響「清理半透明效果 (ExtGState)」功能。</p>
-            <textarea id="extGStateKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
-            <div class="modal-actions">
-                <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
-                <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
+            <textarea id="extGStateKeywordsInput" rows="4" placeholder="例如：watermark, wm, trans, opacity, gs, alpha, blend, adbe, adobe"></textarea>
+            <div class="modal-options">
+                <label><input type="checkbox" id="extGStateKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
+                <label><input type="checkbox" id="extGStateKeywordsExactMatch" /> 精確完全匹配</label>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetExtGStateKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
+                </div>
             </div>
         </div>
     </div>
@@ -835,10 +886,17 @@
         <div class="modal-card">
             <h3>⚙ 設定 OCG 關鍵字</h3>
             <p>輸入用於辨識 OCG 圖層名稱的關鍵字，以逗號分隔。僅影響「清除浮水印圖層 (OCG)」功能。</p>
-            <textarea id="ocgKeywordsInput" rows="4" placeholder="例如：watermark, wm"></textarea>
-            <div class="modal-actions">
-                <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
-                <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
+            <textarea id="ocgKeywordsInput" rows="4" placeholder="例如：watermark, wm, layer, stamp, print, overlay, shuiyin, 浮水印, 水印"></textarea>
+            <div class="modal-options">
+                <label><input type="checkbox" id="ocgKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
+                <label><input type="checkbox" id="ocgKeywordsExactMatch" /> 精確完全匹配</label>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button id="resetOCGKeywordsBtn" class="button" style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
+                </div>
             </div>
         </div>
     </div>
@@ -878,14 +936,76 @@
             }
         }
 
-        // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的英文特徵關鍵字列表
-        let userTriggerWords = loadKeywordList("triggerWords", ["watermark", "wm", "confidential", "draft", "sample"]);
-        // 圖片型浮水印典型命名關鍵字
-        let imageKeywords = loadKeywordList("imageKeywords", ["watermark", "wm"]);
-        // ExtGState 半透明設定命名關鍵字
-        let extGStateKeywords = loadKeywordList("extGStateKeywords", ["watermark", "wm"]);
-        // OCG 圖層名稱關鍵字
-        let ocgKeywords = loadKeywordList("ocgKeywords", ["watermark", "wm"]);
+        function loadKeywordSetting(key, defaultValue) {
+            try {
+                const stored = localStorage.getItem(`pdf_remover_${key}`);
+                if (stored !== null) {
+                    return stored === "true";
+                }
+            } catch (e) {
+                console.error(`無法讀取設定 ${key}:`, e);
+            }
+            return defaultValue;
+        }
+
+        function saveKeywordSetting(key, value) {
+            try {
+                localStorage.setItem(`pdf_remover_${key}`, value.toString());
+            } catch (e) {
+                console.error(`無法儲存設定 ${key}:`, e);
+            }
+        }
+
+        /**
+         * 依據比對設定，檢查目標字串是否匹配關鍵字清單中的任一項目
+         * @param {string} target - 待檢查的目標字串
+         * @param {string[]} keywords - 關鍵字陣列
+         * @param {boolean} useRegex - 是否啟用正規表示式比對
+         * @param {boolean} exactMatch - 是否啟用完全匹配
+         * @returns {boolean} 是否匹配成功
+         */
+        function matchKeyword(target, keywords, useRegex, exactMatch) {
+            if (!target) return false;
+            const lowerTarget = target.toLowerCase();
+            
+            return keywords.some(kw => {
+                if (!kw) return false;
+                const lowerKw = kw.toLowerCase();
+                
+                if (useRegex) {
+                    try {
+                        const regex = new RegExp(kw, 'i');
+                        return regex.test(target);
+                    } catch (e) {
+                        return lowerTarget.includes(lowerKw);
+                    }
+                } else if (exactMatch) {
+                    return lowerTarget === lowerKw;
+                } else {
+                    return lowerTarget.includes(lowerKw);
+                }
+            });
+        }
+
+        // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的特徵關鍵字與比對模式列表
+        let userTriggerWords = loadKeywordList("triggerWords", ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"]);
+        let triggerWordsUseRegex = loadKeywordSetting("triggerWords_useRegex", true);
+        let triggerWordsExactMatch = loadKeywordSetting("triggerWords_exactMatch", false);
+
+        // 圖片型浮水印典型命名關鍵字與比對模式
+        let imageKeywords = loadKeywordList("imageKeywords", ["watermark", "wm", "stamp", "logo", "bg", "background", "sign", "signature", "shuiyin"]);
+        let imageKeywordsUseRegex = loadKeywordSetting("imageKeywords_useRegex", true);
+        let imageKeywordsExactMatch = loadKeywordSetting("imageKeywords_exactMatch", false);
+
+        // ExtGState 半透明設定命名關鍵字與比對模式
+        let extGStateKeywords = loadKeywordList("extGStateKeywords", ["watermark", "wm", "trans", "opacity", "gs", "alpha", "blend", "adbe", "adobe"]);
+        let extGStateKeywordsUseRegex = loadKeywordSetting("extGStateKeywords_useRegex", true);
+        let extGStateKeywordsExactMatch = loadKeywordSetting("extGStateKeywords_exactMatch", false);
+
+        // OCG 圖層名稱關鍵字與比對模式
+        let ocgKeywords = loadKeywordList("ocgKeywords", ["watermark", "wm", "layer", "stamp", "print", "overlay", "shuiyin", "浮水印", "水印"]);
+        let ocgKeywordsUseRegex = loadKeywordSetting("ocgKeywords_useRegex", true);
+        let ocgKeywordsExactMatch = loadKeywordSetting("ocgKeywords_exactMatch", false);
 
         /**
          * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
@@ -1061,15 +1181,51 @@
         const closeOCGKeywordsModalBtn = document.getElementById("closeOCGKeywordsModalBtn");
         const ocgKeywordsModal = document.getElementById("ocgKeywordsModal");
 
+        // 進階比對設定 Checkbox DOM 選取
+        const triggerWordsUseRegexInput = document.getElementById("triggerWordsUseRegex");
+        const triggerWordsExactMatchInput = document.getElementById("triggerWordsExactMatch");
+        const imageKeywordsUseRegexInput = document.getElementById("imageKeywordsUseRegex");
+        const imageKeywordsExactMatchInput = document.getElementById("imageKeywordsExactMatch");
+        const extGStateKeywordsUseRegexInput = document.getElementById("extGStateKeywordsUseRegex");
+        const extGStateKeywordsExactMatchInput = document.getElementById("extGStateKeywordsExactMatch");
+        const ocgKeywordsUseRegexInput = document.getElementById("ocgKeywordsUseRegex");
+        const ocgKeywordsExactMatchInput = document.getElementById("ocgKeywordsExactMatch");
+
+        // 回復預設值按鈕 DOM 選取
+        const resetTriggerWordsBtn = document.getElementById("resetTriggerWordsBtn");
+        const resetImageKeywordsBtn = document.getElementById("resetImageKeywordsBtn");
+        const resetExtGStateKeywordsBtn = document.getElementById("resetExtGStateKeywordsBtn");
+        const resetOCGKeywordsBtn = document.getElementById("resetOCGKeywordsBtn");
+
         // ==========================================
         // 觸發關鍵字 Modal 初始化與事件
         // ==========================================
-        // 讀取已儲存的關鍵字（若有）並填入 textarea
+        // 讀取已儲存的狀態並填入輸入框與勾選框
         triggerWordsInput.value = userTriggerWords.join(", ");
+        triggerWordsUseRegexInput.checked = triggerWordsUseRegex;
+        triggerWordsExactMatchInput.checked = triggerWordsExactMatch;
+
+        // 互斥事件綁定
+        triggerWordsUseRegexInput.addEventListener("change", () => {
+            if (triggerWordsUseRegexInput.checked) triggerWordsExactMatchInput.checked = false;
+        });
+        triggerWordsExactMatchInput.addEventListener("change", () => {
+            if (triggerWordsExactMatchInput.checked) triggerWordsUseRegexInput.checked = false;
+        });
+
+        // 回復預設值事件
+        resetTriggerWordsBtn.addEventListener("click", () => {
+            triggerWordsInput.value = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"].join(", ");
+            triggerWordsUseRegexInput.checked = true;
+            triggerWordsExactMatchInput.checked = false;
+            addStatusMessage("已將特徵關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
+        });
 
         // 開啟關鍵字 Modal
         openTriggerWordsModalBtn.addEventListener("click", () => {
             triggerWordsInput.value = userTriggerWords.join(", ");
+            triggerWordsUseRegexInput.checked = triggerWordsUseRegex;
+            triggerWordsExactMatchInput.checked = triggerWordsExactMatch;
             triggerWordsModal.classList.add("active");
             triggerWordsInput.focus();
         });
@@ -1084,15 +1240,21 @@
             if (e.key === "Escape") triggerWordsModal.classList.remove("active");
         });
 
-        // 套用關鍵字
+        // 套用關鍵字與設定
         applyTriggerWordsBtn.addEventListener("click", () => {
             const raw = triggerWordsInput.value;
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 userTriggerWords = parsed;
+                triggerWordsUseRegex = triggerWordsUseRegexInput.checked;
+                triggerWordsExactMatch = triggerWordsExactMatchInput.checked;
+                
                 saveKeywordList("triggerWords", userTriggerWords);
+                saveKeywordSetting("triggerWords_useRegex", triggerWordsUseRegex);
+                saveKeywordSetting("triggerWords_exactMatch", triggerWordsExactMatch);
+                
                 triggerWordsModal.classList.remove("active");
-                addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字`, "success");
+                addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字（比對模式：${triggerWordsUseRegex ? "正規表示式" : (triggerWordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
                 addStatusMessage("關鍵字清單為空，保留原設定", "error");
             }
@@ -1105,8 +1267,40 @@
         extGStateKeywordsInput.value = extGStateKeywords.join(", ");
         ocgKeywordsInput.value = ocgKeywords.join(", ");
 
+        // 互斥事件綁定
+        imageKeywordsUseRegexInput.addEventListener("change", () => {
+            if (imageKeywordsUseRegexInput.checked) imageKeywordsExactMatchInput.checked = false;
+        });
+        imageKeywordsExactMatchInput.addEventListener("change", () => {
+            if (imageKeywordsExactMatchInput.checked) imageKeywordsUseRegexInput.checked = false;
+        });
+
+        extGStateKeywordsUseRegexInput.addEventListener("change", () => {
+            if (extGStateKeywordsUseRegexInput.checked) extGStateKeywordsExactMatchInput.checked = false;
+        });
+        extGStateKeywordsExactMatchInput.addEventListener("change", () => {
+            if (extGStateKeywordsExactMatchInput.checked) extGStateKeywordsUseRegexInput.checked = false;
+        });
+
+        ocgKeywordsUseRegexInput.addEventListener("change", () => {
+            if (ocgKeywordsUseRegexInput.checked) ocgKeywordsExactMatchInput.checked = false;
+        });
+        ocgKeywordsExactMatchInput.addEventListener("change", () => {
+            if (ocgKeywordsExactMatchInput.checked) ocgKeywordsUseRegexInput.checked = false;
+        });
+
+        // 回復預設值事件
+        resetImageKeywordsBtn.addEventListener("click", () => {
+            imageKeywordsInput.value = ["watermark", "wm", "stamp", "logo", "bg", "background", "sign", "signature", "shuiyin"].join(", ");
+            imageKeywordsUseRegexInput.checked = true;
+            imageKeywordsExactMatchInput.checked = false;
+            addStatusMessage("已將圖片命名關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
+        });
+
         openImageKeywordsModalBtn.addEventListener("click", () => {
             imageKeywordsInput.value = imageKeywords.join(", ");
+            imageKeywordsUseRegexInput.checked = imageKeywordsUseRegex;
+            imageKeywordsExactMatchInput.checked = imageKeywordsExactMatch;
             imageKeywordsModal.classList.add("active");
             imageKeywordsInput.focus();
         });
@@ -1124,16 +1318,32 @@
             const parsed = raw.split(/[\,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 imageKeywords = parsed;
+                imageKeywordsUseRegex = imageKeywordsUseRegexInput.checked;
+                imageKeywordsExactMatch = imageKeywordsExactMatchInput.checked;
+                
                 saveKeywordList("imageKeywords", imageKeywords);
+                saveKeywordSetting("imageKeywords_useRegex", imageKeywordsUseRegex);
+                saveKeywordSetting("imageKeywords_exactMatch", imageKeywordsExactMatch);
+                
                 imageKeywordsModal.classList.remove("active");
-                addStatusMessage(`已套用 ${imageKeywords.length} 個圖片命名關鍵字`, "success");
+                addStatusMessage(`已套用 ${imageKeywords.length} 個圖片命名關鍵字（比對模式：${imageKeywordsUseRegex ? "正規表示式" : (imageKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
                 addStatusMessage("關鍵字清單為空，保留原設定", "error");
             }
         });
 
+        // 回復預設值事件
+        resetExtGStateKeywordsBtn.addEventListener("click", () => {
+            extGStateKeywordsInput.value = ["watermark", "wm", "trans", "opacity", "gs", "alpha", "blend", "adbe", "adobe"].join(", ");
+            extGStateKeywordsUseRegexInput.checked = true;
+            extGStateKeywordsExactMatchInput.checked = false;
+            addStatusMessage("已將 ExtGState 關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
+        });
+
         openExtGStateKeywordsModalBtn.addEventListener("click", () => {
             extGStateKeywordsInput.value = extGStateKeywords.join(", ");
+            extGStateKeywordsUseRegexInput.checked = extGStateKeywordsUseRegex;
+            extGStateKeywordsExactMatchInput.checked = extGStateKeywordsExactMatch;
             extGStateKeywordsModal.classList.add("active");
             extGStateKeywordsInput.focus();
         });
@@ -1146,8 +1356,18 @@
             if (e.key === "Escape") extGStateKeywordsModal.classList.remove("active");
         });
 
+        // 回復預設值事件
+        resetOCGKeywordsBtn.addEventListener("click", () => {
+            ocgKeywordsInput.value = ["watermark", "wm", "layer", "stamp", "print", "overlay", "shuiyin", "浮水印", "水印"].join(", ");
+            ocgKeywordsUseRegexInput.checked = true;
+            ocgKeywordsExactMatchInput.checked = false;
+            addStatusMessage("已將 OCG 關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
+        });
+
         openOCGKeywordsModalBtn.addEventListener("click", () => {
             ocgKeywordsInput.value = ocgKeywords.join(", ");
+            ocgKeywordsUseRegexInput.checked = ocgKeywordsUseRegex;
+            ocgKeywordsExactMatchInput.checked = ocgKeywordsExactMatch;
             ocgKeywordsModal.classList.add("active");
             ocgKeywordsInput.focus();
         });
@@ -1165,9 +1385,15 @@
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 extGStateKeywords = parsed;
+                extGStateKeywordsUseRegex = extGStateKeywordsUseRegexInput.checked;
+                extGStateKeywordsExactMatch = extGStateKeywordsExactMatchInput.checked;
+                
                 saveKeywordList("extGStateKeywords", extGStateKeywords);
+                saveKeywordSetting("extGStateKeywords_useRegex", extGStateKeywordsUseRegex);
+                saveKeywordSetting("extGStateKeywords_exactMatch", extGStateKeywordsExactMatch);
+                
                 extGStateKeywordsModal.classList.remove("active");
-                addStatusMessage(`已套用 ${extGStateKeywords.length} 個 ExtGState 關鍵字`, "success");
+                addStatusMessage(`已套用 ${extGStateKeywords.length} 個 ExtGState 關鍵字（比對模式：${extGStateKeywordsUseRegex ? "正規表示式" : (extGStateKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
                 addStatusMessage("關鍵字清單為空，保留原設定", "error");
             }
@@ -1178,9 +1404,15 @@
             const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
             if (parsed.length > 0) {
                 ocgKeywords = parsed;
+                ocgKeywordsUseRegex = ocgKeywordsUseRegexInput.checked;
+                ocgKeywordsExactMatch = ocgKeywordsExactMatchInput.checked;
+                
                 saveKeywordList("ocgKeywords", ocgKeywords);
+                saveKeywordSetting("ocgKeywords_useRegex", ocgKeywordsUseRegex);
+                saveKeywordSetting("ocgKeywords_exactMatch", ocgKeywordsExactMatch);
+                
                 ocgKeywordsModal.classList.remove("active");
-                addStatusMessage(`已套用 ${ocgKeywords.length} 個 OCG 關鍵字`, "success");
+                addStatusMessage(`已套用 ${ocgKeywords.length} 個 OCG 關鍵字（比對模式：${ocgKeywordsUseRegex ? "正規表示式" : (ocgKeywordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
             } else {
                 addStatusMessage("關鍵字清單為空，保留原設定", "error");
             }
@@ -1693,10 +1925,10 @@
                     // 1. 取得解壓後的明文二進位位元陣列
                     const data = stream.getContents();
                     // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
-                    const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
+                    const text = new TextDecoder("utf-8", { fatal: false }).decode(data);
 
-                    // 3. 比對觸發關鍵字
-                    const containsTriggerWord = userTriggerWords.some((word) => text.includes(word));
+                    // 3. 比對特徵關鍵字
+                    const containsTriggerWord = matchKeyword(text, userTriggerWords, triggerWordsUseRegex, triggerWordsExactMatch);
                     if (containsTriggerWord) {
                         // 建立一個完全乾淨的空字典，只包含 Length=0，不殘留舊的 /Filter 等壓縮格式，確保 PDF 合規性
                         const emptyDict = pdfDoc.context.obj({});
@@ -1733,8 +1965,8 @@
 
             let count = 0;
             for (const key of extGState.keys()) {
-                const keyName = key.value().toLowerCase();
-                if (extGStateKeywords.some((kw) => keyName.includes(kw))) {
+                const keyName = key.value();
+                if (matchKeyword(keyName, extGStateKeywords, extGStateKeywordsUseRegex, extGStateKeywordsExactMatch)) {
                     // 重置為無透明度的預設空 ExtGState 字典
                     extGState.set(key, pdfDoc.context.obj({ Type: PDFName.of("ExtGState") }));
                     count += 1;
@@ -1774,8 +2006,8 @@
                 if (!(nameObject instanceof PDFString || nameObject instanceof PDFHexString)) continue;
 
                 // 解碼名稱明文
-                const name = nameObject.decodeText().toLowerCase();
-                if (ocgKeywords.some((kw) => name.includes(kw))) {
+                const name = nameObject.decodeText();
+                if (matchKeyword(name, ocgKeywords, ocgKeywordsUseRegex, ocgKeywordsExactMatch)) {
                     // 清空圖層名稱，使其失效不顯示
                     ocg.set(PDFName.of("Name"), PDFString.of(""));
                     count += 1;
@@ -1804,9 +2036,9 @@
                 const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
 
                 if (subtype instanceof PDFName && subtype.toString() === "/Image") {
-                    const name = key.value().toLowerCase();
+                    const name = key.value();
                     // 比對使用者自訂的圖片命名關鍵字
-                    if (imageKeywords.some(kw => name.includes(kw))) {
+                    if (matchKeyword(name, imageKeywords, imageKeywordsUseRegex, imageKeywordsExactMatch)) {
                         // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
                         if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) {
                             continue;
