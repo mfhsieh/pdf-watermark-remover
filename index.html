@@ -279,7 +279,7 @@
 
         /* 公用隱藏樣式 */
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         /* ==========================================
@@ -573,7 +573,7 @@
         <!-- 頁面頭部標題區 -->
         <header>
             <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.0</span></h1>
-            <p>所有處理在瀏覽器端執行，檔案不會上傳到伺服器。</p>
+            <p>所有處理在瀏覽器端執行，檔案不會上傳至伺服器</p>
         </header>
 
         <!-- 主互動控制卡片 -->
@@ -592,17 +592,17 @@
             <div class="options">
                 <h2>選擇移除項目（依常見度排序）</h2>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
-                <label><input type="checkbox" id="removeFormXObject" checked /> 移除 Form XObject（最常見）</label>
+                <label><input type="checkbox" id="removeFormXObject" checked /> 移除背景浮水印 (Form XObject)（最常見）</label>
                 <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
-                <label><input type="checkbox" id="removeAnnotations" checked /> 移除註解 (Annots)</label>
+                <label><input type="checkbox" id="removeAnnotations" checked /> 移除疊加註解 (Annots)</label>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
-                <label><input type="checkbox" id="removeDirectContent" checked /> 檢查並清空可疑內容流</label>
+                <label><input type="checkbox" id="removeDirectContent" checked /> 掃描並清除嵌入內容 (Direct Content)</label>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
-                <label><input type="checkbox" id="removeExtGState" checked /> 移除 ExtGState</label>
+                <label><input type="checkbox" id="removeExtGState" checked /> 清理半透明效果 (ExtGState)</label>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
-                <label><input type="checkbox" id="removeOCG" /> 移除 OCG / 圖層名稱</label>
-                <!-- Image XObject：當浮水印是外部圖片且命名含特徵字眼時進行移除 -->
-                <label><input type="checkbox" id="removeImageXObject" /> 移除 Image XObject</label>
+                <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
+                <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
+                <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
             </div>
 
             <!-- 執行動作按鈕 -->
@@ -619,7 +619,7 @@
             </div>
 
             <!-- 實時 Before & After 即時預覽區（預設隱藏） -->
-            <div id="previewContainer" class="preview-container hidden">
+            <div id="previewContainer" class="preview-container hidden" hidden>
                 <!-- 原始 PDF 預覽窗格 -->
                 <div class="preview-box">
                     <h3>原始 PDF 預覽</h3>
@@ -639,14 +639,14 @@
                 <!-- 欄位一：深入淺出的技術與功能說明 -->
                 <div class="info-column">
                     <h2>💡 功能說明</h2>
-                    <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳到任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
+                    <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
-                        <li><strong>清除背景浮水印 (Form XObject)</strong>：用於移除隱藏在文件背景中的文字或圖形元件。</li>
-                        <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註。</li>
-                        <li><strong>清除嵌入字樣 (Direct Content)</strong>：若浮水印直接寫入在內文頁面中，可進行特徵比對並予以清除。</li>
-                        <li><strong>清理半透明效果 (ExtGState)</strong>：移除透明度設定中與浮水印相關的半透明組態。</li>
-                        <li><strong>關閉浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層中，可將該圖層名稱清除使其失效。</li>
-                        <li><strong>清除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可比對圖片名稱（包含 watermark 或 wm 等特徵）並予以清除。
+                        <li><strong>移除背景浮水印 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型浮水印，為最常見的浮水印格式。</li>
+                        <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註型浮水印。</li>
+                        <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可進行特徵比對並予以清除。</li>
+                        <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的半透明圖形狀態。</li>
+                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可將該圖層清除使其失效。</li>
+                        <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可比對圖片名稱（包含 watermark、wm 等特徵關鍵字）並予以清除。
                         </li>
                         <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
                         <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印移除。</li>
@@ -658,8 +658,8 @@
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
                         <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
-                        <li><strong>請務必備份原始檔案</strong>：移除浮水印需要變更 PDF
-                            內部底層結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。
+                        <li><strong>請務必備份原始檔案</strong>：移除浮水印會修改 PDF
+                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。
                         </li>
                         <li><strong>合法使用授權</strong>：請確認您擁有該文件移除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因移除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
                         </li>
@@ -899,6 +899,7 @@
 
         // Before & After 預覽元件
         const previewContainer = document.getElementById("previewContainer");
+        previewContainer.classList.add("hidden");
         const originalPreview = document.getElementById("originalPreview");
         const processedPreviewBox = document.getElementById("processedPreviewBox");
         const processedPreview = document.getElementById("processedPreview");
@@ -907,8 +908,8 @@
         // 全域狀態變數與暫存快取
         // ==========================================
         let selectedFile = null;    // 目前使用者選取上傳的 PDF 檔案實體 (File)
-        let originalUrl = null;     // 原始 PDF 在瀏覽器暫存生成的 Blob URL
-        let processedUrl = null;    // 處理後 PDF 在瀏覽器暫存生成的 Blob URL
+        let originalUrl = null;     // 原始 PDF 於瀏覽器端動態建立的 Blob URL
+        let processedUrl = null;    // 處理後 PDF 於瀏覽器端動態建立的 Blob URL
         let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
 
@@ -1147,7 +1148,7 @@
                 }
 
                 // 6. 將重構後的 PDF 文件保存回二進制陣列 (Uint8Array)
-                addStatusMessage("正在封裝保存 PDF 結構，生成無損 PDF 位元組流...", "info");
+                addStatusMessage("正在封裝保存 PDF 結構，產生無損 PDF 位元組串流...", "info");
                 const bytes = await pdfDoc.save();
 
                 // 7. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
@@ -1216,7 +1217,7 @@
                 Subtype: PDFName.of(subtype),
             });
 
-            // 保留維持 PDF 正常顯示渲染所需的必要關鍵字字典（如尺寸）
+            // 保留維持 PDF 正常顯示渲染所需的必要屬性字典（如尺寸）
             for (const keyName of keepKeys) {
                 const key = PDFName.of(keyName);
                 const value = originalStream.dict.lookup(key);
@@ -1398,7 +1399,7 @@
                     // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
                     const text = new TextDecoder("utf-8", { fatal: false }).decode(data).toLowerCase();
 
-                    // 3. 比對觸發字眼
+                    // 3. 比對觸發關鍵字
                     const containsTriggerWord = TRIGGER_WORDS.some((word) => text.includes(word));
                     if (containsTriggerWord) {
                         // 複製原字典 (以繼承長度、壓縮等設定)，但寫入空內容數據 (Uint8Array)
@@ -1449,7 +1450,7 @@
          * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
          * OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
          * 找到所有的圖層清單 (/OCGs Array)，比對圖層名稱解碼後的字串。
-         * 若符合，則將該 OCG 圖層的 Name 清空使其實效，達到隱藏消除的目的。
+         * 若符合，則將該 OCG 圖層的 Name 清空使其失效，達到隱藏消除的目的。
          * 
          * @param {PDFDocument} pdfDoc - PDF 文件物件
          * @returns {number} 清除的 OCG 圖層數量
