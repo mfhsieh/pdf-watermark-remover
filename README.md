@@ -92,7 +92,7 @@
 
 ## 📢 訊息揭露
 
-本應用程式的程式碼主要透過 AI 工具（Gemini Antigravity）協助生成，並經人工審閱與修改。
+本應用程式的程式碼主要透過 AI 工具（Antigravity IDE）協助生成，並經人工審閱與修改。
 
 ## 📦 Release Notes
 

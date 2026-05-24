@@ -130,6 +130,13 @@
             border-color: var(--primary-dark);
         }
 
+        /* 拖曳檔案懸停於上方時的視覺回饋 */
+        .file-area.dragging {
+            background: rgba(47, 107, 235, 0.14);
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 4px rgba(47, 107, 235, 0.12);
+        }
+
         /* 隱藏原生 input file，使其完全透明並鋪滿整個拖曳區 */
         .file-area input[type="file"] {
             position: absolute;
@@ -177,10 +184,6 @@
             font-size: 1.05rem;
         }
 
-        .phrase-label {
-            font-weight: 600;
-        }
-
         /* 選項 checkbox 文字行高與對齊調整 */
         .options label {
             display: block;
@@ -208,6 +211,10 @@
             background: var(--border);
             color: var(--text);
             transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .button:disabled {
+            cursor: not-allowed;
         }
 
         /* 按鈕懸浮時微往上漂浮 */
@@ -330,7 +337,7 @@
         }
 
         /* ==========================================
-       說明文件網格雙欄排版
+       說明文件網格單欄排版
        ========================================== */
         .info-grid {
             display: grid;
@@ -455,11 +462,6 @@
         }
 
         .cc-icon {
-            width: 18px;
-            height: 18px;
-        }
-
-        .cc-icon-sm {
             width: 18px;
             height: 18px;
         }
@@ -645,7 +647,7 @@
         .icon-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
-            background: rgba(99, 102, 241, 0.06);
+            background: rgba(47, 107, 235, 0.06);
         }
     </style>
 </head>
@@ -718,7 +720,7 @@
             </div>
 
             <!-- Before & After 對照預覽區（預設隱藏） -->
-            <div id="previewContainer" class="preview-container hidden" hidden>
+            <div id="previewContainer" class="preview-container hidden">
                 <!-- 原始 PDF 預覽窗格 -->
                 <div class="preview-box">
                     <h3>原始 PDF 預覽</h3>
@@ -732,7 +734,7 @@
             </div>
         </section>
 
-        <!-- 教學說明與法律安全宣告區（雙欄排版） -->
+        <!-- 教學說明與法律安全宣告區（單欄排版） -->
         <section class="info-card">
             <div class="info-grid">
                 <!-- 欄位一：深入淺出的技術與功能說明 -->
@@ -771,7 +773,7 @@
         <footer class="footer">
             <div class="footer-content">
                 <!-- 導向 GitHub 開源倉庫連結 -->
-                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" class="github-link group">
+                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" class="github-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path
                             d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
@@ -781,7 +783,7 @@
 
                 <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
                 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" target="_blank"
-                    class="cc-badge group">
+                    class="cc-badge">
                     <div class="cc-icons">
                         <!-- CC (Creative Commons) 圖標 -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
@@ -789,20 +791,17 @@
                                 d="M14.972 0c4.196 0 7.769 1.465 10.715 4.393A14.426 14.426 0 0128.9 9.228C29.633 11.04 30 12.964 30 15c0 2.054-.363 3.978-1.085 5.772a13.77 13.77 0 01-3.2 4.754 15.417 15.417 0 01-4.983 3.322A14.932 14.932 0 0114.973 30c-1.982 0-3.88-.38-5.692-1.14a15.087 15.087 0 01-4.875-3.293c-1.437-1.437-2.531-3.058-3.281-4.862A14.71 14.71 0 010 15c0-1.982.38-3.888 1.138-5.719a15.062 15.062 0 013.308-4.915C7.303 1.456 10.812 0 14.972 0zm.055 2.706c-3.429 0-6.313 1.196-8.652 3.589a12.896 12.896 0 00-2.72 4.031 11.814 11.814 0 00-.95 4.675c0 1.607.316 3.156.95 4.646a12.428 12.428 0 002.72 3.992 12.362 12.362 0 003.99 2.679c1.483.616 3.037.924 4.662.924 1.607 0 3.164-.312 4.675-.937a12.954 12.954 0 004.084-2.705c2.339-2.286 3.508-5.152 3.508-8.6 0-1.66-.304-3.231-.91-4.713a11.994 11.994 0 00-2.651-3.965c-2.412-2.41-5.314-3.616-8.706-3.616zm-.188 9.803l-2.01 1.045c-.215-.445-.477-.758-.79-.937-.312-.178-.602-.268-.87-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.509 1.928.34.482.84.724 1.5.724.876 0 1.492-.43 1.85-1.286l1.847.937a4.407 4.407 0 01-1.634 1.728c-.696.42-1.464.63-2.303.63-1.34 0-2.42-.41-3.242-1.233-.821-.82-1.232-1.964-1.232-3.428 0-1.428.416-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.858 0 3.188.723 3.992 2.17zm8.652 0l-1.983 1.045c-.214-.445-.478-.758-.79-.937-.313-.178-.613-.268-.897-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.51 1.928.338.482.838.724 1.5.724.874 0 1.49-.43 1.847-1.286l1.875.937a4.606 4.606 0 01-1.66 1.728c-.696.42-1.455.63-2.277.63-1.357 0-2.441-.41-3.253-1.233-.814-.82-1.22-1.964-1.22-3.428 0-1.428.415-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.857 0 3.18.723 3.965 2.17z" />
                         </svg>
                         <!-- BY (姓名標示) 圖標 -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
-                            fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
                             <path
                                 d="M14.973 0c4.213 0 7.768 1.446 10.66 4.34C28.544 7.25 30 10.803 30 15c0 4.215-1.43 7.723-4.287 10.526C22.678 28.51 19.098 30 14.973 30c-4.054 0-7.571-1.474-10.553-4.42C1.474 22.633 0 19.107 0 15S1.474 7.34 4.42 4.34C7.313 1.446 10.83 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.196-8.652 3.589-2.447 2.5-3.67 5.402-3.67 8.706 0 3.321 1.214 6.196 3.642 8.624 2.429 2.429 5.322 3.642 8.679 3.642 3.339 0 6.25-1.222 8.732-3.67 2.358-2.267 3.536-5.133 3.536-8.598 0-3.41-1.197-6.311-3.589-8.705-2.392-2.392-5.285-3.588-8.678-3.588zm4.018 8.57v6.134H17.33v7.286h-4.66V17.41h-1.714v-6.134a.93.93 0 01.28-.683.933.933 0 01.684-.281h6.161c.25 0 .474.093.67.28a.912.912 0 01.294.684zM12.91 7.42c0-1.41.696-2.116 2.09-2.116s2.09.705 2.09 2.116c0 1.393-.697 2.09-2.09 2.09-1.393 0-2.09-.697-2.09-2.09z" />
                         </svg>
                         <!-- NC (非商業性) 圖標 -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
-                            fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
                             <path
                                 d="M14.973 0c4.214 0 7.768 1.446 10.66 4.339C28.544 7.232 30 10.786 30 15c0 4.215-1.429 7.723-4.287 10.527C22.678 28.51 19.097 30 14.973 30c-4.072 0-7.59-1.482-10.553-4.446C1.474 22.607 0 19.09 0 15c0-4.107 1.474-7.66 4.42-10.66C7.313 1.446 10.83 0 14.973 0zM3.375 10.956c-.446 1.232-.67 2.58-.67 4.045 0 3.321 1.214 6.196 3.642 8.624 2.447 2.412 5.34 3.617 8.679 3.617 3.375 0 6.285-1.223 8.733-3.67.875-.839 1.561-1.714 2.061-2.626l-5.651-2.518a3.866 3.866 0 01-1.433 2.317c-.76.598-1.657.943-2.693 1.031v2.304h-1.74v-2.304c-1.661-.017-3.18-.615-4.554-1.794l2.063-2.089c.981.91 2.098 1.366 3.348 1.366.517 0 .96-.116 1.326-.349.366-.231.55-.615.55-1.151 0-.376-.135-.68-.402-.911l-1.447-.617-1.767-.804-2.384-1.044-7.661-3.427zm11.652-8.278c-3.41 0-6.295 1.206-8.652 3.616-.59.59-1.143 1.26-1.66 2.01l5.732 2.571a3.513 3.513 0 011.42-1.888c.695-.473 1.508-.737 2.437-.79V5.893h1.741v2.304c1.376.071 2.625.535 3.75 1.392L17.84 11.6c-.84-.59-1.697-.884-2.572-.884-.464 0-.88.09-1.245.267-.366.179-.55.483-.55.911 0 .125.045.25.134.375l1.902.858 1.313.59 2.41 1.07 7.687 3.429c.25-1.054.375-2.125.375-3.214 0-3.447-1.196-6.349-3.588-8.707-2.375-2.41-5.27-3.616-8.68-3.616z" />
                         </svg>
                         <!-- SA (相同方式分享) 圖標 -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon-sm" viewBox="0 0 30 30"
-                            fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
                             <path
                                 d="M14.973 0c4.196 0 7.75 1.455 10.66 4.366C28.544 7.26 30 10.804 30 15c0 4.197-1.43 7.714-4.287 10.553C22.696 28.51 19.115 30 14.973 30c-4.054 0-7.571-1.473-10.553-4.42C1.474 22.634 0 19.108 0 15c0-4.088 1.474-7.633 4.42-10.633C7.33 1.455 10.848 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.205-8.652 3.616-2.447 2.483-3.67 5.375-3.67 8.678 0 3.34 1.214 6.214 3.642 8.625 2.429 2.43 5.322 3.643 8.679 3.643 3.339 0 6.25-1.223 8.732-3.67 2.358-2.285 3.536-5.151 3.536-8.598 0-3.428-1.197-6.321-3.589-8.678-2.375-2.412-5.268-3.616-8.678-3.616zM8.33 12.884c.286-1.84 1.026-3.264 2.223-4.273 1.196-1.008 2.651-1.513 4.366-1.513 2.356 0 4.232.76 5.625 2.277 1.393 1.517 2.09 3.464 2.09 5.839 0 2.304-.724 4.219-2.17 5.745-1.447 1.526-3.321 2.29-5.626 2.29-1.696 0-3.16-.508-4.392-1.527-1.233-1.018-1.973-2.464-2.224-4.339H12c.09 1.822 1.187 2.733 3.295 2.733 1.053 0 1.902-.456 2.544-1.366.644-.91.965-2.126.965-3.643 0-1.59-.294-2.799-.883-3.63-.59-.83-1.437-1.245-2.545-1.245-2.001 0-3.126.884-3.375 2.651h1.098l-2.973 2.973-2.973-2.973H8.33z" />
                         </svg>
@@ -1561,7 +1560,7 @@
                         const pwd = await promptForPassword(attempts > 0);
                         if (pwd === null) {
                             // 使用者取消：仍以原始未解密的 PDF 顯示預覽（瀏覽器內建會彈窗詢問密碼）
-                            addStatusMessage("已取消密碼輸入，預覽將顯示加密的原始文件。", "info");
+                            addStatusMessage("已取消密碼輸入。如需繼續處理，請重新選擇 PDF 並輸入密碼。", "info");
                             break;
                         }
                         attempts++;
@@ -1586,16 +1585,16 @@
                 }
             }
 
-            // 4. 建立 Blob URL 並顯示預覽
+            // 3. 建立 Blob URL 並顯示預覽
             const blob = new Blob([previewBytes], { type: "application/pdf" });
             originalUrl = URL.createObjectURL(blob);
             originalPreview.src = originalUrl;
 
-            // 5. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
+            // 4. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
             previewContainer.classList.remove("hidden");
             processedPreviewBox.classList.add("hidden");
 
-            // 6. 只有在無加密，或已成功解密的情況下，才顯示「開始移除浮水印」按鈕
+            // 5. 只有在無加密，或已成功解密的情況下，才顯示「開始移除浮水印」按鈕
             if (!needsPassword || decryptedSuccessfully) {
                 processButton.classList.remove("hidden");
             }
@@ -1663,6 +1662,7 @@
             clearStatusMessages();
             addStatusMessage("🚀 開始處理 PDF 文件，請稍候...", "info");
             processButton.disabled = true; // 鎖定按鈕防止重複觸發
+            processButton.textContent = "處理中...";
 
             try {
                 // 1. 決定本次處理要使用的 PDF 位元組來源
@@ -1726,26 +1726,26 @@
                     }
                 }
 
-                // 3. 取得目前畫面中 checkbox 勾選的清理選項
+                // 2. 取得目前畫面中 checkbox 勾選的清理選項
                 addStatusMessage("載入浮水印移除選項設定...", "info");
                 const options = getOptions();
 
-                // 4. 開始重構 PDF 物件樹
+                // 3. 開始重構 PDF 物件樹
                 addStatusMessage("開始掃描並重構 PDF 物件樹，套用清理策略...", "info");
                 const result = processPdf(pdfDoc, options);
 
-                // 5. 更新狀態列文字
+                // 4. 更新狀態列文字
                 if (result.modifiedObjects === 0) {
                     addStatusMessage("未偵測到可移除的浮水印物件。請嘗試使用更多選項或更換檔案。", "info");
                 } else {
                     addStatusMessage(`已成功置換或修改了 ${result.modifiedObjects} 個可疑浮水印物件。`, "success");
                 }
 
-                // 6. 將重構後的 PDF 文件儲存回二進位陣列 (Uint8Array)
+                // 5. 將重構後的 PDF 文件儲存回二進位陣列 (Uint8Array)
                 addStatusMessage("正在封裝儲存 PDF 結構，產生無損 PDF 位元組串流...", "info");
                 const bytes = await pdfDoc.save();
 
-                // 7. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
+                // 6. 將 Uint8Array 封裝成 Blob 並提供瀏覽器下載/預覽
                 const blob = new Blob([bytes], { type: "application/pdf" });
                 if (processedUrl) {
                     URL.revokeObjectURL(processedUrl); // 釋放舊 URL 記憶體
@@ -1758,7 +1758,7 @@
 
                 addStatusMessage("🎉 浮水印移除已完成！請點擊下方按鈕下載處理後的 PDF。", "success");
 
-                // 8. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
+                // 7. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
                 processedPreview.src = processedUrl;
                 processedPreviewBox.classList.remove("hidden");
             } catch (error) {
@@ -1766,6 +1766,7 @@
                 addStatusMessage(`❌ 處理過程發生錯誤: ${error.message || "未知錯誤"}。無法完成浮水印移除，請嘗試其他檔案。`, "error");
             } finally {
                 processButton.disabled = false; // 無論成功與否，皆解鎖按鈕
+                processButton.textContent = "開始移除浮水印";
             }
         });
 
@@ -1893,7 +1894,7 @@
 
                 // 策略三：清理 Direct Content 內容流
                 if (options.removeDirectContent) {
-                    modifiedObjects += removeDirectContent(pdfDoc, page, options);
+                    modifiedObjects += removeDirectContent(pdfDoc, page);
                 }
 
                 // 策略四：清理 ExtGState 半透明狀態
@@ -1960,11 +1961,16 @@
          * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
          * 
          * @param {PDFPage} page - 目標頁面物件
-         * @returns {number} 移除成功與否的統計計數 (0 或 1)
+         * @returns {number} 實際移除的 Annot 數量
          */
         function removeAnnotations(page) {
             const annotsKey = PDFName.of("Annots");
-            if (page.node.has(annotsKey)) {
+            const annots = page.node.lookup(annotsKey);
+            if (annots instanceof PDFArray) {
+                const count = annots.size();
+                page.node.delete(annotsKey);
+                return count > 0 ? count : 1;
+            } else if (page.node.has(annotsKey)) {
                 page.node.delete(annotsKey);
                 return 1;
             }
@@ -1979,10 +1985,9 @@
          *
          * @param {PDFDocument} pdfDoc - 文件物件
          * @param {PDFPage} page - 頁面物件
-         * @param {Object} options - 設定選項
          * @returns {number} 處理掉的 Direct Content 流數量
          */
-        function removeDirectContent(pdfDoc, page, options) {
+        function removeDirectContent(pdfDoc, page) {
             const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
             if (!contents) return 0;
 
