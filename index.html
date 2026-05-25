@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>純前端 PDF 浮水印移除工具</title>
+    <title>純前端 PDF 浮水印清除工具</title>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
         crossorigin="anonymous"></script>
@@ -66,21 +66,21 @@
 
         header h1 {
             margin: 0;
-            font-size: clamp(1.5rem, 3vw, 2.8rem);
+            font-size: clamp(1.25rem, 4.5vw, 2.2rem);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 10px;
+            white-space: nowrap;
         }
 
         .version-badge {
             display: inline-flex;
-            font-size: 0.9rem;
+            font-size: 0.72rem;
             font-weight: 700;
             background: rgba(47, 107, 235, 0.08);
             color: var(--primary);
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: 8px;
             letter-spacing: 0.03em;
             border: 1px solid rgba(47, 107, 235, 0.15);
@@ -90,6 +90,8 @@
             margin: 12px auto 0;
             color: var(--muted);
             max-width: 700px;
+            font-size: clamp(0.75rem, 3.5vw, 1.05rem);
+            white-space: nowrap;
         }
 
         /* ==========================================
@@ -727,7 +729,7 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>純前端 PDF 浮水印移除工具 <span class="version-badge">v1.1.2</span></h1>
+            <h1>純前端 PDF 浮水印清除工具 <span class="version-badge">v1.1.2</span></h1>
             <p>所有處理在瀏覽器端執行，檔案不會上傳至伺服器</p>
         </header>
 
@@ -743,49 +745,49 @@
                 </div>
             </div>
 
-            <!-- 浮水印清理策略選項 -->
+            <!-- 浮水印清除策略選項 -->
             <div class="options hidden" id="optionsContainer">
-                <h2>選擇清理策略</h2>
+                <h2>選擇清除策略</h2>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <div class="option-row" id="optionRowFormXObject">
-                    <label><input type="checkbox" id="removeFormXObject" /> 移除表單外部物件 (Form XObject)</label>
+                    <label><input type="checkbox" id="removeFormXObject" /> 清除表單外部物件 (Form XObject)</label>
                     <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的表單外部物件"
                         aria-label="選擇欲清除的表單外部物件">⚙</button>
                 </div>
                 <!-- Annotations：各種註解（印章、附註等） -->
                 <div class="option-row" id="optionRowAnnotations">
-                    <label><input type="checkbox" id="removeAnnotations" /> 移除註解 (Annotation)</label>
-                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定註解清理類型"
-                        aria-label="設定註解清理類型">⚙</button>
+                    <label><input type="checkbox" id="removeAnnotations" /> 清除註解 (Annotation)</label>
+                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定註解清除選項"
+                        aria-label="設定註解清除選項">⚙</button>
                 </div>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row" id="optionRowDirectContent">
-                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除頁面直接內容 (Direct Content)</label>
-                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字"
-                        aria-label="設定特徵關鍵字">⚙</button>
+                    <label><input type="checkbox" id="removeDirectContent" /> 清除頁面直接內容 (Direct Content)</label>
+                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定頁面直接內容清除選項"
+                        aria-label="設定頁面直接內容清除選項">⚙</button>
                 </div>
-                <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
+                <!-- ExtGState：延伸圖形狀態 -->
                 <div class="option-row" id="optionRowExtGState">
-                    <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
-                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字"
-                        aria-label="設定 ExtGState 關鍵字">⚙</button>
+                    <label><input type="checkbox" id="removeExtGState" /> 清除延伸圖形狀態 (ExtGState)</label>
+                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定延伸圖形狀態清除選項"
+                        aria-label="設定延伸圖形狀態清除選項">⚙</button>
                 </div>
-                <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
+                <!-- OCG / Optional Content Group：選擇性內容群組 -->
                 <div class="option-row" id="optionRowOCG">
-                    <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
-                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字"
-                        aria-label="設定 OCG 關鍵字">⚙</button>
+                    <label><input type="checkbox" id="removeOCG" /> 清除選擇性內容群組 (OCG)</label>
+                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定選擇性內容群組清除選項"
+                        aria-label="設定選擇性內容群組清除選項">⚙</button>
                 </div>
-                <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
+                <!-- Image XObject：影像外部物件 -->
                 <div class="option-row" id="optionRowImageXObject">
-                    <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
-                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定內部資源代號關鍵字"
-                        aria-label="設定內部資源代號關鍵字">⚙</button>
+                    <label><input type="checkbox" id="removeImageXObject" /> 清除影像外部物件 (Image XObject)</label>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定影像外部物件清除選項"
+                        aria-label="設定影像外部物件清除選項">⚙</button>
                 </div>
             </div>
 
             <!-- 執行動作按鈕 -->
-            <button id="processButton" class="button hidden">開始移除浮水印</button>
+            <button id="processButton" class="button hidden">開始清除浮水印</button>
 
             <!-- 狀態提示語與進度回饋 -->
             <div id="status" class="status">
@@ -820,15 +822,14 @@
                     <h2>💡 功能說明</h2>
                     <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
-                        <li><strong>移除表單外部物件 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印格式）。</li>
-                        <li><strong>移除註解 (Annotation)</strong>：移除覆蓋在文件上層的各種標記、電子印章或附註型物件。</li>
-                        <li><strong>掃描並清除頁面直接內容 (Direct Content)</strong>：若浮水印直接寫入頁面直接內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
-                        <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。</li>
-                        <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content
-                            Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
-                        <li><strong>移除圖片型浮水印 (Image XObject)</strong>：若浮水印為圖片形式，可透過自訂命名關鍵字比對 XObject 名稱並予以清除。</li>
+                        <li><strong>清除表單外部物件 (Form XObject)</strong>：清除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印格式），支援個體實例精確勾選。</li>
+                        <li><strong>清除註解 (Annotation)</strong>：清除覆蓋在文件上層的各種標記、電子印章或附註型物件，並保留超連結等其他有用註解。</li>
+                        <li><strong>清除頁面直接內容 (Direct Content)</strong>：精確偵測並清理解碼後的頁面核心內容流實例，完美保留正常的文字正文。</li>
+                        <li><strong>清除延伸圖形狀態 (ExtGState)</strong>：清除與浮水印相關的延伸狀態（透明度及混合模式等特徵），防止因模糊關鍵字匹配而誤殺正常渲染。</li>
+                        <li><strong>清除選擇性內容群組 (OCG)</strong>：隱藏不需要的選擇性內容圖層（圖層名稱解碼），支援個體實例精確勾選與預警。</li>
+                        <li><strong>清除影像外部物件 (Image XObject)</strong>：精確顯示並清除影像實例，提供寬高尺寸與壓縮格式等預覽，守護正常插圖與 Logo。</li>
                         <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
-                        <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印移除。</li>
+                        <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印清除。</li>
                     </ul>
                 </div>
                 <!-- 欄位二：免責聲明與備份安全指引 -->
@@ -837,10 +838,10 @@
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
                         <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
-                        <li><strong>請務必備份原始檔案</strong>：移除浮水印會修改 PDF
-                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遗失。</li>
-                        <li><strong>破壞性操作風險</strong>：部分進階清理策略（如「掃描並清除頁面直接內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
-                        <li><strong>合法使用授權</strong>：請確認您擁有該文件移除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因移除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
+                        <li><strong>請務必備份原始檔案</strong>：清除浮水印會修改 PDF
+                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。</li>
+                        <li><strong>破壞性操作風險</strong>：部分進階清除策略（如「清除頁面直接內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
+                        <li><strong>合法使用授權</strong>：請確認您擁有該文件清除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因清除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
                         </li>
                     </ol>
                 </div>
@@ -894,7 +895,7 @@
     <div id="passwordModal" class="modal-overlay">
         <div class="modal-card">
             <h3>🔒 此 PDF 檔案已受密碼保護</h3>
-            <p>請輸入文件密碼以進行解密與浮水印移除：</p>
+            <p>請輸入文件密碼以進行解密與浮水印清除：</p>
             <input type="password" id="pdfPasswordInput" placeholder="請輸入 PDF 密碼" />
             <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
             <div class="modal-actions">
@@ -908,8 +909,8 @@
     <div id="triggerWordsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定頁面直接內容清理選項</h3>
-            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
-            <div style="color: var(--danger); font-size: 0.85rem; font-weight: 500; margin-bottom: 12px; line-height: 1.5;">⚠️ 警告：物理清空頁面直接內容可能導致該內容中的正常文字一併消失，請謹慎勾選。</div>
+            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="directContentListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -933,7 +934,7 @@
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定表單外部物件清理選項</h3>
             <p id="formXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+                    class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="formXObjectListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -957,7 +958,7 @@
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定註解清理選項</h3>
             <p id="annotsModalDesc" style="line-height: 1.8;">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的註解（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+                    class="badge-danger">清除</strong>的註解（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="annotsSubtypesContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -980,7 +981,8 @@
     <div id="imageKeywordsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定影像外部物件清理選項</h3>
-            <p id="imageXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong class="badge-danger">清除</strong>的影像外部物件（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+            <p id="imageXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的影像外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="imageXObjectListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -1003,7 +1005,8 @@
     <div id="extGStateKeywordsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定延伸圖形狀態清理選項</h3>
-            <p id="extGStateModalDesc" style="line-height: 1.8;">請勾選您想要<strong class="badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+            <p id="extGStateModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="extGStateListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -1026,7 +1029,8 @@
     <div id="ocgKeywordsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定選擇性內容群組清理選項</h3>
-            <p id="ocgModalDesc" style="line-height: 1.8;">請勾選您想要<strong class="badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+            <p id="ocgModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="ocgListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -1318,50 +1322,43 @@
         const openTriggerWordsModalBtn = document.getElementById("openTriggerWordsModalBtn");
         const closeTriggerWordsModalBtn = document.getElementById("closeTriggerWordsModalBtn");
         const triggerWordsModal = document.getElementById("triggerWordsModal");
-        const imageKeywordsInput = document.getElementById("imageKeywordsInput");
         const applyImageKeywordsBtn = document.getElementById("applyImageKeywordsBtn");
         const openImageKeywordsModalBtn = document.getElementById("openImageKeywordsModalBtn");
         const closeImageKeywordsModalBtn = document.getElementById("closeImageKeywordsModalBtn");
         const imageKeywordsModal = document.getElementById("imageKeywordsModal");
-        const extGStateKeywordsInput = document.getElementById("extGStateKeywordsInput");
+        const resetImageXObjectBtn = document.getElementById("resetImageXObjectBtn");
+
         const applyExtGStateKeywordsBtn = document.getElementById("applyExtGStateKeywordsBtn");
         const openExtGStateKeywordsModalBtn = document.getElementById("openExtGStateKeywordsModalBtn");
         const closeExtGStateKeywordsModalBtn = document.getElementById("closeExtGStateKeywordsModalBtn");
         const extGStateKeywordsModal = document.getElementById("extGStateKeywordsModal");
-        const ocgKeywordsInput = document.getElementById("ocgKeywordsInput");
+        const resetExtGStateBtn = document.getElementById("resetExtGStateBtn");
+
         const applyOCGKeywordsBtn = document.getElementById("applyOCGKeywordsBtn");
         const openOCGKeywordsModalBtn = document.getElementById("openOCGKeywordsModalBtn");
         const closeOCGKeywordsModalBtn = document.getElementById("closeOCGKeywordsModalBtn");
         const ocgKeywordsModal = document.getElementById("ocgKeywordsModal");
+        const resetOCGBtn = document.getElementById("resetOCGBtn");
+
         const applyFormXObjectKeywordsBtn = document.getElementById("applyFormXObjectKeywordsBtn");
         const openFormXObjectKeywordsModalBtn = document.getElementById("openFormXObjectKeywordsModalBtn");
         const closeFormXObjectKeywordsModalBtn = document.getElementById("closeFormXObjectKeywordsModalBtn");
         const formXObjectKeywordsModal = document.getElementById("formXObjectKeywordsModal");
         const resetFormXObjectBtn = document.getElementById("resetFormXObjectBtn");
+
         const openAnnotsSettingsModalBtn = document.getElementById("openAnnotsSettingsModalBtn");
         const closeAnnotsSettingsModalBtn = document.getElementById("closeAnnotsSettingsModalBtn");
         const applyAnnotsSettingsBtn = document.getElementById("applyAnnotsSettingsBtn");
         const resetAnnotsSettingsBtn = document.getElementById("resetAnnotsSettingsBtn");
         const annotsSettingsModal = document.getElementById("annotsSettingsModal");
 
-        // 進階比對設定 Checkbox DOM 選取
-        const imageKeywordsUseRegexInput = document.getElementById("imageKeywordsUseRegex");
-        const imageKeywordsExactMatchInput = document.getElementById("imageKeywordsExactMatch");
-        const extGStateKeywordsUseRegexInput = document.getElementById("extGStateKeywordsUseRegex");
-        const extGStateKeywordsExactMatchInput = document.getElementById("extGStateKeywordsExactMatch");
-        const ocgKeywordsUseRegexInput = document.getElementById("ocgKeywordsUseRegex");
-        const ocgKeywordsExactMatchInput = document.getElementById("ocgKeywordsExactMatch");
-
         // 回復預設值按鈕 DOM 選取
         const resetTriggerWordsBtn = document.getElementById("resetTriggerWordsBtn");
-        const resetImageKeywordsBtn = document.getElementById("resetImageKeywordsBtn");
-        const resetExtGStateKeywordsBtn = document.getElementById("resetExtGStateKeywordsBtn");
-        const resetOCGKeywordsBtn = document.getElementById("resetOCGKeywordsBtn");
 
         // ==========================================
         // 頁面直接內容 (Direct Content) Modal 初始化與事件
         // ==========================================
-        
+
         // 開啟 Modal
         openTriggerWordsModalBtn.addEventListener("click", () => {
             const container = document.getElementById("directContentListContainer");
@@ -1418,7 +1415,7 @@
                             labelText = `[頁面直接內容] "${entry.previewText}"`;
                         }
                         labelText += ` (第 ${entry.page} 頁)`;
-                        
+
                         label.appendChild(document.createTextNode(labelText));
                         container.appendChild(label);
                     });
@@ -1486,7 +1483,7 @@
                     `;
                 } else {
                     if (desc) desc.style.display = "block";
-                    
+
                     // 排序：頁碼升冪，接著依資源代碼字母排序
                     const sortedEntries = Array.from(detectedImages.entries()).sort((a, b) => {
                         if (a[1].page !== b[1].page) return a[1].page - b[1].page;
@@ -1506,7 +1503,7 @@
                         input.type = "checkbox";
                         input.name = "imageXObjectItem";
                         input.value = key;
-                        
+
                         // 判斷是否已被選定清除
                         const isChecked = imagesToDestroy.includes(key);
                         input.checked = isChecked;
@@ -2162,8 +2159,9 @@
                     detectedImages.clear();
 
                     // Check OCG
-                    if (scanDoc.catalog.has(PDFName.of("OCProperties"))) {
-                        const ocPropertiesRef = scanDoc.catalog.get(PDFName.of("OCProperties"));
+                    const catalogDict = scanDoc.catalog;
+                    if (catalogDict.has(PDFName.of("OCProperties"))) {
+                        const ocPropertiesRef = catalogDict.get(PDFName.of("OCProperties"));
                         const ocProperties = scanDoc.context.lookup(ocPropertiesRef);
                         if (ocProperties instanceof PDFDict) {
                             const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
@@ -2269,44 +2267,44 @@
                                                             const data = xObj.getContents();
                                                             const rawStr = decodeBinaryToText(data);
                                                             if (!detectedFormXObjects.has(rawStr)) {
-                                                                    const textMatches = rawStr.match(/\((.*?)\)/g);
-                                                                    let previewText = "";
-                                                                    if (textMatches) {
-                                                                        previewText = textMatches.map(m => {
-                                                                            const inner = m.slice(1, -1);
-                                                                            try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
-                                                                        }).join(' ').trim();
-                                                                    }
-                                                                    const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
-                                                                    if (hexMatches && !previewText) {
-                                                                        previewText = hexMatches.map(m => {
-                                                                            const inner = m.slice(1, -1);
-                                                                            try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
-                                                                        }).join(' ').trim();
-                                                                    }
+                                                                const textMatches = rawStr.match(/\((.*?)\)/g);
+                                                                let previewText = "";
+                                                                if (textMatches) {
+                                                                    previewText = textMatches.map(m => {
+                                                                        const inner = m.slice(1, -1);
+                                                                        try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
+                                                                    }).join(' ').trim();
+                                                                }
+                                                                const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
+                                                                if (hexMatches && !previewText) {
+                                                                    previewText = hexMatches.map(m => {
+                                                                        const inner = m.slice(1, -1);
+                                                                        try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
+                                                                    }).join(' ').trim();
+                                                                }
 
-                                                                    // 檢查是否包含過多無法顯示的編碼字元
-                                                                    let validCount = 0;
-                                                                    for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
-                                                                        const code = previewText.charCodeAt(cIdx);
-                                                                        const isAscii = (code >= 32 && code <= 126);
-                                                                        const isWhitespace = (code === 9 || code === 10 || code === 13);
-                                                                        const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
-                                                                        if (isAscii || isWhitespace || isCjk) {
-                                                                            validCount++;
-                                                                        }
+                                                                // 檢查是否包含過多無法顯示的編碼字元
+                                                                let validCount = 0;
+                                                                for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
+                                                                    const code = previewText.charCodeAt(cIdx);
+                                                                    const isAscii = (code >= 32 && code <= 126);
+                                                                    const isWhitespace = (code === 9 || code === 10 || code === 13);
+                                                                    const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
+                                                                    if (isAscii || isWhitespace || isCjk) {
+                                                                        validCount++;
                                                                     }
-                                                                    if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
-                                                                        previewText = "[自訂編碼字元 " + key.value() + "]";
-                                                                    }
+                                                                }
+                                                                if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
+                                                                    previewText = "[自訂編碼字元 " + key.value() + "]";
+                                                                }
 
-                                                                    if (!previewText) previewText = key.value();
-                                                                    if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
+                                                                if (!previewText) previewText = key.value();
+                                                                if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
 
-                                                                    detectedFormXObjects.set(rawStr, { previewText: previewText, pages: [i + 1] });
-                                                                    if (isSuspectedWatermark(previewText) || isSuspectedWatermark(key.value())) {
-                                                                        formXObjectsToDestroy.push(rawStr);
-                                                                    }
+                                                                detectedFormXObjects.set(rawStr, { previewText: previewText, pages: [i + 1] });
+                                                                if (isSuspectedWatermark(previewText) || isSuspectedWatermark(key.value())) {
+                                                                    formXObjectsToDestroy.push(rawStr);
+                                                                }
                                                             } else {
                                                                 const entry = detectedFormXObjects.get(rawStr);
                                                                 if (entry && !entry.pages.includes(i + 1)) {
@@ -2321,12 +2319,12 @@
                                                     if (xObj instanceof PDFRawStream) {
                                                         const keyName = key.value();
                                                         const uniqueKey = `${i}:${keyName}`;
-                                                        
+
                                                         // 獲取寬、高、Filter 等特徵
                                                         const width = xObj.dict.get(PDFName.of("Width"));
                                                         const height = xObj.dict.get(PDFName.of("Height"));
                                                         const filter = xObj.dict.get(PDFName.of("Filter"));
-                                                        
+
                                                         let filterStr = filter ? filter.toString() : "RAW";
                                                         let previewText = `尺寸: ${width}x${height}, 壓縮格式: ${filterStr}`;
 
@@ -2359,7 +2357,7 @@
                                         for (const key of extGState.keys()) {
                                             const keyName = key.value();
                                             const gsObj = scanDoc.context.lookup(extGState.get(key));
-                                            
+
                                             // 萃取特徵做為 previewText，例如透明度 ca/CA 與混合模式 BM
                                             let details = [];
                                             if (gsObj instanceof PDFDict) {
@@ -2405,7 +2403,7 @@
                             const streams = [];
                             if (contents instanceof PDFArray) {
                                 for (let idx = 0; idx < contents.size(); idx++) {
-                                    streams.push({ item: contents.lookup(idx), index: idx });
+                                    streams.push({ item: scanDoc.context.lookup(contents.get(idx)), index: idx });
                                 }
                             } else {
                                 streams.push({ item: contents, index: null });
@@ -2496,19 +2494,36 @@
             // 更新 UI 選項顯示狀態
             const optionsContainer = document.getElementById('optionsContainer');
             if (!needsPassword || decryptedSuccessfully) {
-                document.getElementById('optionRowFormXObject').classList.toggle('hidden', !hasFormXObject);
-                document.getElementById('optionRowAnnotations').classList.toggle('hidden', detectedAnnotations.size === 0);
-                document.getElementById('optionRowDirectContent').classList.toggle('hidden', detectedDirectContents.size === 0);
-                document.getElementById('optionRowExtGState').classList.toggle('hidden', !hasExtGState);
-                document.getElementById('optionRowOCG').classList.toggle('hidden', !hasOCG);
-                document.getElementById('optionRowImageXObject').classList.toggle('hidden', !hasImageXObject);
+                // 確保所有策略選項列都顯示，以利使用者手動調整與嘗試
+                document.getElementById('optionRowFormXObject').classList.remove('hidden');
+                document.getElementById('optionRowAnnotations').classList.remove('hidden');
+                document.getElementById('optionRowDirectContent').classList.remove('hidden');
+                document.getElementById('optionRowExtGState').classList.remove('hidden');
+                document.getElementById('optionRowOCG').classList.remove('hidden');
+                document.getElementById('optionRowImageXObject').classList.remove('hidden');
 
-                const anyOption = hasFormXObject || detectedAnnotations.size > 0 || detectedDirectContents.size > 0 || hasExtGState || hasOCG || hasImageXObject;
-                if (anyOption) {
-                    optionsContainer.classList.remove('hidden');
+                // 載入 PDF 後，將策略選項區塊恢復為可見
+                optionsContainer.classList.remove('hidden');
+
+                // 根據是否自動偵測到疑似浮水印的特定物件，來自動勾選對應策略
+                document.getElementById("removeFormXObject").checked = formXObjectsToDestroy.length > 0;
+                document.getElementById("removeAnnotations").checked = annotsToDestroy.length > 0;
+                document.getElementById("removeDirectContent").checked = directContentsToDestroy.length > 0;
+                document.getElementById("removeExtGState").checked = extGStatesToDestroy.length > 0;
+                document.getElementById("removeOCG").checked = ocgsToDestroy.length > 0;
+                document.getElementById("removeImageXObject").checked = imagesToDestroy.length > 0;
+
+                const anySuspected = formXObjectsToDestroy.length > 0 ||
+                    annotsToDestroy.length > 0 ||
+                    directContentsToDestroy.length > 0 ||
+                    extGStatesToDestroy.length > 0 ||
+                    ocgsToDestroy.length > 0 ||
+                    imagesToDestroy.length > 0;
+
+                if (!anySuspected) {
+                    addStatusMessage("掃描完成：未自動偵測到明顯的浮水印物件，您可以手動勾選合適的策略來嘗試清除。", "info");
                 } else {
-                    optionsContainer.classList.add('hidden');
-                    addStatusMessage("掃描完成：未偵測到常見的浮水印特徵物件。", "info");
+                    addStatusMessage("掃描完成：已自動勾選偵測到疑似浮水印的清除策略，您也可以手動調整。", "success");
                 }
             } else {
                 if (optionsContainer) optionsContainer.classList.add('hidden');
@@ -2523,7 +2538,7 @@
             previewContainer.classList.remove("hidden");
             processedPreviewBox.classList.add("hidden");
 
-            // 5. 只有在無加密，或已成功解密的情況下，才顯示「開始移除浮水印」按鈕
+            // 5. 只有在無加密，或已成功解密的情況下，才顯示「開始清除浮水印」按鈕
             if (!needsPassword || decryptedSuccessfully) {
                 processButton.classList.remove("hidden");
             }
@@ -2671,16 +2686,16 @@
                 }
 
                 // 2. 取得目前畫面中 checkbox 勾選的清理選項
-                addStatusMessage("載入浮水印移除選項設定...", "info");
+                addStatusMessage("載入浮水印清除選項設定...", "info");
                 const options = getOptions();
 
                 // 3. 開始重構 PDF 物件樹
-                addStatusMessage("開始掃描並重構 PDF 物件樹，套用清理策略...", "info");
+                addStatusMessage("開始掃描並重構 PDF 物件樹，套用清除策略...", "info");
                 const result = processPdf(pdfDoc, options);
 
                 // 4. 更新狀態列文字
                 if (result.modifiedObjects === 0) {
-                    addStatusMessage("未偵測到可移除的浮水印物件。請嘗試使用更多選項或更換檔案。", "info");
+                    addStatusMessage("未偵測到可清除的浮水印物件。請嘗試使用更多選項或更換檔案。", "info");
                 } else {
                     addStatusMessage(`已成功置換或修改了 ${result.modifiedObjects} 個可疑浮水印物件。`, "success");
                 }
@@ -2700,17 +2715,17 @@
                 downloadLink.download = selectedFile.name.replace(/\.pdf$/i, "") + "_removed.pdf";
                 downloadArea.classList.remove("hidden");
 
-                addStatusMessage("🎉 浮水印移除已完成！請點擊下方按鈕下載處理後的 PDF。", "success");
+                addStatusMessage("🎉 浮水印清除已完成！請點擊下方按鈕下載處理後的 PDF。", "success");
 
                 // 7. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
                 processedPreview.src = processedUrl;
                 processedPreviewBox.classList.remove("hidden");
             } catch (error) {
                 console.error(error);
-                addStatusMessage(`❌ 處理過程發生錯誤: ${error.message || "未知錯誤"}。無法完成浮水印移除，請嘗試其他檔案。`, "error");
+                addStatusMessage(`❌ 處理過程發生錯誤: ${error.message || "未知錯誤"}。無法完成浮水印清除，請嘗試其他檔案。`, "error");
             } finally {
                 processButton.disabled = false; // 無論成功與否，皆解鎖按鈕
-                processButton.textContent = "開始移除浮水印";
+                processButton.textContent = "開始清除浮水印";
             }
         });
 
@@ -2826,22 +2841,22 @@
                     page.node.set(PDFName.of("Resources"), resources);
                 }
 
-                // 策略一：清理 Form XObject 浮水印
+                // 策略一：清除 Form XObject 浮水印
                 if (options.removeFormXObject) {
                     modifiedObjects += removeFormXObjects(pdfDoc, resources);
                 }
 
-                // 策略二：移除 Annotation 註解
+                // 策略二：清除註解 (Annotation)
                 if (options.removeAnnotations) {
                     modifiedObjects += removeAnnotations(page);
                 }
 
-                // 策略三：清理頁面直接內容 (Direct Content)
+                // 策略三：清除頁面直接內容 (Direct Content)
                 if (options.removeDirectContent) {
                     modifiedObjects += removeDirectContent(pdfDoc, page);
                 }
 
-                // 策略四：清理 ExtGState 半透明狀態
+                // 策略四：清除延伸圖形狀態 (ExtGState)
                 if (options.removeExtGState) {
                     modifiedObjects += removeExtGState(pdfDoc, resources, pageIndex);
                 }
@@ -2915,12 +2930,12 @@
         }
 
         /**
-         * 策略二：移除 Annots 註解
+         * 策略二：清除註解 (Annotation)
          * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
          * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
          * 
          * @param {PDFPage} page - 目標頁面物件
-         * @returns {number} 實際移除的 Annot 數量
+         * @returns {number} 實際清除的註解數量
          */
         function removeAnnotations(page) {
             const annotsKey = PDFName.of("Annots");
@@ -2985,7 +3000,7 @@
                         const emptyDict = pdfDoc.context.obj({});
                         const emptyStream = pdfDoc.context.stream(new Uint8Array(), emptyDict);
                         const ref = pdfDoc.context.register(emptyStream);
-                        
+
                         contents.set(idx, ref);
                         count += 1;
                     }
@@ -2999,7 +3014,7 @@
                         const emptyDict = pdfDoc.context.obj({});
                         const emptyStream = pdfDoc.context.stream(new Uint8Array(), emptyDict);
                         const ref = pdfDoc.context.register(emptyStream);
-                        
+
                         page.node.set(contentsKey, ref);
                         count += 1;
                     }
@@ -3044,7 +3059,8 @@
          * @returns {number} 隱藏 of OCG 圖層數量
          */
         function removeOCG(pdfDoc) {
-            const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));
+            const catalogDict = pdfDoc.catalog;
+            const ocPropertiesRef = catalogDict.get(PDFName.of("OCProperties"));
             if (!ocPropertiesRef) return 0;
 
             const ocProperties = pdfDoc.context.lookup(ocPropertiesRef);
