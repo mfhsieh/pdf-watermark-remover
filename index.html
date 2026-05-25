@@ -53,7 +53,7 @@
        容器與排版布局
        ========================================== */
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 28px 16px 48px;
         }
@@ -653,6 +653,72 @@
             color: var(--primary);
             background: rgba(47, 107, 235, 0.06);
         }
+
+        /* 視覺高對比膠囊徽章 (Badges) */
+        .badge-danger {
+            color: var(--danger);
+            background: rgba(217, 45, 32, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-success {
+            color: #0f973d;
+            background: rgba(15, 151, 61, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* 無註解提示卡片樣式 */
+        .no-annots-card {
+            text-align: center;
+            padding: 24px;
+            width: 100%;
+            color: var(--muted);
+            background: rgba(47, 107, 235, 0.04);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .no-annots-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .no-annots-text {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0f973d;
+        }
+
+        /* 動態註解選項 Checkbox 樣式 */
+        .annot-checkbox-label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            width: 100%;
+            color: inherit;
+            transition: color 0.2s ease;
+        }
+
+        .annot-checkbox-label:hover {
+            color: var(--primary);
+        }
+
+        .annot-checkbox-input {
+            cursor: pointer;
+            accent-color: var(--primary);
+            width: 15px;
+            height: 15px;
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -678,35 +744,43 @@
             </div>
 
             <!-- 浮水印清理策略選項 -->
-            <div class="options">
+            <div class="options hidden" id="optionsContainer">
                 <h2>選擇清理策略</h2>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
-                <label><input type="checkbox" id="removeFormXObject" checked /> 移除背景浮水印 (Form XObject)（最常見）</label>
-                <!-- Annotations：疊加於最上層的印章、附註與標記型浮水印 -->
-                <label><input type="checkbox" id="removeAnnotations" checked /> 移除疊加註解 (Annots)</label>
+                <div class="option-row" id="optionRowFormXObject">
+                    <label><input type="checkbox" id="removeFormXObject" /> 移除表單外部物件 (Form XObject)</label>
+                    <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的表單外部物件"
+                        aria-label="選擇欲清除的表單外部物件">⚙</button>
+                </div>
+                <!-- Annotations：各種註解物件（印章、附註等） -->
+                <div class="option-row" id="optionRowAnnotations">
+                    <label><input type="checkbox" id="removeAnnotations" /> 移除註解物件 (Annotation)</label>
+                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定註解清理類型"
+                        aria-label="設定註解清理類型">⚙</button>
+                </div>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
-                <div class="option-row">
+                <div class="option-row" id="optionRowDirectContent">
                     <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字"
                         aria-label="設定特徵關鍵字">⚙</button>
                 </div>
                 <!-- ExtGState：控制半透明渲染效果的擴充圖形狀態 -->
-                <div class="option-row">
+                <div class="option-row" id="optionRowExtGState">
                     <label><input type="checkbox" id="removeExtGState" /> 清理半透明效果 (ExtGState)</label>
                     <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定 ExtGState 關鍵字"
                         aria-label="設定 ExtGState 關鍵字">⚙</button>
                 </div>
                 <!-- OCG / Optional Content Group：圖層切換控制的浮水印 -->
-                <div class="option-row">
+                <div class="option-row" id="optionRowOCG">
                     <label><input type="checkbox" id="removeOCG" /> 清除浮水印圖層 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定 OCG 關鍵字"
                         aria-label="設定 OCG 關鍵字">⚙</button>
                 </div>
                 <!-- Image XObject：當浮水印是外部圖片且命名含特徵關鍵字時進行移除 -->
-                <div class="option-row">
+                <div class="option-row" id="optionRowImageXObject">
                     <label><input type="checkbox" id="removeImageXObject" /> 移除圖片型浮水印 (Image XObject)</label>
-                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定圖片命名關鍵字"
-                        aria-label="設定圖片命名關鍵字">⚙</button>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定內部資源代號關鍵字"
+                        aria-label="設定內部資源代號關鍵字">⚙</button>
                 </div>
             </div>
 
@@ -746,8 +820,8 @@
                     <h2>💡 功能說明</h2>
                     <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
-                        <li><strong>移除背景浮水印 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型浮水印，為最常見的浮水印格式。</li>
-                        <li><strong>移除疊加註解 (Annots)</strong>：移除覆蓋在文件上層的標記、電子印章或附註型浮水印。</li>
+                        <li><strong>移除表單外部物件 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印格式）。</li>
+                        <li><strong>移除註解物件 (Annotation)</strong>：移除覆蓋在文件上層的各種標記、電子印章或附註型物件。</li>
                         <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
                         <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。</li>
                         <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content
@@ -764,8 +838,8 @@
                     <ol>
                         <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
                         <li><strong>請務必備份原始檔案</strong>：移除浮水印會修改 PDF
-                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。
-                        </li>
+                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。</li>
+                        <li><strong>破壞性操作風險</strong>：部分進階清理策略（如「掃描並清除嵌入內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
                         <li><strong>合法使用授權</strong>：請確認您擁有該文件移除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因移除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
                         </li>
                     </ol>
@@ -830,24 +904,73 @@
         </div>
     </div>
 
-    <!-- 特徵關鍵字設定 Modal -->
+    <!-- 嵌入內容流 (Direct Content) 設定 Modal -->
     <div id="triggerWordsModal" class="modal-overlay">
-        <div class="modal-card">
-            <h3>⚙ 設定特徵關鍵字</h3>
-            <p>輸入用於掃描嵌入內容的關鍵字，以逗號分隔。僅影響「掃描並清除嵌入內容 (Direct Content)」功能。</p>
-            <textarea id="triggerWordsInput" rows="4"
-                placeholder="例如：watermark, confidential, draft, sample, trial, 機密, 草稿, 浮水印"></textarea>
-            <div class="modal-options">
-                <label><input type="checkbox" id="triggerWordsUseRegex" /> 啟用正規表示式 (Regex)</label>
-                <label><input type="checkbox" id="triggerWordsExactMatch" /> 精確完全比對</label>
+        <div class="modal-card" style="max-width: 500px;">
+            <h3>⚙ 設定嵌入內容流清理選項</h3>
+            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong class="badge-danger">清除</strong>的嵌入內容流（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+            <div style="color: var(--danger); font-size: 0.85rem; font-weight: 500; margin-bottom: 12px; line-height: 1.5;">⚠️ 警告：物理清空整個內容流可能導致該流中的正常文字一併消失，請謹慎勾選。</div>
+
+            <div id="directContentListContainer"
+                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
+
             <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
                 <button id="resetTriggerWordsBtn" class="button"
                     style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
                 <div style="display: flex; gap: 12px;">
                     <button id="closeTriggerWordsModalBtn" class="button">取消</button>
                     <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表單外部物件 (Form XObject) 設定 Modal -->
+    <div id="formXObjectKeywordsModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <h3>⚙ 設定表單外部物件清理選項</h3>
+            <p id="formXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+
+            <div id="formXObjectListContainer"
+                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
+
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
+                <button id="resetFormXObjectBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeFormXObjectKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyFormXObjectKeywordsBtn" class="button button-primary">套用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 註解物件 (Annotation) 設定 Modal -->
+    <div id="annotsSettingsModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <h3>⚙ 設定註解清理選項</h3>
+            <p id="annotsModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+                    class="badge-danger">清除</strong>的註解物件（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+
+            <div id="annotsSubtypesContainer"
+                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
+
+            <div class="modal-actions"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
+                <button id="resetAnnotsSettingsBtn" class="button"
+                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeAnnotsSettingsModalBtn" class="button">取消</button>
+                    <button id="applyAnnotsSettingsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
@@ -880,9 +1003,9 @@
     <div id="extGStateKeywordsModal" class="modal-overlay">
         <div class="modal-card">
             <h3>⚙ 設定 ExtGState 關鍵字</h3>
-            <p>輸入用於辨識 ExtGState 半透明設定名稱的關鍵字，以逗號分隔。僅影響「清理半透明效果 (ExtGState)」功能。</p>
+            <p>輸入用於辨識 ExtGState 半透明設定之「內部資源代號」的關鍵字，以逗號分隔。僅影響「清理半透明效果 (ExtGState)」功能。</p>
             <textarea id="extGStateKeywordsInput" rows="4"
-                placeholder="例如：watermark, wm, trans, opacity, gs, alpha, blend, adbe, adobe"></textarea>
+                placeholder="例如：watermark, wm, trans, opacity, shuiyin"></textarea>
             <div class="modal-options">
                 <label><input type="checkbox" id="extGStateKeywordsUseRegex" /> 啟用正規表示式 (Regex)</label>
                 <label><input type="checkbox" id="extGStateKeywordsExactMatch" /> 精確完全比對</label>
@@ -1008,10 +1131,9 @@
             });
         }
 
-        // 頁面內容流 (Direct Content) 中用來匹配並消滅浮水印的特徵關鍵字與比對模式列表
-        let userTriggerWords = loadKeywordList("triggerWords", ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"]);
-        let triggerWordsUseRegex = loadKeywordSetting("triggerWords_useRegex", true);
-        let triggerWordsExactMatch = loadKeywordSetting("triggerWords_exactMatch", false);
+        // 頁面嵌入內容流 (Direct Content) 處理模式設定
+        let detectedDirectContents = new Map(); // key = streamRefStr, value = { previewText, page, ref, rawText }
+        let directContentsToDestroy = []; // 儲存選定要清空的嵌入內容流參照字串
 
         // 圖片型浮水印典型命名關鍵字與比對模式
         let imageKeywords = loadKeywordList("imageKeywords", ["watermark", "wm", "stamp", "logo", "bg", "background", "sign", "signature", "shuiyin"]);
@@ -1027,6 +1149,19 @@
         let ocgKeywords = loadKeywordList("ocgKeywords", ["watermark", "wm", "layer", "stamp", "print", "overlay", "shuiyin", "浮水印", "水印"]);
         let ocgKeywordsUseRegex = loadKeywordSetting("ocgKeywords_useRegex", true);
         let ocgKeywordsExactMatch = loadKeywordSetting("ocgKeywords_exactMatch", false);
+
+        // Form XObject 表單外部物件處理模式與關鍵字設定
+        let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
+        let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
+        const defaultFormXKeywords = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+        function isSuspectedWatermark(text) {
+            if (!text) return false;
+            const lower = text.toLowerCase();
+            return defaultFormXKeywords.some(kw => lower.includes(kw));
+        }
+
+        // 要刪除的特定註解物件參照 (annotRefStr) 清單，預設不使用 localStorage 保存
+        let annotsToDestroy = [];
 
         /**
          * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
@@ -1182,7 +1317,6 @@
         const processButton = document.getElementById("processButton");
         const downloadArea = document.getElementById("downloadArea");
         const downloadLink = document.getElementById("downloadLink");
-        const triggerWordsInput = document.getElementById("triggerWordsInput");
         const applyTriggerWordsBtn = document.getElementById("applyTriggerWordsBtn");
         const openTriggerWordsModalBtn = document.getElementById("openTriggerWordsModalBtn");
         const closeTriggerWordsModalBtn = document.getElementById("closeTriggerWordsModalBtn");
@@ -1202,10 +1336,18 @@
         const openOCGKeywordsModalBtn = document.getElementById("openOCGKeywordsModalBtn");
         const closeOCGKeywordsModalBtn = document.getElementById("closeOCGKeywordsModalBtn");
         const ocgKeywordsModal = document.getElementById("ocgKeywordsModal");
+        const applyFormXObjectKeywordsBtn = document.getElementById("applyFormXObjectKeywordsBtn");
+        const openFormXObjectKeywordsModalBtn = document.getElementById("openFormXObjectKeywordsModalBtn");
+        const closeFormXObjectKeywordsModalBtn = document.getElementById("closeFormXObjectKeywordsModalBtn");
+        const formXObjectKeywordsModal = document.getElementById("formXObjectKeywordsModal");
+        const resetFormXObjectBtn = document.getElementById("resetFormXObjectBtn");
+        const openAnnotsSettingsModalBtn = document.getElementById("openAnnotsSettingsModalBtn");
+        const closeAnnotsSettingsModalBtn = document.getElementById("closeAnnotsSettingsModalBtn");
+        const applyAnnotsSettingsBtn = document.getElementById("applyAnnotsSettingsBtn");
+        const resetAnnotsSettingsBtn = document.getElementById("resetAnnotsSettingsBtn");
+        const annotsSettingsModal = document.getElementById("annotsSettingsModal");
 
         // 進階比對設定 Checkbox DOM 選取
-        const triggerWordsUseRegexInput = document.getElementById("triggerWordsUseRegex");
-        const triggerWordsExactMatchInput = document.getElementById("triggerWordsExactMatch");
         const imageKeywordsUseRegexInput = document.getElementById("imageKeywordsUseRegex");
         const imageKeywordsExactMatchInput = document.getElementById("imageKeywordsExactMatch");
         const extGStateKeywordsUseRegexInput = document.getElementById("extGStateKeywordsUseRegex");
@@ -1220,65 +1362,109 @@
         const resetOCGKeywordsBtn = document.getElementById("resetOCGKeywordsBtn");
 
         // ==========================================
-        // 觸發關鍵字 Modal 初始化與事件
+        // 嵌入內容流 (Direct Content) Modal 初始化與事件
         // ==========================================
-        // 讀取已儲存的狀態並填入輸入框與勾選框
-        triggerWordsInput.value = userTriggerWords.join(", ");
-        triggerWordsUseRegexInput.checked = triggerWordsUseRegex;
-        triggerWordsExactMatchInput.checked = triggerWordsExactMatch;
-
-        // 互斥事件綁定
-        triggerWordsUseRegexInput.addEventListener("change", () => {
-            if (triggerWordsUseRegexInput.checked) triggerWordsExactMatchInput.checked = false;
-        });
-        triggerWordsExactMatchInput.addEventListener("change", () => {
-            if (triggerWordsExactMatchInput.checked) triggerWordsUseRegexInput.checked = false;
-        });
-
-        // 回復預設值事件
-        resetTriggerWordsBtn.addEventListener("click", () => {
-            triggerWordsInput.value = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"].join(", ");
-            triggerWordsUseRegexInput.checked = true;
-            triggerWordsExactMatchInput.checked = false;
-            addStatusMessage("已將特徵關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
-        });
-
-        // 開啟關鍵字 Modal
+        
+        // 開啟 Modal
         openTriggerWordsModalBtn.addEventListener("click", () => {
-            triggerWordsInput.value = userTriggerWords.join(", ");
-            triggerWordsUseRegexInput.checked = triggerWordsUseRegex;
-            triggerWordsExactMatchInput.checked = triggerWordsExactMatch;
+            const container = document.getElementById("directContentListContainer");
+            const desc = document.getElementById("triggerWordsModalDesc");
+            if (container) {
+                container.innerHTML = "";
+
+                if (detectedDirectContents.size === 0) {
+                    if (desc) desc.style.display = "none";
+                    container.innerHTML = `
+                        <div class="no-annots-card">
+                            <div class="no-annots-icon">📄</div>
+                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何嵌入內容流。</p>
+                        </div>
+                    `;
+                    resetTriggerWordsBtn.disabled = true;
+                    applyTriggerWordsBtn.disabled = true;
+                } else {
+                    if (desc) desc.style.display = "block";
+                    resetTriggerWordsBtn.disabled = false;
+                    applyTriggerWordsBtn.disabled = false;
+
+                    // 排序嵌入內容流實例：
+                    // 1. 優先按頁碼升冪排序
+                    // 2. 其餘按預覽文字排序
+                    const sortedDirects = Array.from(detectedDirectContents.entries()).sort((a, b) => {
+                        const directA = a[1];
+                        const directB = b[1];
+                        if (directA.page !== directB.page) {
+                            return directA.page - directB.page;
+                        }
+                        return directA.previewText.localeCompare(directB.previewText);
+                    });
+
+                    sortedDirects.forEach(([streamRefStr, entry]) => {
+                        const isChecked = directContentsToDestroy.includes(streamRefStr);
+                        const label = document.createElement("label");
+                        label.className = "annot-checkbox-label";
+
+                        const input = document.createElement("input");
+                        input.type = "checkbox";
+                        input.name = "directContentItem";
+                        input.value = streamRefStr;
+                        input.checked = isChecked;
+                        input.className = "annot-checkbox-input";
+
+                        label.appendChild(input);
+
+                        // 組合顯示文字，包含頁數標記
+                        let labelText = `[嵌入內容流]`;
+                        if (entry.previewText.startsWith("[")) {
+                            labelText = entry.previewText;
+                        } else {
+                            labelText = `[嵌入內容流] "${entry.previewText}"`;
+                        }
+                        labelText += ` (第 ${entry.page} 頁)`;
+                        
+                        label.appendChild(document.createTextNode(labelText));
+                        container.appendChild(label);
+                    });
+                }
+            }
             triggerWordsModal.classList.add("active");
-            triggerWordsInput.focus();
         });
 
-        // 關閉關鍵字 Modal（取消）
+        // 關閉 Modal
         closeTriggerWordsModalBtn.addEventListener("click", () => {
             triggerWordsModal.classList.remove("active");
         });
 
-        // ESC 關閉 Modal
-        triggerWordsInput.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") triggerWordsModal.classList.remove("active");
+        // 回復預設值
+        resetTriggerWordsBtn.addEventListener("click", () => {
+            const container = document.getElementById("directContentListContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="directContentItem"]');
+                checkboxes.forEach(cb => {
+                    const streamRefStr = cb.value;
+                    const entry = detectedDirectContents.get(streamRefStr);
+                    if (entry) {
+                        cb.checked = isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.rawText);
+                    }
+                });
+                addStatusMessage("已將當前檔案中的嵌入內容流清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。", "info");
+            }
         });
 
-        // 套用關鍵字與設定
+        // 套用設定
         applyTriggerWordsBtn.addEventListener("click", () => {
-            const raw = triggerWordsInput.value;
-            const parsed = raw.split(/[,\n]/).map(w => w.trim()).filter(w => w);
-            if (parsed.length > 0) {
-                userTriggerWords = parsed;
-                triggerWordsUseRegex = triggerWordsUseRegexInput.checked;
-                triggerWordsExactMatch = triggerWordsExactMatchInput.checked;
-
-                saveKeywordList("triggerWords", userTriggerWords);
-                saveKeywordSetting("triggerWords_useRegex", triggerWordsUseRegex);
-                saveKeywordSetting("triggerWords_exactMatch", triggerWordsExactMatch);
+            const container = document.getElementById("directContentListContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="directContentItem"]');
+                directContentsToDestroy = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        directContentsToDestroy.push(cb.value);
+                    }
+                });
 
                 triggerWordsModal.classList.remove("active");
-                addStatusMessage(`已套用 ${userTriggerWords.length} 個自訂關鍵字（比對模式：${triggerWordsUseRegex ? "正規表示式" : (triggerWordsExactMatch ? "精確完全比對" : "子字串包含")}）`, "success");
-            } else {
-                addStatusMessage("關鍵字清單為空，保留原設定", "error");
+                addStatusMessage(`已成功套用嵌入內容流清理設定！共選定清理 ${directContentsToDestroy.length} 個嵌入內容流實例。`, "success");
             }
         });
 
@@ -1365,7 +1551,7 @@
 
         // 回復預設值事件
         resetExtGStateKeywordsBtn.addEventListener("click", () => {
-            extGStateKeywordsInput.value = ["watermark", "wm", "trans", "opacity", "gs", "alpha", "blend", "adbe", "adobe"].join(", ");
+            extGStateKeywordsInput.value = ["watermark", "wm", "trans", "opacity", "shuiyin"].join(", ");
             extGStateKeywordsUseRegexInput.checked = true;
             extGStateKeywordsExactMatchInput.checked = false;
             addStatusMessage("已將 ExtGState 關鍵字設定重置為預設值（Regex 比對模式已啟用），點擊套用即可生效。", "info");
@@ -1449,6 +1635,234 @@
             }
         });
 
+        // ==========================================
+        // 表單外部物件 Form XObject Modal 初始化與事件
+        // ==========================================
+
+        // 開啟 Modal
+        openFormXObjectKeywordsModalBtn.addEventListener("click", () => {
+            const container = document.getElementById("formXObjectListContainer");
+            const desc = document.getElementById("formXObjectModalDesc");
+            if (container) {
+                container.innerHTML = "";
+                if (detectedFormXObjects.size === 0) {
+                    if (desc) desc.style.display = "none";
+                    container.innerHTML = `
+                        <div class="no-annots-card">
+                            <div class="no-annots-icon">📄</div>
+                            <p class="no-annots-text">未解析出可選擇的表單外部物件內容。</p>
+                        </div>
+                    `;
+                    resetFormXObjectBtn.disabled = true;
+                    applyFormXObjectKeywordsBtn.disabled = true;
+                } else {
+                    if (desc) desc.style.display = "block";
+                    resetFormXObjectBtn.disabled = false;
+                    applyFormXObjectKeywordsBtn.disabled = false;
+                    let index = 0;
+                    detectedFormXObjects.forEach((entry, rawText) => {
+                        const isChecked = formXObjectsToDestroy.includes(rawText);
+                        const label = document.createElement("label");
+                        label.className = "annot-checkbox-label";
+
+                        const input = document.createElement("input");
+                        input.type = "checkbox";
+                        input.name = "formXObjectItem";
+                        input.value = index.toString();
+                        input.checked = isChecked;
+                        input.className = "annot-checkbox-input";
+                        input.dataset.rawText = rawText;
+
+                        label.appendChild(input);
+
+                        // 組合顯示文字，包含頁數標記
+                        const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
+                        label.appendChild(document.createTextNode(entry.previewText + pageLabel));
+                        container.appendChild(label);
+                        index++;
+                    });
+                }
+            }
+            formXObjectKeywordsModal.classList.add("active");
+        });
+
+        // 關閉 Modal
+        closeFormXObjectKeywordsModalBtn.addEventListener("click", () => {
+            formXObjectKeywordsModal.classList.remove("active");
+        });
+
+        // 回復預設值
+        resetFormXObjectBtn.addEventListener("click", () => {
+            const container = document.getElementById("formXObjectListContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="formXObjectItem"]');
+                checkboxes.forEach(cb => {
+                    const rawText = cb.dataset.rawText;
+                    if (rawText !== undefined) {
+                        const entry = detectedFormXObjects.get(rawText);
+                        const previewText = entry ? entry.previewText : "";
+                        cb.checked = isSuspectedWatermark(previewText) || isSuspectedWatermark(rawText);
+                    }
+                });
+                addStatusMessage("已將當前檔案中的表單外部物件清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。", "info");
+            }
+        });
+
+        // 套用設定
+        applyFormXObjectKeywordsBtn.addEventListener("click", () => {
+            const container = document.getElementById("formXObjectListContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="formXObjectItem"]');
+                formXObjectsToDestroy = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked && cb.dataset.rawText !== undefined) {
+                        formXObjectsToDestroy.push(cb.dataset.rawText);
+                    }
+                });
+                addStatusMessage(`已選擇套用清理 ${formXObjectsToDestroy.length} 個表單外部物件。`, "success");
+            }
+            formXObjectKeywordsModal.classList.remove("active");
+        });
+
+        // ==========================================
+        // 註解物件 (Annotation) 客製化過濾 Modal 初始化與事件
+        // ==========================================
+        const annotSubtypeMeta = {
+            "Watermark": { label: "浮水印 (Watermark)", defaultDestroy: true, color: "inherit" },
+            "Stamp": { label: "蓋印與圖章 (Stamp)", defaultDestroy: true, color: "inherit" },
+            "Text": { label: "文字附註 (Text)", defaultDestroy: false, color: "inherit" },
+            "Popup": { label: "彈出說明視窗 (Popup)", defaultDestroy: false, color: "inherit" },
+            "FreeText": { label: "打字機文字 (FreeText)", defaultDestroy: false, color: "inherit" },
+            "Highlight": { label: "螢光筆標註 (Highlight)", defaultDestroy: false, color: "inherit" },
+            "Underline": { label: "底線標註 (Underline)", defaultDestroy: false, color: "inherit" },
+            "StrikeOut": { label: "刪除線標註 (StrikeOut)", defaultDestroy: false, color: "inherit" },
+            "Squiggly": { label: "波浪線標註 (Squiggly)", defaultDestroy: false, color: "inherit" },
+            "Ink": { label: "手繪塗鴉 (Ink)", defaultDestroy: false, color: "inherit" },
+            "Line": { label: "線條與箭頭標註 (Line)", defaultDestroy: false, color: "inherit" },
+            "Square": { label: "矩形框標註 (Square)", defaultDestroy: false, color: "inherit" },
+            "Circle": { label: "圓形框標註 (Circle)", defaultDestroy: false, color: "inherit" },
+            "Polygon": { label: "多邊形標註 (Polygon)", defaultDestroy: false, color: "inherit" },
+            "PolyLine": { label: "折線標註 (PolyLine)", defaultDestroy: false, color: "inherit" },
+            "Link": { label: "網頁與目錄超連結 (Link)", defaultDestroy: false, color: "var(--primary)" },
+            "Widget": { label: "表單欄位與電子簽章 (Widget)", defaultDestroy: false, color: "var(--primary)" }
+        };
+
+        // 開啟 Modal
+        openAnnotsSettingsModalBtn.addEventListener("click", () => {
+            const container = document.getElementById("annotsSubtypesContainer");
+            const desc = document.getElementById("annotsModalDesc");
+            if (container) {
+                container.innerHTML = "";
+
+                if (detectedAnnotations.size === 0) {
+                    if (desc) desc.style.display = "none";
+                    container.innerHTML = `
+                        <div class="no-annots-card">
+                            <div class="no-annots-icon">📄</div>
+                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何註解物件，無需進行設定。</p>
+                        </div>
+                    `;
+                    resetAnnotsSettingsBtn.disabled = true;
+                    applyAnnotsSettingsBtn.disabled = true;
+                } else {
+                    if (desc) desc.style.display = "block";
+                    resetAnnotsSettingsBtn.disabled = false;
+                    applyAnnotsSettingsBtn.disabled = false;
+
+                    // 將偵測到的註解個體排序：
+                    // 1. 優先按頁碼升冪排序
+                    // 2. 同一頁內，將 Link 與 Widget 排在最後
+                    // 3. 其餘按 Subtype 字母與預覽文字排序
+                    const sortedAnnots = Array.from(detectedAnnotations.entries()).sort((a, b) => {
+                        const annotA = a[1];
+                        const annotB = b[1];
+
+                        if (annotA.page !== annotB.page) {
+                            return annotA.page - annotB.page;
+                        }
+
+                        const isSpecialA = (annotA.subtype === "Link" || annotA.subtype === "Widget");
+                        const isSpecialB = (annotB.subtype === "Link" || annotB.subtype === "Widget");
+                        if (isSpecialA && !isSpecialB) return 1;
+                        if (!isSpecialA && isSpecialB) return -1;
+
+                        if (annotA.subtype !== annotB.subtype) {
+                            return annotA.subtype.localeCompare(annotB.subtype);
+                        }
+                        return annotA.previewText.localeCompare(annotB.previewText);
+                    });
+
+                    sortedAnnots.forEach(([annotRefStr, annot]) => {
+                        const meta = annotSubtypeMeta[annot.subtype];
+                        const labelText = meta ? meta.label : `/${annot.subtype}`;
+                        const textColor = meta ? meta.color : "inherit";
+                        const isChecked = annotsToDestroy.includes(annotRefStr);
+
+                        const label = document.createElement("label");
+                        label.className = "annot-checkbox-label";
+                        if (textColor !== "inherit") {
+                            label.style.color = textColor;
+                        }
+
+                        const input = document.createElement("input");
+                        input.type = "checkbox";
+                        input.name = "annotItem";
+                        input.value = annotRefStr;
+                        input.checked = isChecked;
+                        input.className = "annot-checkbox-input";
+
+                        label.appendChild(input);
+
+                        // 建立顯示文字：若有內容文字則包含引號，並皆加上頁碼標記
+                        const contentDisplay = annot.previewText ? ` "${annot.previewText}"` : "";
+                        const pageLabel = ` (第 ${annot.page} 頁)`;
+                        label.appendChild(document.createTextNode(`[${labelText}]${contentDisplay}${pageLabel}`));
+
+                        container.appendChild(label);
+                    });
+                }
+            }
+            annotsSettingsModal.classList.add("active");
+        });
+
+        // 關閉 Modal
+        closeAnnotsSettingsModalBtn.addEventListener("click", () => {
+            annotsSettingsModal.classList.remove("active");
+        });
+
+        // 回復預設值
+        resetAnnotsSettingsBtn.addEventListener("click", () => {
+            const container = document.getElementById("annotsSubtypesContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="annotItem"]');
+                checkboxes.forEach(cb => {
+                    const annotRefStr = cb.value;
+                    const annot = detectedAnnotations.get(annotRefStr);
+                    if (annot) {
+                        cb.checked = (annot.subtype === "Watermark" || annot.subtype === "Stamp");
+                    }
+                });
+                addStatusMessage("已將當前檔案中的註解清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。", "info");
+            }
+        });
+
+        // 套用設定
+        applyAnnotsSettingsBtn.addEventListener("click", () => {
+            const container = document.getElementById("annotsSubtypesContainer");
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[name="annotItem"]');
+                annotsToDestroy = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        annotsToDestroy.push(cb.value);
+                    }
+                });
+
+                annotsSettingsModal.classList.remove("active");
+                addStatusMessage(`已成功套用註解清理設定！共選定清理 ${annotsToDestroy.length} 個註解物件實例。`, "success");
+            }
+        });
+
         // Before & After 預覽元件
         const previewContainer = document.getElementById("previewContainer");
         const originalPreview = document.getElementById("originalPreview");
@@ -1464,6 +1878,7 @@
         let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
         let lastSuccessPassword = null;  // 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存）
+        let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解物件實例
 
         /**
          * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
@@ -1490,6 +1905,28 @@
 
             // 5. 隱藏開始處理按鈕
             processButton.classList.add("hidden");
+
+            // 6. 重置偵測到的註解類型與刪除清單
+            detectedAnnotations.clear();
+            annotsToDestroy = [];
+            detectedFormXObjects.clear();
+            formXObjectsToDestroy = [];
+            detectedDirectContents.clear();
+            directContentsToDestroy = [];
+
+            // 7. 隱藏清理策略選項區塊
+            const optionsContainer = document.getElementById("optionsContainer");
+            if (optionsContainer) {
+                optionsContainer.classList.add("hidden");
+            }
+
+            // 8. 重置所有清理策略為預設不勾選
+            document.getElementById("removeFormXObject").checked = false;
+            document.getElementById("removeAnnotations").checked = false;
+            document.getElementById("removeDirectContent").checked = false;
+            document.getElementById("removeExtGState").checked = false;
+            document.getElementById("removeOCG").checked = false;
+            document.getElementById("removeImageXObject").checked = false;
         }
 
         /**
@@ -1589,6 +2026,273 @@
                 }
             }
 
+            // 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件 (Annots, XObject, ExtGState, OCG, Contents)
+            let hasFormXObject = false;
+            let hasImageXObject = false;
+            let hasExtGState = false;
+            let hasOCG = false;
+            let hasDirectContent = false;
+
+            if (!needsPassword || decryptedSuccessfully) {
+                try {
+                    const scanDoc = await PDFDocument.load(previewBytes, { updateMetadata: false });
+                    detectedAnnotations.clear();
+
+                    // Check OCG
+                    if (scanDoc.catalog.has(PDFName.of("OCProperties"))) {
+                        hasOCG = true;
+                    }
+
+                    const pageCount = scanDoc.getPageCount();
+                    for (let i = 0; i < pageCount; i++) {
+                        const page = scanDoc.getPage(i);
+
+                        // Check Annots
+                        const annots = page.node.lookup(PDFName.of("Annots"));
+                        if (annots instanceof PDFArray) {
+                            for (let idx = 0; idx < annots.size(); idx++) {
+                                const annotRef = annots.get(idx);
+                                const annot = scanDoc.context.lookup(annotRef);
+                                if (annot instanceof PDFDict) {
+                                    const subtype = scanDoc.context.lookup(annot.get(PDFName.of("Subtype")));
+                                    if (subtype instanceof PDFName) {
+                                        const subtypeStr = subtype.toString().replace(/^\//, "");
+                                        const annotRefStr = annotRef.toString();
+
+                                        // 萃取內文 /Contents
+                                        let previewText = "";
+                                        const contentsObj = scanDoc.context.lookup(annot.get(PDFName.of("Contents")));
+                                        if (contentsObj instanceof PDFString || contentsObj instanceof PDFHexString) {
+                                            try {
+                                                previewText = contentsObj.decodeText();
+                                            } catch (e) {
+                                                previewText = contentsObj.toString();
+                                            }
+                                        }
+
+                                        // 限制顯示長度
+                                        if (previewText.length > 50) {
+                                            previewText = previewText.substring(0, 50) + "...";
+                                        }
+
+                                        detectedAnnotations.set(annotRefStr, {
+                                            subtype: subtypeStr,
+                                            previewText: previewText,
+                                            page: i + 1,
+                                            ref: annotRef
+                                        });
+
+                                        // 如果 subtype 是 Watermark 或 Stamp，預設勾選
+                                        if (subtypeStr === "Watermark" || subtypeStr === "Stamp") {
+                                            if (!annotsToDestroy.includes(annotRefStr)) {
+                                                annotsToDestroy.push(annotRefStr);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check Resources
+                        const resourcesNode = page.node.lookup(PDFName.of("Resources"));
+                        if (resourcesNode) {
+                            const resources = scanDoc.context.lookup(resourcesNode);
+                            if (resources instanceof PDFDict) {
+                                const xObjectsNode = resources.get(PDFName.of("XObject"));
+                                if (xObjectsNode) {
+                                    const xObjects = scanDoc.context.lookup(xObjectsNode);
+                                    if (xObjects instanceof PDFDict) {
+                                        for (const key of xObjects.keys()) {
+                                            const xObj = scanDoc.context.lookup(xObjects.get(key));
+                                            const subtype = xObj instanceof PDFRawStream ? scanDoc.context.lookup(xObj.dict.get(PDFName.of("Subtype"))) : null;
+                                            if (subtype instanceof PDFName) {
+                                                if (subtype.toString() === "/Form") {
+                                                    hasFormXObject = true;
+                                                    if (xObj instanceof PDFRawStream) {
+                                                        try {
+                                                            const data = xObj.getContents();
+                                                            const rawStr = decodeBinaryToText(data);
+                                                            if (!detectedFormXObjects.has(rawStr)) {
+                                                                const textMatches = rawStr.match(/\((.*?)\)/g);
+                                                                let previewText = "";
+                                                                if (textMatches) {
+                                                                    previewText = textMatches.map(m => {
+                                                                        const inner = m.slice(1, -1);
+                                                                        try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
+                                                                    }).join(' ').trim();
+                                                                }
+                                                                const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
+                                                                if (hexMatches && !previewText) {
+                                                                    previewText = hexMatches.map(m => {
+                                                                        const inner = m.slice(1, -1);
+                                                                        try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
+                                                                    }).join(' ').trim();
+                                                                }
+
+                                                                // 檢查是否包含過多無法顯示的編碼字元 (如 Identity-H)
+                                                                let validCount = 0;
+                                                                for (let i = 0; i < previewText.length; i++) {
+                                                                    const code = previewText.charCodeAt(i);
+                                                                    // 允許標準 ASCII 可列印字元 (32-126) 及常見空白字元
+                                                                    const isAscii = (code >= 32 && code <= 126);
+                                                                    const isWhitespace = (code === 9 || code === 10 || code === 13);
+                                                                    // 允許常見 CJK、注音、全形標點符號範圍
+                                                                    const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
+                                                                    if (isAscii || isWhitespace || isCjk) {
+                                                                        validCount++;
+                                                                    }
+                                                                }
+                                                                if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
+                                                                    previewText = "[自訂編碼字元 " + key.value() + "]";
+                                                                }
+
+                                                                if (!previewText) previewText = key.value();
+                                                                if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
+
+                                                                detectedFormXObjects.set(rawStr, { previewText: previewText, pages: [i + 1] });
+                                                                if (isSuspectedWatermark(previewText) || isSuspectedWatermark(key.value())) {
+                                                                    formXObjectsToDestroy.push(rawStr);
+                                                                }
+                                                            } else {
+                                                                const entry = detectedFormXObjects.get(rawStr);
+                                                                if (entry && !entry.pages.includes(i + 1)) {
+                                                                    entry.pages.push(i + 1);
+                                                                }
+                                                            }
+                                                        } catch (e) { }
+                                                    }
+                                                }
+                                                if (subtype.toString() === "/Image") hasImageXObject = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                const extGStateNode = resources.get(PDFName.of("ExtGState"));
+                                if (extGStateNode) {
+                                    const extGState = scanDoc.context.lookup(extGStateNode);
+                                    if (extGState instanceof PDFDict) {
+                                        hasExtGState = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check Direct Content
+                        const contents = scanDoc.context.lookup(page.node.lookup(PDFName.of("Contents")));
+                        if (contents) {
+                            const streams = [];
+                            if (contents instanceof PDFArray) {
+                                for (let idx = 0; idx < contents.size(); idx++) {
+                                    streams.push({ item: contents.lookup(idx), index: idx });
+                                }
+                            } else {
+                                streams.push({ item: contents, index: null });
+                            }
+
+                            streams.forEach(entry => {
+                                const stream = entry.item;
+                                if (stream instanceof PDFRawStream) {
+                                    let streamRef = null;
+                                    if (contents instanceof PDFArray) {
+                                        streamRef = contents.get(entry.index);
+                                    } else {
+                                        streamRef = page.node.get(PDFName.of("Contents"));
+                                    }
+
+                                    if (streamRef) {
+                                        const refStr = streamRef.toString();
+                                        try {
+                                            const data = stream.getContents();
+                                            const rawStr = new TextDecoder("utf-8", { fatal: false }).decode(data);
+
+                                            // 解析預覽文字
+                                            const textMatches = rawStr.match(/\((.*?)\)/g);
+                                            let previewText = "";
+                                            if (textMatches) {
+                                                previewText = textMatches.map(m => {
+                                                    const inner = m.slice(1, -1);
+                                                    try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
+                                                }).join(' ').trim();
+                                            }
+                                            const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
+                                            if (hexMatches && !previewText) {
+                                                previewText = hexMatches.map(m => {
+                                                    const inner = m.slice(1, -1);
+                                                    try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
+                                                }).join(' ').trim();
+                                            }
+
+                                            // 檢查是否包含過多無法顯示的編碼字元
+                                            let validCount = 0;
+                                            for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
+                                                const code = previewText.charCodeAt(cIdx);
+                                                const isAscii = (code >= 32 && code <= 126);
+                                                const isWhitespace = (code === 9 || code === 10 || code === 13);
+                                                const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
+                                                if (isAscii || isWhitespace || isCjk) {
+                                                    validCount++;
+                                                }
+                                            }
+                                            if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
+                                                previewText = `[自訂編碼字元]`;
+                                            }
+
+                                            if (!previewText) {
+                                                previewText = `[嵌入內容流 (大小: ${data.length} bytes)]`;
+                                            }
+                                            if (previewText.length > 50) {
+                                                previewText = previewText.substring(0, 50) + "...";
+                                            }
+
+                                            detectedDirectContents.set(refStr, {
+                                                previewText: previewText,
+                                                page: i + 1,
+                                                ref: streamRef,
+                                                rawText: rawStr
+                                            });
+
+                                            // 預設勾選：如果預覽文字或 rawText 中符合 suspect keywords，則預先標記
+                                            if (isSuspectedWatermark(previewText) || isSuspectedWatermark(rawStr)) {
+                                                if (!directContentsToDestroy.includes(refStr)) {
+                                                    directContentsToDestroy.push(refStr);
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.error("Direct content parse error", e);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    console.log("背景掃描完成，偵測到註解數量：", detectedAnnotations.size, "，嵌入內容流數量：", detectedDirectContents.size);
+                } catch (scanErr) {
+                    console.error("背景掃描類型失敗", scanErr);
+                }
+            }
+
+            // 更新 UI 選項顯示狀態
+            const optionsContainer = document.getElementById('optionsContainer');
+            if (!needsPassword || decryptedSuccessfully) {
+                document.getElementById('optionRowFormXObject').classList.toggle('hidden', !hasFormXObject);
+                document.getElementById('optionRowAnnotations').classList.toggle('hidden', detectedAnnotations.size === 0);
+                document.getElementById('optionRowDirectContent').classList.toggle('hidden', detectedDirectContents.size === 0);
+                document.getElementById('optionRowExtGState').classList.toggle('hidden', !hasExtGState);
+                document.getElementById('optionRowOCG').classList.toggle('hidden', !hasOCG);
+                document.getElementById('optionRowImageXObject').classList.toggle('hidden', !hasImageXObject);
+
+                const anyOption = hasFormXObject || detectedAnnotations.size > 0 || detectedDirectContents.size > 0 || hasExtGState || hasOCG || hasImageXObject;
+                if (anyOption) {
+                    optionsContainer.classList.remove('hidden');
+                } else {
+                    optionsContainer.classList.add('hidden');
+                    addStatusMessage("掃描完成：未偵測到常見的浮水印特徵物件。", "info");
+                }
+            } else {
+                if (optionsContainer) optionsContainer.classList.add('hidden');
+            }
+
             // 3. 建立 Blob URL 並顯示預覽
             const blob = new Blob([previewBytes], { type: "application/pdf" });
             originalUrl = URL.createObjectURL(blob);
@@ -1603,6 +2307,21 @@
                 processButton.classList.remove("hidden");
             }
         }
+
+        /**
+         * 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
+         * @param {Uint8Array} data 
+         * @returns {string}
+         */
+        function decodeBinaryToText(data) {
+            let str = "";
+            const chunkSize = 16384;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                str += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));
+            }
+            return str;
+        }
+
 
         // 監聽傳統點擊選擇檔案事件
         fileInput.addEventListener("change", (event) => {
@@ -1945,15 +2664,30 @@
                         continue;
                     }
 
-                    // 替換為空 Form，但必須保留 BBox 等定位參數以防渲染引擎出錯
-                    const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
-                        "BBox",
-                        "Matrix",
-                        "Group",
-                        "Resources",
-                    ]);
-                    xObjects.set(key, blankedStream);
-                    count += 1;
+                    let shouldRemove = false;
+                    if (xObject instanceof PDFRawStream) {
+                        try {
+                            const data = xObject.getContents();
+                            const rawStr = decodeBinaryToText(data);
+                            if (formXObjectsToDestroy.includes(rawStr)) {
+                                shouldRemove = true;
+                            }
+                        } catch (err) {
+                            console.error("Form XObject 解碼失敗", err);
+                        }
+                    }
+
+                    if (shouldRemove) {
+                        // 替換為空 Form，但必須保留 BBox 等定位參數以防渲染引擎出錯
+                        const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
+                            "BBox",
+                            "Matrix",
+                            "Group",
+                            "Resources",
+                        ]);
+                        xObjects.set(key, blankedStream);
+                        count += 1;
+                    }
                 }
             }
             return count;
@@ -1970,15 +2704,38 @@
         function removeAnnotations(page) {
             const annotsKey = PDFName.of("Annots");
             const annots = page.node.lookup(annotsKey);
-            if (annots instanceof PDFArray) {
-                const count = annots.size();
-                page.node.delete(annotsKey);
-                return count > 0 ? count : 1;
-            } else if (page.node.has(annotsKey)) {
-                page.node.delete(annotsKey);
-                return 1;
+            if (!(annots instanceof PDFArray)) {
+                if (page.node.has(annotsKey)) {
+                    // 若存在但不是 Array，保險起見物理刪除
+                    page.node.delete(annotsKey);
+                    return 1;
+                }
+                return 0;
             }
-            return 0;
+
+            const context = page.node.context;
+            const newAnnots = context.obj([]);
+            let removedCount = 0;
+
+            for (let idx = 0; idx < annots.size(); idx += 1) {
+                const annotRef = annots.get(idx);
+                const annotRefStr = annotRef.toString();
+
+                if (annotsToDestroy.includes(annotRefStr)) {
+                    removedCount += 1;
+                } else {
+                    newAnnots.push(annotRef);
+                }
+            }
+
+            // 更新頁面的註解欄位
+            if (newAnnots.size() === 0) {
+                page.node.delete(annotsKey);
+            } else {
+                page.node.set(annotsKey, newAnnots);
+            }
+
+            return removedCount;
         }
 
         /**
@@ -1992,50 +2749,41 @@
          * @returns {number} 處理掉的 Direct Content 流數量
          */
         function removeDirectContent(pdfDoc, page) {
-            const contents = pdfDoc.context.lookup(page.node.get(PDFName.of("Contents")));
+            const contentsKey = PDFName.of("Contents");
+            const contents = pdfDoc.context.lookup(page.node.get(contentsKey));
             if (!contents) return 0;
 
-            // 彙整該頁面所有的內容流物件（可能是單個 Stream，也可能是 Stream 陣列）
-            const streams = [];
+            let count = 0;
             if (contents instanceof PDFArray) {
                 for (let idx = 0; idx < contents.size(); idx += 1) {
-                    streams.push({ item: contents.lookup(idx), index: idx });
-                }
-            } else {
-                streams.push({ item: contents, index: null });
-            }
+                    const streamRef = contents.get(idx);
+                    const streamRefStr = streamRef.toString();
 
-            let count = 0;
-            streams.forEach((entry) => {
-                const stream = entry.item;
-                if (!(stream instanceof PDFRawStream)) return;
-
-                try {
-                    // 1. 取得解壓後的明文二進位位元陣列
-                    const data = stream.getContents();
-                    // 2. 進行 UTF-8 解碼，fatal: false 容錯處理以防止未知亂碼編碼引發 JS 崩潰
-                    const text = new TextDecoder("utf-8", { fatal: false }).decode(data);
-
-                    // 3. 比對特徵關鍵字
-                    const containsTriggerWord = matchKeyword(text, userTriggerWords, triggerWordsUseRegex, triggerWordsExactMatch);
-                    if (containsTriggerWord) {
+                    if (directContentsToDestroy.includes(streamRefStr)) {
                         // 建立一個完全乾淨的空字典，只包含 Length=0，不殘留舊的 /Filter 等壓縮格式，確保 PDF 合規性
                         const emptyDict = pdfDoc.context.obj({});
                         const emptyStream = pdfDoc.context.stream(new Uint8Array(), emptyDict);
                         const ref = pdfDoc.context.register(emptyStream);
-
-                        // 寫回 PDF 結構樹
-                        if (entry.index === null) {
-                            page.node.set(PDFName.of("Contents"), ref);
-                        } else {
-                            contents.set(entry.index, ref);
-                        }
+                        
+                        contents.set(idx, ref);
                         count += 1;
                     }
-                } catch (error) {
-                    console.error("Direct content scan failed", error);
                 }
-            });
+            } else {
+                const streamRef = page.node.get(contentsKey);
+                if (streamRef) {
+                    const streamRefStr = streamRef.toString();
+                    if (directContentsToDestroy.includes(streamRefStr)) {
+                        // 建立一個完全乾淨的空字典，只包含 Length=0，不殘留舊的 /Filter 等壓縮格式，確保 PDF 合規性
+                        const emptyDict = pdfDoc.context.obj({});
+                        const emptyStream = pdfDoc.context.stream(new Uint8Array(), emptyDict);
+                        const ref = pdfDoc.context.register(emptyStream);
+                        
+                        page.node.set(contentsKey, ref);
+                        count += 1;
+                    }
+                }
+            }
             return count;
         }
 
@@ -2068,10 +2816,10 @@
          * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
          * OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
          * 找到所有的圖層清單 (/OCGs Array)，比對圖層名稱解碼後的字串。
-         * 若符合，則將該 OCG 圖層的 Name 清空使其失效，達到隱藏消除的目的。
+         * 若符合，則將該 OCG 圖層的 Reference 加入到 /D (Default View) 字典的 /OFF 陣列中，以達到隱藏的效果。
          * 
          * @param {PDFDocument} pdfDoc - PDF 文件物件
-         * @returns {number} 清除的 OCG 圖層數量
+         * @returns {number} 隱藏的 OCG 圖層數量
          */
         function removeOCG(pdfDoc) {
             const ocPropertiesRef = pdfDoc.catalog.get(PDFName.of("OCProperties"));
@@ -2086,9 +2834,28 @@
             const ocgs = pdfDoc.context.lookup(ocgsRef);
             if (!(ocgs instanceof PDFArray)) return 0;
 
+            // 獲取 Default View (D) 字典
+            let dDictRef = ocProperties.get(PDFName.of("D"));
+            let dDict = pdfDoc.context.lookup(dDictRef);
+
+            // 如果沒有 D 字典，為了確保不破壞結構，若有需要再創建，或乾脆直接跳過，通常會有 D 字典
+            if (!(dDict instanceof PDFDict)) {
+                return 0;
+            }
+
+            // 確保有 OFF 陣列
+            let offArrayRef = dDict.get(PDFName.of("OFF"));
+            let offArray = pdfDoc.context.lookup(offArrayRef);
+            if (!(offArray instanceof PDFArray)) {
+                offArray = pdfDoc.context.obj([]);
+                dDict.set(PDFName.of("OFF"), offArray);
+            }
+
             let count = 0;
             for (let idx = 0; idx < ocgs.size(); idx += 1) {
-                const ocg = ocgs.lookup(idx);
+                const ocgRef = ocgs.get(idx); // 需要存 reference 來加到 OFF array 裡
+                const ocg = pdfDoc.context.lookup(ocgRef);
+
                 if (!(ocg instanceof PDFDict)) continue;
                 // OCG 名稱可能是普通 String，也可能是 HexString 二進位十六進位編碼，在此進行解包相容
                 const nameObject = ocg.lookup(PDFName.of("Name"));
@@ -2097,9 +2864,19 @@
                 // 解碼名稱明文
                 const name = nameObject.decodeText();
                 if (matchKeyword(name, ocgKeywords, ocgKeywordsUseRegex, ocgKeywordsExactMatch)) {
-                    // 清空圖層名稱，使其失效不顯示
-                    ocg.set(PDFName.of("Name"), PDFString.of(""));
-                    count += 1;
+                    // 檢查該圖層是否已經在 OFF 陣列中
+                    let isAlreadyOff = false;
+                    for (let offIdx = 0; offIdx < offArray.size(); offIdx++) {
+                        if (offArray.get(offIdx) === ocgRef) {
+                            isAlreadyOff = true;
+                            break;
+                        }
+                    }
+
+                    if (!isAlreadyOff) {
+                        offArray.push(ocgRef);
+                        count += 1;
+                    }
                 }
             }
             return count;

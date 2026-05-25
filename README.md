@@ -14,12 +14,12 @@
 
 ### 1. 六種清理策略
 工具提供以下六種常見 PDF 物件的掃描與清理選項：
-- **移除背景浮水印 (Form XObject)**：移除封裝在獨立子畫布中的向量或文字型浮水印，為最常見的浮水印格式。
-- **移除疊加註解 (Annots)**：移除覆蓋在文件上層的 PDF 標記、電子印章或附註型浮水印。
-- **掃描並清除嵌入內容 (Direct Content)**：若浮水印直接寫入頁面內容流，可透過自訂的關鍵字比對並清除命中內容。
-- **清理半透明效果 (ExtGState)**：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。
-- **清除浮水印圖層 (OCG)**：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。
-- **移除圖片型浮水印 (Image XObject)**：若浮水印為圖片形式，可透過自訂命名關鍵字比對 XObject 名稱並予以清除。
+- **移除表單外部物件 (Form XObject)**：移除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印）。提供**「精準過濾模式」**（預設，會解壓縮物件內部繪圖指令並比對關鍵字以防誤刪 Logo）與**「強力清除模式」**（會強制刪除所有 Form XObject 向量圖形）。
+- **移除註解物件 (Annotation)**：提供**「註解個體客製化過濾」**設定彈窗，列出 PDF 中每一個具體的註解實例並標記所在頁碼與解碼文字內容，允許自由勾選要清除的個別實例，並預設自動預勾選最常作為浮水印的 `Watermark`（浮水印）與 `Stamp`（蓋印與圖章），同時保留其他如「超連結」與「互動表單」不被破壞。
+- **掃描並清除嵌入內容 (Direct Content)**：提供**「嵌入內容流個體客製化過濾」**設定彈窗，偵測並列出 PDF 每一頁中的嵌入內容流（Content Stream）實例並標記頁碼與解碼文字內容，允許自由勾選要清除的個別嵌入內容流實例（預設自動預勾選疑似浮水印的串流），**能極大程度地防止因誤判而導致整頁正常正文一併被清除變白**。
+- **清理半透明效果 (ExtGState)**：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂「內部資源代號」進行過濾。
+- **清除浮水印圖層 (OCG)**：若浮水印定義在特定的選用內容圖層（Optional Content Group）中，可透過自訂關鍵字比對圖層名稱並將其隱藏。
+- **移除圖片型浮水印 (Image XObject)**：若浮水印為圖片形式，可透過自訂「內部資源代號」關鍵字 (例如 `/Im1` 等) 進行比對並予以清除。
 
 ### 2. 雙欄對照預覽（Before & After）
 
@@ -34,16 +34,17 @@
 
 ### 4. 進階比對與過濾模式 (持久化儲存)
 
-為了避免誤刪正常文件內容，工具為四大清理策略提供自訂關鍵字，並支援 `localStorage` 自動儲存設定，提供三種匹配模式（設定視窗中可獨立切換）：
+為了避免誤刪正常文件內容，工具為五大清理策略提供自訂關鍵字，並支援 `localStorage` 自動儲存設定，提供三種匹配模式（設定視窗中可獨立切換）：
 *   **包含匹配 (Includes)**：PDF 物件名稱或內容文字包含關鍵字即清除，最為通用。
 *   **完全匹配 (Exact)**：物件名稱必須完全符合關鍵字，防範誤刪正常的同名前綴插圖。
 *   **正規表示式 (Regex)**：預設啟用。支援複雜正則比對，適合清理序列化或動態特徵的物件。
 *   **回復預設值**：各設定彈窗提供「回復預設值」按鈕，可一鍵還原官方預設參數並啟用 Regex 模式。
 
 #### 關鍵字預設值：
+*   **表單外部物件 (Form XObject)**：`watermark`, `wm`, `confidential`, `draft`, `sample`, `internal`, `copy`, `trial`, `evaluation`, `demo`, `機密`, `內部`, `草稿`, `樣本`, `樣品`, `複製品`, `浮水印`, `水印`, `僅供參考`
 *   **掃描特徵 (Direct Content)**：`watermark`, `wm`, `confidential`, `draft`, `sample`, `internal`, `copy`, `trial`, `evaluation`, `demo`, `機密`, `內部`, `草稿`, `樣本`, `樣品`, `複製品`, `浮水印`, `水印`, `僅供參考`
-*   **圖片命名 (Image XObject)**：`watermark`, `wm`, `stamp`, `logo`, `bg`, `background`, `sign`, `signature`, `shuiyin`
-*   **ExtGState (半透明度)**：`watermark`, `wm`, `trans`, `opacity`, `gs`, `alpha`, `blend`, `adbe`, `adobe`
+*   **內部圖片代號 (Image XObject)**：`watermark`, `wm`, `stamp`, `logo`, `bg`, `background`, `sign`, `signature`, `shuiyin`
+*   **ExtGState (半透明度)**：`watermark`, `wm`, `trans`, `opacity`, `shuiyin`
 *   **OCG (圖層名稱)**：`watermark`, `wm`, `layer`, `stamp`, `print`, `overlay`, `shuiyin`, `浮水印`, `水印`
 
 ### 5. 密碼安全機制
