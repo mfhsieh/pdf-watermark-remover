@@ -752,15 +752,15 @@
                     <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的表單外部物件"
                         aria-label="選擇欲清除的表單外部物件">⚙</button>
                 </div>
-                <!-- Annotations：各種註解物件（印章、附註等） -->
+                <!-- Annotations：各種註解（印章、附註等） -->
                 <div class="option-row" id="optionRowAnnotations">
-                    <label><input type="checkbox" id="removeAnnotations" /> 移除註解物件 (Annotation)</label>
+                    <label><input type="checkbox" id="removeAnnotations" /> 移除註解 (Annotation)</label>
                     <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定註解清理類型"
                         aria-label="設定註解清理類型">⚙</button>
                 </div>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row" id="optionRowDirectContent">
-                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除嵌入內容 (Direct Content)</label>
+                    <label><input type="checkbox" id="removeDirectContent" /> 掃描並清除頁面直接內容 (Direct Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定特徵關鍵字"
                         aria-label="設定特徵關鍵字">⚙</button>
                 </div>
@@ -821,8 +821,8 @@
                     <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
                         <li><strong>移除表單外部物件 (Form XObject)</strong>：移除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印格式）。</li>
-                        <li><strong>移除註解物件 (Annotation)</strong>：移除覆蓋在文件上層的各種標記、電子印章或附註型物件。</li>
-                        <li><strong>掃描並清除嵌入內容 (Direct Content)</strong>：若浮水印直接寫入頁面內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
+                        <li><strong>移除註解 (Annotation)</strong>：移除覆蓋在文件上層的各種標記、電子印章或附註型物件。</li>
+                        <li><strong>掃描並清除頁面直接內容 (Direct Content)</strong>：若浮水印直接寫入頁面直接內容流，可根據自訂的特徵關鍵字進行比對並清除命中內容。</li>
                         <li><strong>清理半透明效果 (ExtGState)</strong>：清除透明度設定中與浮水印相關的 ExtGState 物件，並可透過自訂關鍵字比對名稱進行精準過濾。</li>
                         <li><strong>清除浮水印圖層 (OCG)</strong>：若浮水印定義在特定的選用內容圖層（Optional Content
                             Group）中，可透過自訂關鍵字比對圖層名稱並將其失效。</li>
@@ -838,8 +838,8 @@
                     <ol>
                         <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
                         <li><strong>請務必備份原始檔案</strong>：移除浮水印會修改 PDF
-                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。</li>
-                        <li><strong>破壞性操作風險</strong>：部分進階清理策略（如「掃描並清除嵌入內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
+                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遗失。</li>
+                        <li><strong>破壞性操作風險</strong>：部分進階清理策略（如「掃描並清除頁面直接內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
                         <li><strong>合法使用授權</strong>：請確認您擁有該文件移除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因移除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
                         </li>
                     </ol>
@@ -904,12 +904,12 @@
         </div>
     </div>
 
-    <!-- 嵌入內容流 (Direct Content) 設定 Modal -->
+    <!-- 頁面直接內容 (Direct Content) 設定 Modal -->
     <div id="triggerWordsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
-            <h3>⚙ 設定嵌入內容流清理選項</h3>
-            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong class="badge-danger">清除</strong>的嵌入內容流（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
-            <div style="color: var(--danger); font-size: 0.85rem; font-weight: 500; margin-bottom: 12px; line-height: 1.5;">⚠️ 警告：物理清空整個內容流可能導致該流中的正常文字一併消失，請謹慎勾選。</div>
+            <h3>⚙ 設定頁面直接內容清理選項</h3>
+            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+            <div style="color: var(--danger); font-size: 0.85rem; font-weight: 500; margin-bottom: 12px; line-height: 1.5;">⚠️ 警告：物理清空頁面直接內容可能導致該內容中的正常文字一併消失，請謹慎勾選。</div>
 
             <div id="directContentListContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -952,12 +952,12 @@
         </div>
     </div>
 
-    <!-- 註解物件 (Annotation) 設定 Modal -->
+    <!-- 註解 (Annotation) 設定 Modal -->
     <div id="annotsSettingsModal" class="modal-overlay">
         <div class="modal-card" style="max-width: 500px;">
             <h3>⚙ 設定註解清理選項</h3>
             <p id="annotsModalDesc" style="line-height: 1.8;">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的註解物件（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
+                    class="badge-danger">清除</strong>的註解（未勾選的項目將會被<strong class="badge-success">安全保留</strong>）：</p>
 
             <div id="annotsSubtypesContainer"
                 style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
@@ -1131,9 +1131,9 @@
             });
         }
 
-        // 頁面嵌入內容流 (Direct Content) 處理模式設定
+        // 頁面直接內容 (Direct Content) 處理模式設定
         let detectedDirectContents = new Map(); // key = streamRefStr, value = { previewText, page, ref, rawText }
-        let directContentsToDestroy = []; // 儲存選定要清空的嵌入內容流參照字串
+        let directContentsToDestroy = []; // 儲存選定要清空的頁面直接內容參照字串
 
         // 圖片型浮水印典型命名關鍵字與比對模式
         let imageKeywords = loadKeywordList("imageKeywords", ["watermark", "wm", "stamp", "logo", "bg", "background", "sign", "signature", "shuiyin"]);
@@ -1160,7 +1160,7 @@
             return defaultFormXKeywords.some(kw => lower.includes(kw));
         }
 
-        // 要刪除的特定註解物件參照 (annotRefStr) 清單，預設不使用 localStorage 保存
+        // 要刪除的特定註解參照 (annotRefStr) 清單，預設不使用 localStorage 保存
         let annotsToDestroy = [];
 
         /**
@@ -1362,7 +1362,7 @@
         const resetOCGKeywordsBtn = document.getElementById("resetOCGKeywordsBtn");
 
         // ==========================================
-        // 嵌入內容流 (Direct Content) Modal 初始化與事件
+        // 頁面直接內容 (Direct Content) Modal 初始化與事件
         // ==========================================
         
         // 開啟 Modal
@@ -1377,7 +1377,7 @@
                     container.innerHTML = `
                         <div class="no-annots-card">
                             <div class="no-annots-icon">📄</div>
-                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何嵌入內容流。</p>
+                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何頁面直接內容。</p>
                         </div>
                     `;
                     resetTriggerWordsBtn.disabled = true;
@@ -1387,7 +1387,7 @@
                     resetTriggerWordsBtn.disabled = false;
                     applyTriggerWordsBtn.disabled = false;
 
-                    // 排序嵌入內容流實例：
+                    // 排序頁面直接內容實例：
                     // 1. 優先按頁碼升冪排序
                     // 2. 其餘按預覽文字排序
                     const sortedDirects = Array.from(detectedDirectContents.entries()).sort((a, b) => {
@@ -1414,11 +1414,11 @@
                         label.appendChild(input);
 
                         // 組合顯示文字，包含頁數標記
-                        let labelText = `[嵌入內容流]`;
+                        let labelText = `[頁面直接內容]`;
                         if (entry.previewText.startsWith("[")) {
                             labelText = entry.previewText;
                         } else {
-                            labelText = `[嵌入內容流] "${entry.previewText}"`;
+                            labelText = `[頁面直接內容] "${entry.previewText}"`;
                         }
                         labelText += ` (第 ${entry.page} 頁)`;
                         
@@ -1447,7 +1447,7 @@
                         cb.checked = isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.rawText);
                     }
                 });
-                addStatusMessage("已將當前檔案中的嵌入內容流清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。", "info");
+                addStatusMessage("已將當前檔案中的頁面直接內容清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。", "info");
             }
         });
 
@@ -1464,7 +1464,7 @@
                 });
 
                 triggerWordsModal.classList.remove("active");
-                addStatusMessage(`已成功套用嵌入內容流清理設定！共選定清理 ${directContentsToDestroy.length} 個嵌入內容流實例。`, "success");
+                addStatusMessage(`已成功套用頁面直接內容清理設定！共選定清理 ${directContentsToDestroy.length} 個頁面直接內容實例。`, "success");
             }
         });
 
@@ -1725,7 +1725,7 @@
         });
 
         // ==========================================
-        // 註解物件 (Annotation) 客製化過濾 Modal 初始化與事件
+        // 註解 (Annotation) 客製化過濾 Modal 初始化與事件
         // ==========================================
         const annotSubtypeMeta = {
             "Watermark": { label: "浮水印 (Watermark)", defaultDestroy: true, color: "inherit" },
@@ -1759,7 +1759,7 @@
                     container.innerHTML = `
                         <div class="no-annots-card">
                             <div class="no-annots-icon">📄</div>
-                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何註解物件，無需進行設定。</p>
+                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何註解，無需進行設定。</p>
                         </div>
                     `;
                     resetAnnotsSettingsBtn.disabled = true;
@@ -1859,7 +1859,7 @@
                 });
 
                 annotsSettingsModal.classList.remove("active");
-                addStatusMessage(`已成功套用註解清理設定！共選定清理 ${annotsToDestroy.length} 個註解物件實例。`, "success");
+                addStatusMessage(`已成功套用註解清理設定！共選定清理 ${annotsToDestroy.length} 個註解實例。`, "success");
             }
         });
 
@@ -1878,7 +1878,7 @@
         let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
         let lastSuccessPassword = null;  // 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存）
-        let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解物件實例
+        let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解實例
 
         /**
          * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
@@ -2239,7 +2239,7 @@
                                             }
 
                                             if (!previewText) {
-                                                previewText = `[嵌入內容流 (大小: ${data.length} bytes)]`;
+                                                previewText = `[頁面直接內容 (大小: ${data.length} bytes)]`;
                                             }
                                             if (previewText.length > 50) {
                                                 previewText = previewText.substring(0, 50) + "...";
@@ -2266,7 +2266,7 @@
                             });
                         }
                     }
-                    console.log("背景掃描完成，偵測到註解數量：", detectedAnnotations.size, "，嵌入內容流數量：", detectedDirectContents.size);
+                    console.log("背景掃描完成，偵測到註解數量：", detectedAnnotations.size, "，頁面直接內容數量：", detectedDirectContents.size);
                 } catch (scanErr) {
                     console.error("背景掃描類型失敗", scanErr);
                 }
@@ -2615,7 +2615,7 @@
                     modifiedObjects += removeAnnotations(page);
                 }
 
-                // 策略三：清理 Direct Content 內容流
+                // 策略三：清理頁面直接內容 (Direct Content)
                 if (options.removeDirectContent) {
                     modifiedObjects += removeDirectContent(pdfDoc, page);
                 }
@@ -2746,7 +2746,7 @@
          *
          * @param {PDFDocument} pdfDoc - 文件物件
          * @param {PDFPage} page - 頁面物件
-         * @returns {number} 處理掉的 Direct Content 流數量
+         * @returns {number} 處理掉的頁面直接內容 (Direct Content) 數量
          */
         function removeDirectContent(pdfDoc, page) {
             const contentsKey = PDFName.of("Contents");
