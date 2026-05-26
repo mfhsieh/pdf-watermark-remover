@@ -1096,6 +1096,78 @@
             return isSuspectedWatermark(entry.name);
         }
 
+        /**
+         * 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
+         * @param {Uint8Array} data 
+         * @returns {string}
+         */
+        function decodeBinaryToText(data) {
+            let str = "";
+            const chunkSize = 16384;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                str += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));
+            }
+            return str;
+        }
+
+        /**
+         * 從 PDF 內容流的二進位資料中，解碼並提取出可讀的預覽文字，並處理編碼異常與降級 fallback
+         * @param {Uint8Array} data - 內容流的原始二進位資料
+         * @param {Object} options - 設定選項
+         * @param {string} [options.customEncodingLabel=""] - 自訂編碼時顯示的附加標記，如 " Fm1"
+         * @param {string} [options.fallbackText=""] - 沒有文字時降級顯示的文字，例如元件資源名稱或大小說明
+         * @returns {string} 可讀預覽字串（限制長度為 50 字元）
+         */
+        function extractPreviewTextFromRawStream(data, options = {}) {
+            const { customEncodingLabel = "", fallbackText = "" } = options;
+
+            // 統一使用 decodeBinaryToText 進行精確 of 二進位轉字串，防止 TextDecoder 的 UTF-8 替代字元干擾正則比對
+            const rawStr = decodeBinaryToText(data);
+
+            const textMatches = rawStr.match(/\((.*?)\)/g);
+            let previewText = "";
+            if (textMatches) {
+                previewText = textMatches.map(m => {
+                    const inner = m.slice(1, -1);
+                    try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
+                }).join(' ').trim();
+            }
+            
+            const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
+            if (hexMatches && !previewText) {
+                previewText = hexMatches.map(m => {
+                    const inner = m.slice(1, -1);
+                    try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
+                }).join(' ').trim();
+            }
+
+            // 檢查是否包含過多無法顯示的編碼字元
+            let validCount = 0;
+            for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
+                const code = previewText.charCodeAt(cIdx);
+                const isAscii = (code >= 32 && code <= 126);
+                const isWhitespace = (code === 9 || code === 10 || code === 13);
+                const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
+                if (isAscii || isWhitespace || isCjk) {
+                    validCount++;
+                }
+            }
+
+            if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
+                previewText = `[自訂編碼字元${customEncodingLabel}]`;
+            }
+
+            if (!previewText) {
+                previewText = fallbackText;
+            }
+
+            if (previewText.length > 50) {
+                previewText = previewText.substring(0, 50) + "...";
+            }
+
+            return previewText;
+        }
+
         // Form XObject 表單外部物件處理模式設定
         let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
         let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
@@ -1931,41 +2003,13 @@
                                                             const data = xObj.getContents();
                                                             const rawStr = decodeBinaryToText(data);
                                                             if (!detectedFormXObjects.has(rawStr)) {
-                                                                const textMatches = rawStr.match(/\((.*?)\)/g);
-                                                                let previewText = "";
-                                                                if (textMatches) {
-                                                                    previewText = textMatches.map(m => {
-                                                                        const inner = m.slice(1, -1);
-                                                                        try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
-                                                                    }).join(' ').trim();
-                                                                }
-                                                                const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
-                                                                if (hexMatches && !previewText) {
-                                                                    previewText = hexMatches.map(m => {
-                                                                        const inner = m.slice(1, -1);
-                                                                        try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
-                                                                    }).join(' ').trim();
-                                                                }
+                                                                const keyName = key.value();
+                                                                const previewText = extractPreviewTextFromRawStream(data, {
+                                                                    customEncodingLabel: " " + keyName,
+                                                                    fallbackText: keyName
+                                                                });
 
-                                                                // 檢查是否包含過多無法顯示的編碼字元
-                                                                let validCount = 0;
-                                                                for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
-                                                                    const code = previewText.charCodeAt(cIdx);
-                                                                    const isAscii = (code >= 32 && code <= 126);
-                                                                    const isWhitespace = (code === 9 || code === 10 || code === 13);
-                                                                    const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
-                                                                    if (isAscii || isWhitespace || isCjk) {
-                                                                        validCount++;
-                                                                    }
-                                                                }
-                                                                if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
-                                                                    previewText = "[自訂編碼字元 " + key.value() + "]";
-                                                                }
-
-                                                                if (!previewText) previewText = key.value();
-                                                                if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
-
-                                                                const entry = { keyName: key.value(), previewText: previewText, pages: [i + 1] };
+                                                                const entry = { keyName: keyName, previewText: previewText, pages: [i + 1] };
                                                                 detectedFormXObjects.set(rawStr, entry);
                                                                 if (isSuspectFormXObject(entry)) {
                                                                     formXObjectsToDestroy.push(rawStr);
@@ -2092,46 +2136,12 @@
                                         const refStr = streamRef.toString();
                                         try {
                                             const data = stream.getContents();
-                                            const rawStr = new TextDecoder("utf-8", { fatal: false }).decode(data);
+                                            const rawStr = decodeBinaryToText(data);
 
-                                            // 解析預覽文字
-                                            const textMatches = rawStr.match(/\((.*?)\)/g);
-                                            let previewText = "";
-                                            if (textMatches) {
-                                                previewText = textMatches.map(m => {
-                                                    const inner = m.slice(1, -1);
-                                                    try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
-                                                }).join(' ').trim();
-                                            }
-                                            const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
-                                            if (hexMatches && !previewText) {
-                                                previewText = hexMatches.map(m => {
-                                                    const inner = m.slice(1, -1);
-                                                    try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
-                                                }).join(' ').trim();
-                                            }
-
-                                            // 檢查是否包含過多無法顯示的編碼字元
-                                            let validCount = 0;
-                                            for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
-                                                const code = previewText.charCodeAt(cIdx);
-                                                const isAscii = (code >= 32 && code <= 126);
-                                                const isWhitespace = (code === 9 || code === 10 || code === 13);
-                                                const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
-                                                if (isAscii || isWhitespace || isCjk) {
-                                                    validCount++;
-                                                }
-                                            }
-                                            if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
-                                                previewText = `[自訂編碼字元]`;
-                                            }
-
-                                            if (!previewText) {
-                                                previewText = `[頁面直接內容 (大小: ${data.length} bytes)]`;
-                                            }
-                                            if (previewText.length > 50) {
-                                                previewText = previewText.substring(0, 50) + "...";
-                                            }
+                                            const previewText = extractPreviewTextFromRawStream(data, {
+                                                customEncodingLabel: "",
+                                                fallbackText: `[頁面直接內容 (大小: ${data.length} bytes)]`
+                                            });
 
                                             detectedDirectContents.set(refStr, {
                                                 previewText: previewText,
@@ -2213,19 +2223,7 @@
             }
         }
 
-        /**
-         * 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
-         * @param {Uint8Array} data 
-         * @returns {string}
-         */
-        function decodeBinaryToText(data) {
-            let str = "";
-            const chunkSize = 16384;
-            for (let i = 0; i < data.length; i += chunkSize) {
-                str += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));
-            }
-            return str;
-        }
+
 
 
         // 監聽傳統點擊選擇檔案事件
