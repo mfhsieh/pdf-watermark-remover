@@ -12,6 +12,10 @@
     <style>
         /* ==========================================
        專案核心設計系統與 CSS 自訂變數定義
+       
+       本專案採用高科技質感的現代配色系統，主色為湛藍調。
+       搭配磨砂玻璃 (Glassmorphism)、微陰影 (Soft Shadow) 與細緻渐變，
+       提供使用者極具 premium 與質感的純前端視覺體驗。
        ========================================== */
         :root {
             /* 頁面背景色：柔和的淡藍灰 */
@@ -575,55 +579,6 @@
             font-size: 0.95rem;
         }
 
-        /* 關鍵字 Modal 內的 textarea */
-        .modal-card textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            resize: vertical;
-            outline: none;
-            transition: border-color 0.2s;
-            margin-bottom: 8px;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .modal-card textarea:focus {
-            border-color: var(--primary);
-        }
-
-        /* Modal 中的進階比對選項 */
-        .modal-options {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            color: var(--muted);
-        }
-
-        .modal-options label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            user-select: none;
-            transition: color 0.2s;
-        }
-
-        .modal-options label:hover {
-            color: var(--text);
-        }
-
-        .modal-options input[type="checkbox"] {
-            cursor: pointer;
-            accent-color: var(--primary);
-            width: 14px;
-            height: 14px;
-            margin: 0;
-        }
 
         /* 選項列：checkbox + 齒輪按鈕並排 */
         .option-row {
@@ -766,6 +721,12 @@
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定頁面直接內容清除選項"
                         aria-label="設定頁面直接內容清除選項">⚙</button>
                 </div>
+                <!-- Image XObject：影像外部物件 -->
+                <div class="option-row" id="optionRowImageXObject">
+                    <label><input type="checkbox" id="removeImageXObject" /> 清除影像外部物件 (Image XObject)</label>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定影像外部物件清除選項"
+                        aria-label="設定影像外部物件清除選項">⚙</button>
+                </div>
                 <!-- ExtGState：延伸圖形狀態 -->
                 <div class="option-row" id="optionRowExtGState">
                     <label><input type="checkbox" id="removeExtGState" /> 清除延伸圖形狀態 (ExtGState)</label>
@@ -777,12 +738,6 @@
                     <label><input type="checkbox" id="removeOCG" /> 清除選擇性內容群組 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定選擇性內容群組清除選項"
                         aria-label="設定選擇性內容群組清除選項">⚙</button>
-                </div>
-                <!-- Image XObject：影像外部物件 -->
-                <div class="option-row" id="optionRowImageXObject">
-                    <label><input type="checkbox" id="removeImageXObject" /> 清除影像外部物件 (Image XObject)</label>
-                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定影像外部物件清除選項"
-                        aria-label="設定影像外部物件清除選項">⚙</button>
                 </div>
             </div>
 
@@ -796,7 +751,7 @@
 
             <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
             <div id="downloadArea" class="download-area hidden">
-                <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
+                <a id="downloadLink" class="button button-primary" href="// ">下載處理後 PDF</a>
             </div>
 
             <!-- Before & After 對照預覽區（預設隱藏） -->
@@ -1062,82 +1017,36 @@
         } = PDFLib;
 
         // ==========================================
-        // 關鍵字清單初始化與 localStorage 讀寫 helper
+        // 全域浮水印自動判定關鍵字設定（集中於開頭以利檢視與微調）
         // ==========================================
-        function loadKeywordList(key, defaultList) {
-            try {
-                const stored = localStorage.getItem(`pdf_remover_${key}`);
-                if (stored) {
-                    return JSON.parse(stored);
-                }
-            } catch (e) {
-                console.error(`無法讀取關鍵字清單 ${key}:`, e);
-            }
-            return defaultList;
-        }
-
-        function saveKeywordList(key, array) {
-            try {
-                localStorage.setItem(`pdf_remover_${key}`, JSON.stringify(array));
-            } catch (e) {
-                console.error(`無法儲存關鍵字清單 ${key}:`, e);
-            }
-        }
-
-        function loadKeywordSetting(key, defaultValue) {
-            try {
-                const stored = localStorage.getItem(`pdf_remover_${key}`);
-                if (stored !== null) {
-                    return stored === "true";
-                }
-            } catch (e) {
-                console.error(`無法讀取設定 ${key}:`, e);
-            }
-            return defaultValue;
-        }
-
-        function saveKeywordSetting(key, value) {
-            try {
-                localStorage.setItem(`pdf_remover_${key}`, value.toString());
-            } catch (e) {
-                console.error(`無法儲存設定 ${key}:`, e);
-            }
-        }
+        // 當偵測到 PDF 物件名稱或內容含有以下任一關鍵字時，該清理策略將會被自動預設勾選
+        const WATERMARK_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
 
         /**
-         * 依據比對設定，檢查目標字串是否匹配關鍵字清單中的任一項目
-         * @param {string} target - 待檢查的目標字串
-         * @param {string[]} keywords - 關鍵字陣列
-         * @param {boolean} useRegex - 是否啟用正規表示式比對
-         * @param {boolean} exactMatch - 是否啟用完全匹配
-         * @returns {boolean} 是否匹配成功
+         * 判定文字或元件命名是否含有疑似浮水印的特徵
+         * @param {string} text - 待檢查的目標字串
+         * @returns {boolean} 是否符合特徵，若符合則對應清理策略會被預設自動勾選
          */
-        function matchKeyword(target, keywords, useRegex, exactMatch) {
-            if (!target) return false;
-            const lowerTarget = target.toLowerCase();
-
-            return keywords.some(kw => {
-                if (!kw) return false;
-                const lowerKw = kw.toLowerCase();
-
-                if (useRegex) {
-                    try {
-                        const regex = new RegExp(kw, 'i');
-                        return regex.test(target);
-                    } catch (e) {
-                        return lowerTarget.includes(lowerKw);
-                    }
-                } else if (exactMatch) {
-                    return lowerTarget === lowerKw;
-                } else {
-                    return lowerTarget.includes(lowerKw);
-                }
-            });
+        function isSuspectedWatermark(text) {
+            if (!text) return false;
+            const lower = text.toLowerCase();
+            return WATERMARK_KEYWORDS.some(kw => lower.includes(kw));
         }
+
+        // Form XObject 表單外部物件處理模式設定
+        let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
+        let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
+
+        // 要刪除的特定註解參照 (annotRefStr) 清單
+        let annotsToDestroy = [];
 
         // 頁面直接內容 (Direct Content) 處理模式設定
         let detectedDirectContents = new Map(); // key = streamRefStr, value = { previewText, page, ref, rawText }
         let directContentsToDestroy = []; // 儲存選定要清空的頁面直接內容參照字串
+
+        // 影像外部物件 (Image XObject) 狀態管理變數
+        let detectedImages = new Map(); // key = `${page}:${name}`, value = { keyName, previewText, page, ref, rawStream }
+        let imagesToDestroy = []; // 儲存選定要清除的影像外部物件鍵值
 
         // 延伸圖形狀態 (ExtGState) 狀態管理變數
         let detectedExtGStates = new Map(); // key = `${page}:${name}`, value = { keyName, previewText, page, ref }
@@ -1146,23 +1055,6 @@
         // 選擇性內容群組 (OCG) 狀態管理變數
         let detectedOCGs = new Map(); // key = ocgRefStr, value = { name, previewText, ref }
         let ocgsToDestroy = []; // 儲存選定要隱藏的 OCG 參照字串
-
-        // 影像外部物件 (Image XObject) 狀態管理變數
-        let detectedImages = new Map(); // key = `${page}:${name}`, value = { keyName, previewText, page, ref, rawStream }
-        let imagesToDestroy = []; // 儲存選定要清除的影像外部物件鍵值
-
-        // Form XObject 表單外部物件處理模式與關鍵字設定
-        let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
-        let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
-        const defaultFormXKeywords = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
-        function isSuspectedWatermark(text) {
-            if (!text) return false;
-            const lower = text.toLowerCase();
-            return defaultFormXKeywords.some(kw => lower.includes(kw));
-        }
-
-        // 要刪除的特定註解參照 (annotRefStr) 清單，預設不使用 localStorage 保存
-        let annotsToDestroy = [];
 
         /**
          * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
@@ -1199,12 +1091,22 @@
          * @param {string} password - 密碼（預設空字串）
          * @returns {Promise<Uint8Array>} - 解密後的 PDF 位元組
          */
+        /**
+         * 使用 qpdf-wasm 引擎解密加密的 PDF 文件
+         * 
+         * 此函數採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
+         * 才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面加載頻寬。
+         * 支援所有標準的 PDF 加密演算法（AES-256、AES-128、RC4 等），並能正確修復損壞的 XRef 與 Object Stream。
+         *
+         * @param {Uint8Array} pdfBytes - 原始加密 PDF 的二進位位元組陣列
+         * @param {string} password - 使用者輸入的解密密碼（若僅有編輯限制則傳入空字串 ""）
+         * @returns {Promise<Uint8Array>} - 解密完成後乾淨的 PDF 二進位位元組陣列
+         */
         async function decryptWithQpdfWasm(pdfBytes, password = '') {
-            // 延遲載入 qpdf-wasm（僅在第一次解密時載入）
+            // 檢查是否為首次執行，若是則動態 import 並初始化 WebAssembly 引擎
             if (!window._qpdfWasmModule) {
                 addStatusMessage('⏳ 首次使用加密 PDF 解密功能，正在載入 QPDF 引擎（約 1.8MB）...', 'info');
                 try {
-                    // 使用動態 import 從 CDN 載入
                     const { default: QPDF } = await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
                     window._qpdfWasmModule = await QPDF();
                     addStatusMessage('✅ QPDF 引擎載入完成！正在解密 PDF...', 'success');
@@ -1215,36 +1117,38 @@
 
             const qpdf = window._qpdfWasmModule;
 
-            // 寫入虛擬檔案系統
+            // 定義虛擬檔案系統中的虛擬輸入與輸出路徑
             const inputPath = '/decrypt_input.pdf';
             const outputPath = '/decrypt_output.pdf';
+
+            // 將 PDF 二進位位元組寫入 WebAssembly 虛擬檔案系統中
             qpdf.FS.writeFile(inputPath, pdfBytes);
 
             try {
-                // 執行解密命令
-                // qpdf --decrypt --password=<pwd> input.pdf -- output.pdf
+                // 建構解密參數：如果提供密碼則傳入密碼參數，否則執行無密碼直接解密（解除僅有編輯限制的權限 PDF）
                 const args = password
                     ? ['--decrypt', `--password=${password}`, inputPath, '--', outputPath]
                     : ['--decrypt', inputPath, '--', outputPath];
 
+                // 呼叫 QPDF WASM 核心進入點
                 const exitCode = qpdf.callMain(args);
 
+                // QPDF 回傳 0 代表成功，3 代表有警告但成功解密（例如非標準字型結構，此為安全警告，亦屬成功）
                 if (exitCode !== 0 && exitCode !== 3) {
-                    // exit code 3 = 解密成功但有警告（可接受）
                     throw new Error(`QPDF 解密失敗（exit code: ${exitCode}）`);
                 }
 
-                // 讀取解密後的輸出
+                // 從虛擬檔案系統中讀取解密成功後的文件二進位位元組
                 const decryptedBytes = qpdf.FS.readFile(outputPath);
 
-                // 清理虛擬檔案系統
+                // 主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
                 try { qpdf.FS.unlink(inputPath); } catch { }
                 try { qpdf.FS.unlink(outputPath); } catch { }
 
                 return new Uint8Array(decryptedBytes);
 
             } catch (err) {
-                // 清理
+                // 發生任何異常時，亦必須在 catch 中進行檔案釋放與記憶體垃圾回收
                 try { qpdf.FS.unlink(inputPath); } catch { }
                 try { qpdf.FS.unlink(outputPath); } catch { }
                 throw err;
@@ -1318,566 +1222,156 @@
         const processButton = document.getElementById("processButton");
         const downloadArea = document.getElementById("downloadArea");
         const downloadLink = document.getElementById("downloadLink");
-        const applyTriggerWordsBtn = document.getElementById("applyTriggerWordsBtn");
-        const openTriggerWordsModalBtn = document.getElementById("openTriggerWordsModalBtn");
-        const closeTriggerWordsModalBtn = document.getElementById("closeTriggerWordsModalBtn");
-        const triggerWordsModal = document.getElementById("triggerWordsModal");
-        const applyImageKeywordsBtn = document.getElementById("applyImageKeywordsBtn");
-        const openImageKeywordsModalBtn = document.getElementById("openImageKeywordsModalBtn");
-        const closeImageKeywordsModalBtn = document.getElementById("closeImageKeywordsModalBtn");
-        const imageKeywordsModal = document.getElementById("imageKeywordsModal");
-        const resetImageXObjectBtn = document.getElementById("resetImageXObjectBtn");
-
-        const applyExtGStateKeywordsBtn = document.getElementById("applyExtGStateKeywordsBtn");
-        const openExtGStateKeywordsModalBtn = document.getElementById("openExtGStateKeywordsModalBtn");
-        const closeExtGStateKeywordsModalBtn = document.getElementById("closeExtGStateKeywordsModalBtn");
-        const extGStateKeywordsModal = document.getElementById("extGStateKeywordsModal");
-        const resetExtGStateBtn = document.getElementById("resetExtGStateBtn");
-
-        const applyOCGKeywordsBtn = document.getElementById("applyOCGKeywordsBtn");
-        const openOCGKeywordsModalBtn = document.getElementById("openOCGKeywordsModalBtn");
-        const closeOCGKeywordsModalBtn = document.getElementById("closeOCGKeywordsModalBtn");
-        const ocgKeywordsModal = document.getElementById("ocgKeywordsModal");
-        const resetOCGBtn = document.getElementById("resetOCGBtn");
-
-        const applyFormXObjectKeywordsBtn = document.getElementById("applyFormXObjectKeywordsBtn");
-        const openFormXObjectKeywordsModalBtn = document.getElementById("openFormXObjectKeywordsModalBtn");
-        const closeFormXObjectKeywordsModalBtn = document.getElementById("closeFormXObjectKeywordsModalBtn");
-        const formXObjectKeywordsModal = document.getElementById("formXObjectKeywordsModal");
-        const resetFormXObjectBtn = document.getElementById("resetFormXObjectBtn");
-
-        const openAnnotsSettingsModalBtn = document.getElementById("openAnnotsSettingsModalBtn");
-        const closeAnnotsSettingsModalBtn = document.getElementById("closeAnnotsSettingsModalBtn");
-        const applyAnnotsSettingsBtn = document.getElementById("applyAnnotsSettingsBtn");
-        const resetAnnotsSettingsBtn = document.getElementById("resetAnnotsSettingsBtn");
-        const annotsSettingsModal = document.getElementById("annotsSettingsModal");
-
-        // 回復預設值按鈕 DOM 選取
-        const resetTriggerWordsBtn = document.getElementById("resetTriggerWordsBtn");
 
         // ==========================================
-        // 頁面直接內容 (Direct Content) Modal 初始化與事件
+        // 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
         // ==========================================
+        /**
+         * 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
+         * 
+         * 此類別採用統一的封裝設計，負責管理 6 種不同清除策略的彈出設定視窗，
+         * 包含視窗開關、條列式 Checkbox 的動態渲染、回復預設值、套用設定以及與主畫面勾選狀態的雙向連動。
+         */
+        class WatermarkStrategyModal {
+            /**
+             * 構造函數：初始化 Modal 實例並選取關聯的 DOM 元素
+             * @param {Object} config - 設定物件
+             */
+            constructor(config) {
+                this.modal = document.getElementById(config.modalId);
+                this.openBtn = document.getElementById(config.openBtnId);
+                this.closeBtn = document.getElementById(config.closeBtnId);
+                this.applyBtn = document.getElementById(config.applyBtnId);
+                this.resetBtn = document.getElementById(config.resetBtnId);
+                this.listContainer = document.getElementById(config.listContainerId);
+                this.desc = document.getElementById(config.descId);
 
-        // 開啟 Modal
-        openTriggerWordsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("directContentListContainer");
-            const desc = document.getElementById("triggerWordsModalDesc");
-            if (container) {
-                container.innerHTML = "";
+                this.checkboxName = config.checkboxName;
+                this.emptyText = config.emptyText || "未偵測到任何物件。";
+                this.mainCheckboxId = config.mainCheckboxId;
 
-                if (detectedDirectContents.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
-                        <div class="no-annots-card">
-                            <div class="no-annots-icon">📄</div>
-                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何頁面直接內容。</p>
-                        </div>
-                    `;
-                    resetTriggerWordsBtn.disabled = true;
-                    applyTriggerWordsBtn.disabled = true;
-                } else {
-                    if (desc) desc.style.display = "block";
-                    resetTriggerWordsBtn.disabled = false;
-                    applyTriggerWordsBtn.disabled = false;
+                this.getDetectedMap = config.getDetectedMap;
+                this.getDestroyList = config.getDestroyList;
+                this.setDestroyList = config.setDestroyList;
+                this.getSuspectState = config.getSuspectState;
+                this.getSortCompare = config.getSortCompare;
+                this.renderLabel = config.renderLabel;
+                this.applyMsgTemplate = config.applyMsgTemplate;
+                this.resetMsg = config.resetMsg;
 
-                    // 排序頁面直接內容實例：
-                    // 1. 優先按頁碼升冪排序
-                    // 2. 其餘按預覽文字排序
-                    const sortedDirects = Array.from(detectedDirectContents.entries()).sort((a, b) => {
-                        const directA = a[1];
-                        const directB = b[1];
-                        if (directA.page !== directB.page) {
-                            return directA.page - directB.page;
+                this.initEvents();
+            }
+
+            initEvents() {
+                // 開啟 Modal
+                this.openBtn.addEventListener("click", () => {
+                    this.render();
+                    this.modal.classList.add("active");
+                });
+
+                // 關閉 Modal
+                this.closeBtn.addEventListener("click", () => {
+                    this.modal.classList.remove("active");
+                });
+
+                // 回復預設值
+                this.resetBtn.addEventListener("click", () => {
+                    const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
+                    const map = this.getDetectedMap();
+                    checkboxes.forEach(cb => {
+                        const key = cb.dataset.rawText !== undefined ? cb.dataset.rawText : cb.value;
+                        const entry = map.get(key);
+                        if (entry) {
+                            cb.checked = this.getSuspectState(key, entry, cb);
                         }
-                        return directA.previewText.localeCompare(directB.previewText);
                     });
+                    addStatusMessage(this.resetMsg, "info");
+                });
 
-                    sortedDirects.forEach(([streamRefStr, entry]) => {
-                        const isChecked = directContentsToDestroy.includes(streamRefStr);
-                        const label = document.createElement("label");
-                        label.className = "annot-checkbox-label";
+                // 套用設定
+                this.applyBtn.addEventListener("click", () => {
+                    const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
+                    const destroyList = [];
+                    checkboxes.forEach(cb => {
+                        if (cb.checked) {
+                            const val = cb.dataset.rawText !== undefined ? cb.dataset.rawText : cb.value;
+                            destroyList.push(val);
+                        }
+                    });
+                    this.setDestroyList(destroyList);
 
-                        const input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.name = "directContentItem";
-                        input.value = streamRefStr;
-                        input.checked = isChecked;
-                        input.className = "annot-checkbox-input";
-
-                        label.appendChild(input);
-
-                        // 組合顯示文字，包含頁數標記
-                        let labelText = `[頁面直接內容]`;
-                        if (entry.previewText.startsWith("[")) {
-                            labelText = entry.previewText;
+                    // 自動勾選/取消勾選主策略 checkbox 連動
+                    const mainCheckbox = document.getElementById(this.mainCheckboxId);
+                    if (mainCheckbox) {
+                        if (destroyList.length > 0) {
+                            if (!mainCheckbox.checked) {
+                                mainCheckbox.checked = true;
+                            }
                         } else {
-                            labelText = `[頁面直接內容] "${entry.previewText}"`;
+                            if (mainCheckbox.checked) {
+                                mainCheckbox.checked = false;
+                            }
                         }
-                        labelText += ` (第 ${entry.page} 頁)`;
-
-                        label.appendChild(document.createTextNode(labelText));
-                        container.appendChild(label);
-                    });
-                }
-            }
-            triggerWordsModal.classList.add("active");
-        });
-
-        // 關閉 Modal
-        closeTriggerWordsModalBtn.addEventListener("click", () => {
-            triggerWordsModal.classList.remove("active");
-        });
-
-        // 回復預設值
-        resetTriggerWordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("directContentListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="directContentItem"]');
-                checkboxes.forEach(cb => {
-                    const streamRefStr = cb.value;
-                    const entry = detectedDirectContents.get(streamRefStr);
-                    if (entry) {
-                        cb.checked = isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.rawText);
                     }
+
+                    this.modal.classList.remove("active");
+                    addStatusMessage(this.applyMsgTemplate(destroyList.length), "success");
                 });
-                addStatusMessage("已將當前檔案中的頁面直接內容清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。", "info");
             }
-        });
 
-        // 套用設定
-        applyTriggerWordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("directContentListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="directContentItem"]');
-                directContentsToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        directContentsToDestroy.push(cb.value);
-                    }
-                });
+            render() {
+                const map = this.getDetectedMap();
+                const destroyList = this.getDestroyList();
 
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (directContentsToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeDirectContent");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
+                this.listContainer.innerHTML = "";
 
-                triggerWordsModal.classList.remove("active");
-                addStatusMessage(`已成功套用頁面直接內容清理設定！共選定清理 ${directContentsToDestroy.length} 個頁面直接內容實例。`, "success");
-            }
-        });
-
-        // ==========================================
-        // 圖片命名、ExtGState、OCG 關鍵字 Modal 初始化與事件
-        // ==========================================
-        // 影像外部物件 (Image XObject) Modal 初始化與事件
-        // ==========================================
-
-        // 開啟 Modal
-        openImageKeywordsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("imageXObjectListContainer");
-            const desc = document.getElementById("imageXObjectModalDesc");
-            if (container) {
-                container.innerHTML = "";
-                if (detectedImages.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
+                if (map.size === 0) {
+                    if (this.desc) this.desc.style.display = "none";
+                    this.listContainer.innerHTML = `
                         <div class="no-annots-card" style="width: 100%; text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted);">
-                            📭 當前 PDF 檔案中未偵測到任何影像外部物件 (Image XObject)。
+                            ${this.emptyText}
                         </div>
                     `;
+                    if (this.resetBtn) this.resetBtn.disabled = true;
+                    if (this.applyBtn) this.applyBtn.disabled = true;
                 } else {
-                    if (desc) desc.style.display = "block";
+                    if (this.desc) this.desc.style.display = "block";
+                    if (this.resetBtn) this.resetBtn.disabled = false;
+                    if (this.applyBtn) this.applyBtn.disabled = false;
 
-                    // 排序：頁碼升冪，接著依資源代碼字母排序
-                    const sortedEntries = Array.from(detectedImages.entries()).sort((a, b) => {
-                        if (a[1].page !== b[1].page) return a[1].page - b[1].page;
-                        return a[1].keyName.localeCompare(b[1].keyName);
-                    });
-
-                    sortedEntries.forEach(([key, entry]) => {
-                        const label = document.createElement("label");
-                        label.className = "annot-checkbox-label";
-                        label.style.display = "flex";
-                        label.style.alignItems = "center";
-                        label.style.gap = "8px";
-                        label.style.width = "100%";
-                        label.style.cursor = "pointer";
-
-                        const input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.name = "imageXObjectItem";
-                        input.value = key;
-
-                        // 判斷是否已被選定清除
-                        const isChecked = imagesToDestroy.includes(key);
-                        input.checked = isChecked;
-                        input.className = "annot-checkbox-input";
-
-                        label.appendChild(input);
-
-                        // 組合顯示文字，包含尺寸與壓縮格式等特徵
-                        let labelText = `[影像外部物件] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`;
-                        label.appendChild(document.createTextNode(labelText));
-                        container.appendChild(label);
-                    });
-                }
-            }
-            imageKeywordsModal.classList.add("active");
-        });
-
-        // 關閉 Modal
-        closeImageKeywordsModalBtn.addEventListener("click", () => {
-            imageKeywordsModal.classList.remove("active");
-        });
-
-        // 回復預設值
-        resetImageXObjectBtn.addEventListener("click", () => {
-            const container = document.getElementById("imageXObjectListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="imageXObjectItem"]');
-                checkboxes.forEach(cb => {
-                    const key = cb.value;
-                    const entry = detectedImages.get(key);
-                    if (entry) {
-                        // 依據名稱判定是否疑似浮水印
-                        cb.checked = isSuspectedWatermark(entry.keyName);
-                    }
-                });
-                addStatusMessage("已將當前檔案中的影像外部物件清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。", "info");
-            }
-        });
-
-        // 套用設定
-        applyImageKeywordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("imageXObjectListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="imageXObjectItem"]');
-                imagesToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        imagesToDestroy.push(cb.value);
-                    }
-                });
-
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (imagesToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeImageXObject");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
-
-                imageKeywordsModal.classList.remove("active");
-                addStatusMessage(`已成功套用影像外部物件清理設定！共選定清除 ${imagesToDestroy.length} 個影像實例。`, "success");
-            }
-        });
-
-        // ==========================================
-        // 延伸圖形狀態 (ExtGState) Modal 初始化與事件
-        // ==========================================
-
-        // 開啟 Modal
-        openExtGStateKeywordsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("extGStateListContainer");
-            const desc = document.getElementById("extGStateModalDesc");
-            if (container) {
-                container.innerHTML = "";
-                if (detectedExtGStates.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
-                        <div class="no-annots-card" style="width: 100%; text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted);">
-                            📭 當前 PDF 檔案中未偵測到任何延伸圖形狀態 (ExtGState)。
-                        </div>
-                    `;
-                } else {
-                    if (desc) desc.style.display = "block";
-
-                    // 排序：頁碼升冪，接著依資源代碼字母排序
-                    const sortedEntries = Array.from(detectedExtGStates.entries()).sort((a, b) => {
-                        if (a[1].page !== b[1].page) return a[1].page - b[1].page;
-                        return a[1].keyName.localeCompare(b[1].keyName);
-                    });
-
-                    sortedEntries.forEach(([key, entry]) => {
-                        const label = document.createElement("label");
-                        label.className = "annot-checkbox-label";
-                        label.style.display = "flex";
-                        label.style.alignItems = "center";
-                        label.style.gap = "8px";
-                        label.style.width = "100%";
-                        label.style.cursor = "pointer";
-
-                        const input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.name = "extGStateItem";
-                        input.value = key;
-
-                        const isChecked = extGStatesToDestroy.includes(key);
-                        input.checked = isChecked;
-                        input.className = "annot-checkbox-input";
-
-                        label.appendChild(input);
-
-                        let labelText = `[延伸圖形狀態] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`;
-                        label.appendChild(document.createTextNode(labelText));
-                        container.appendChild(label);
-                    });
-                }
-            }
-            extGStateKeywordsModal.classList.add("active");
-        });
-
-        // 關閉 Modal
-        closeExtGStateKeywordsModalBtn.addEventListener("click", () => {
-            extGStateKeywordsModal.classList.remove("active");
-        });
-
-        // 回復預設值
-        resetExtGStateBtn.addEventListener("click", () => {
-            const container = document.getElementById("extGStateListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="extGStateItem"]');
-                checkboxes.forEach(cb => {
-                    const key = cb.value;
-                    const entry = detectedExtGStates.get(key);
-                    if (entry) {
-                        // 根據名稱或預覽內容中是否有疑似浮水印字樣或特定透明度
-                        cb.checked = isSuspectedWatermark(entry.keyName) || isSuspectedWatermark(entry.previewText);
-                    }
-                });
-                addStatusMessage("已將當前檔案中的延伸圖形狀態清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。", "info");
-            }
-        });
-
-        // 套用設定
-        applyExtGStateKeywordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("extGStateListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="extGStateItem"]');
-                extGStatesToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        extGStatesToDestroy.push(cb.value);
-                    }
-                });
-
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (extGStatesToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeExtGState");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
-
-                extGStateKeywordsModal.classList.remove("active");
-                addStatusMessage(`已成功套用延伸圖形狀態清理設定！共選定清理 ${extGStatesToDestroy.length} 個延伸圖形狀態實例。`, "success");
-            }
-        });
-
-        // ==========================================
-        // 選擇性內容群組 (OCG) Modal 初始化與事件
-        // ==========================================
-
-        // 開啟 Modal
-        openOCGKeywordsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("ocgListContainer");
-            const desc = document.getElementById("ocgModalDesc");
-            if (container) {
-                container.innerHTML = "";
-                if (detectedOCGs.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
-                        <div class="no-annots-card" style="width: 100%; text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted);">
-                            📭 當前 PDF 檔案中未偵測到任何選擇性內容群組 (OCG)。
-                        </div>
-                    `;
-                } else {
-                    if (desc) desc.style.display = "block";
-
-                    // 排序：依圖層群組名稱字母排序
-                    const sortedEntries = Array.from(detectedOCGs.entries()).sort((a, b) => {
-                        return a[1].name.localeCompare(b[1].name);
-                    });
-
-                    sortedEntries.forEach(([refStr, entry]) => {
-                        const label = document.createElement("label");
-                        label.className = "annot-checkbox-label";
-                        label.style.display = "flex";
-                        label.style.alignItems = "center";
-                        label.style.gap = "8px";
-                        label.style.width = "100%";
-                        label.style.cursor = "pointer";
-
-                        const input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.name = "ocgItem";
-                        input.value = refStr;
-
-                        const isChecked = ocgsToDestroy.includes(refStr);
-                        input.checked = isChecked;
-                        input.className = "annot-checkbox-input";
-
-                        label.appendChild(input);
-
-                        let labelText = `[選擇性內容群組] "${entry.name}" (${entry.previewText})`;
-                        label.appendChild(document.createTextNode(labelText));
-                        container.appendChild(label);
-                    });
-                }
-            }
-            ocgKeywordsModal.classList.add("active");
-        });
-
-        // 關閉 Modal
-        closeOCGKeywordsModalBtn.addEventListener("click", () => {
-            ocgKeywordsModal.classList.remove("active");
-        });
-
-        // 回復預設值
-        resetOCGBtn.addEventListener("click", () => {
-            const container = document.getElementById("ocgListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="ocgItem"]');
-                checkboxes.forEach(cb => {
-                    const refStr = cb.value;
-                    const entry = detectedOCGs.get(refStr);
-                    if (entry) {
-                        cb.checked = isSuspectedWatermark(entry.name);
-                    }
-                });
-                addStatusMessage("已將當前檔案中的選擇性內容群組清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。", "info");
-            }
-        });
-
-        // 套用設定
-        applyOCGKeywordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("ocgListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="ocgItem"]');
-                ocgsToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        ocgsToDestroy.push(cb.value);
-                    }
-                });
-
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (ocgsToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeOCG");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
-
-                ocgKeywordsModal.classList.remove("active");
-                addStatusMessage(`已成功套用選擇性內容群組清理設定！共選定隱藏 ${ocgsToDestroy.length} 個選擇性內容群組實例。`, "success");
-            }
-        });
-
-        // ==========================================
-        // 表單外部物件 Form XObject Modal 初始化與事件
-        // ==========================================
-
-        // 開啟 Modal
-        openFormXObjectKeywordsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("formXObjectListContainer");
-            const desc = document.getElementById("formXObjectModalDesc");
-            if (container) {
-                container.innerHTML = "";
-                if (detectedFormXObjects.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
-                        <div class="no-annots-card">
-                            <div class="no-annots-icon">📄</div>
-                            <p class="no-annots-text">未解析出可選擇的表單外部物件內容。</p>
-                        </div>
-                    `;
-                    resetFormXObjectBtn.disabled = true;
-                    applyFormXObjectKeywordsBtn.disabled = true;
-                } else {
-                    if (desc) desc.style.display = "block";
-                    resetFormXObjectBtn.disabled = false;
-                    applyFormXObjectKeywordsBtn.disabled = false;
+                    const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
                     let index = 0;
-                    detectedFormXObjects.forEach((entry, rawText) => {
-                        const isChecked = formXObjectsToDestroy.includes(rawText);
+                    sortedEntries.forEach(([key, entry]) => {
                         const label = document.createElement("label");
                         label.className = "annot-checkbox-label";
 
                         const input = document.createElement("input");
                         input.type = "checkbox";
-                        input.name = "formXObjectItem";
-                        input.value = index.toString();
+                        input.name = this.checkboxName;
+
+                        // Form XObject 特殊處理
+                        if (this.checkboxName === "formXObjectItem") {
+                            input.value = index.toString();
+                            input.dataset.rawText = key;
+                        } else {
+                            input.value = key;
+                        }
+
+                        const isChecked = destroyList.includes(key);
                         input.checked = isChecked;
                         input.className = "annot-checkbox-input";
-                        input.dataset.rawText = rawText;
 
                         label.appendChild(input);
-
-                        // 組合顯示文字，包含頁數標記
-                        const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
-                        label.appendChild(document.createTextNode(entry.previewText + pageLabel));
-                        container.appendChild(label);
+                        this.renderLabel(label, key, entry, isChecked);
+                        this.listContainer.appendChild(label);
                         index++;
                     });
                 }
             }
-            formXObjectKeywordsModal.classList.add("active");
-        });
-
-        // 關閉 Modal
-        closeFormXObjectKeywordsModalBtn.addEventListener("click", () => {
-            formXObjectKeywordsModal.classList.remove("active");
-        });
-
-        // 回復預設值
-        resetFormXObjectBtn.addEventListener("click", () => {
-            const container = document.getElementById("formXObjectListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="formXObjectItem"]');
-                checkboxes.forEach(cb => {
-                    const rawText = cb.dataset.rawText;
-                    if (rawText !== undefined) {
-                        const entry = detectedFormXObjects.get(rawText);
-                        const previewText = entry ? entry.previewText : "";
-                        cb.checked = isSuspectedWatermark(previewText) || isSuspectedWatermark(rawText);
-                    }
-                });
-                addStatusMessage("已將當前檔案中的表單外部物件清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。", "info");
-            }
-        });
-
-        // 套用設定
-        applyFormXObjectKeywordsBtn.addEventListener("click", () => {
-            const container = document.getElementById("formXObjectListContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="formXObjectItem"]');
-                formXObjectsToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked && cb.dataset.rawText !== undefined) {
-                        formXObjectsToDestroy.push(cb.dataset.rawText);
-                    }
-                });
-
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (formXObjectsToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeFormXObject");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
-
-                addStatusMessage(`已選擇套用清理 ${formXObjectsToDestroy.length} 個表單外部物件。`, "success");
-            }
-            formXObjectKeywordsModal.classList.remove("active");
-        });
+        }
 
         // ==========================================
-        // 註解 (Annotation) 客製化過濾 Modal 初始化與事件
+        // 註解 (Annotation) 元資料定義與 Modal 初始化
         // ==========================================
         const annotSubtypeMeta = {
             "Watermark": { label: "浮水印 (Watermark)", defaultDestroy: true, color: "inherit" },
@@ -1899,129 +1393,195 @@
             "Widget": { label: "表單欄位與電子簽章 (Widget)", defaultDestroy: false, color: "var(--primary)" }
         };
 
-        // 開啟 Modal
-        openAnnotsSettingsModalBtn.addEventListener("click", () => {
-            const container = document.getElementById("annotsSubtypesContainer");
-            const desc = document.getElementById("annotsModalDesc");
-            if (container) {
-                container.innerHTML = "";
+        // 1. 表單外部物件 (Form XObject) Modal
+        new WatermarkStrategyModal({
+            modalId: "formXObjectKeywordsModal",
+            openBtnId: "openFormXObjectKeywordsModalBtn",
+            closeBtnId: "closeFormXObjectKeywordsModalBtn",
+            applyBtnId: "applyFormXObjectKeywordsBtn",
+            resetBtnId: "resetFormXObjectBtn",
+            listContainerId: "formXObjectListContainer",
+            descId: "formXObjectModalDesc",
+            checkboxName: "formXObjectItem",
+            emptyText: `<div class="no-annots-card"><div class="no-annots-icon">📄</div><p class="no-annots-text">未解析出可選擇的表單外部物件內容。</p></div>`,
+            mainCheckboxId: "removeFormXObject",
+            getDetectedMap: () => detectedFormXObjects,
+            getDestroyList: () => formXObjectsToDestroy,
+            setDestroyList: (list) => { formXObjectsToDestroy = list; },
+            getSuspectState: (key, entry) => isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.keyName),
+            getSortCompare: () => 0, // 無特定排序需求
+            renderLabel: (labelEl, key, entry) => {
+                const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
+                labelEl.appendChild(document.createTextNode(entry.previewText + pageLabel));
+            },
+            applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個表單外部物件。`,
+            resetMsg: "已將當前檔案中的表單外部物件清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。"
+        });
 
-                if (detectedAnnotations.size === 0) {
-                    if (desc) desc.style.display = "none";
-                    container.innerHTML = `
-                        <div class="no-annots-card">
-                            <div class="no-annots-icon">📄</div>
-                            <p class="no-annots-text">當前 PDF 檔案中未偵測到任何註解，無需進行設定。</p>
-                        </div>
-                    `;
-                    resetAnnotsSettingsBtn.disabled = true;
-                    applyAnnotsSettingsBtn.disabled = true;
-                } else {
-                    if (desc) desc.style.display = "block";
-                    resetAnnotsSettingsBtn.disabled = false;
-                    applyAnnotsSettingsBtn.disabled = false;
+        // 2. 註解 (Annotation) Modal
+        new WatermarkStrategyModal({
+            modalId: "annotsSettingsModal",
+            openBtnId: "openAnnotsSettingsModalBtn",
+            closeBtnId: "closeAnnotsSettingsModalBtn",
+            applyBtnId: "applyAnnotsSettingsBtn",
+            resetBtnId: "resetAnnotsSettingsBtn",
+            listContainerId: "annotsSubtypesContainer",
+            descId: "annotsModalDesc",
+            checkboxName: "annotItem",
+            emptyText: `<div class="no-annots-card"><div class="no-annots-icon">📄</div><p class="no-annots-text">當前 PDF 檔案中未偵測到任何註解，無需進行設定。</p></div>`,
+            mainCheckboxId: "removeAnnotations",
+            getDetectedMap: () => detectedAnnotations,
+            getDestroyList: () => annotsToDestroy,
+            setDestroyList: (list) => { annotsToDestroy = list; },
+            getSuspectState: (key, entry) => entry.subtype === "Watermark" || entry.subtype === "Stamp",
+            getSortCompare: (a, b) => {
+                const annotA = a[1];
+                const annotB = b[1];
+                if (annotA.page !== annotB.page) return annotA.page - annotB.page;
+                const isSpecialA = (annotA.subtype === "Link" || annotA.subtype === "Widget");
+                const isSpecialB = (annotB.subtype === "Link" || annotB.subtype === "Widget");
+                if (isSpecialA && !isSpecialB) return 1;
+                if (!isSpecialA && isSpecialB) return -1;
+                if (annotA.subtype !== annotB.subtype) return annotA.subtype.localeCompare(annotB.subtype);
+                return annotA.previewText.localeCompare(annotB.previewText);
+            },
+            renderLabel: (labelEl, key, entry) => {
+                const meta = annotSubtypeMeta[entry.subtype];
+                const labelText = meta ? meta.label : `/${entry.subtype}`;
+                const textColor = meta ? meta.color : "inherit";
+                if (textColor !== "inherit") labelEl.style.color = textColor;
+                const contentDisplay = entry.previewText ? ` "${entry.previewText}"` : "";
+                const pageLabel = ` (第 ${entry.page} 頁)`;
+                labelEl.appendChild(document.createTextNode(`[${labelText}]${contentDisplay}${pageLabel}`));
+            },
+            applyMsgTemplate: (len) => `已成功套用註解清理設定！共選定清理 ${len} 個註解實例。`,
+            resetMsg: "已將當前檔案中的註解清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。"
+        });
 
-                    // 將偵測到的註解個體排序：
-                    // 1. 優先按頁碼升冪排序
-                    // 2. 同一頁內，將 Link 與 Widget 排在最後
-                    // 3. 其餘按 Subtype 字母與預覽文字排序
-                    const sortedAnnots = Array.from(detectedAnnotations.entries()).sort((a, b) => {
-                        const annotA = a[1];
-                        const annotB = b[1];
+        // 3. 頁面直接內容 (Direct Content) Modal
+        new WatermarkStrategyModal({
+            modalId: "triggerWordsModal",
+            openBtnId: "openTriggerWordsModalBtn",
+            closeBtnId: "closeTriggerWordsModalBtn",
+            applyBtnId: "applyTriggerWordsBtn",
+            resetBtnId: "resetTriggerWordsBtn",
+            listContainerId: "directContentListContainer",
+            descId: "triggerWordsModalDesc",
+            checkboxName: "directContentItem",
+            emptyText: "📭 當前 PDF 檔案中未偵測到任何頁面直接內容。",
+            mainCheckboxId: "removeDirectContent",
+            getDetectedMap: () => detectedDirectContents,
+            getDestroyList: () => directContentsToDestroy,
+            setDestroyList: (list) => { directContentsToDestroy = list; },
+            getSuspectState: (key, entry) => isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.rawText),
+            getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].previewText.localeCompare(b[1].previewText),
+            renderLabel: (labelEl, key, entry) => {
+                let labelText = entry.previewText.startsWith("[") ? entry.previewText : `[頁面直接內容] "${entry.previewText}"`;
+                labelText += ` (第 ${entry.page} 頁)`;
+                labelEl.appendChild(document.createTextNode(labelText));
+            },
+            applyMsgTemplate: (len) => `已成功套用頁面直接內容清理設定！共選定清理 ${len} 個頁面直接內容實例。`,
+            resetMsg: "已將當前檔案中的頁面直接內容清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。"
+        });
 
-                        if (annotA.page !== annotB.page) {
-                            return annotA.page - annotB.page;
-                        }
+        // 4. 影像外部物件 (Image XObject) Modal
+        new WatermarkStrategyModal({
+            modalId: "imageKeywordsModal",
+            openBtnId: "openImageKeywordsModalBtn",
+            closeBtnId: "closeImageKeywordsModalBtn",
+            applyBtnId: "applyImageKeywordsBtn",
+            resetBtnId: "resetImageXObjectBtn",
+            listContainerId: "imageXObjectListContainer",
+            descId: "imageXObjectModalDesc",
+            checkboxName: "imageXObjectItem",
+            emptyText: "📭 當前 PDF 檔案中未偵測到任何影像外部物件 (Image XObject)。",
+            mainCheckboxId: "removeImageXObject",
+            getDetectedMap: () => detectedImages,
+            getDestroyList: () => imagesToDestroy,
+            setDestroyList: (list) => { imagesToDestroy = list; },
+            getSuspectState: (key, entry) => isSuspectedWatermark(entry.keyName),
+            getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
+            renderLabel: (labelEl, key, entry) => {
+                labelEl.style.display = "flex";
+                labelEl.style.alignItems = "center";
+                labelEl.style.gap = "8px";
+                labelEl.style.width = "100%";
+                labelEl.style.cursor = "pointer";
+                labelEl.appendChild(document.createTextNode(`[影像外部物件] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`));
+            },
+            applyMsgTemplate: (len) => `已成功套用影像外部物件清理設定！共選定清除 ${len} 個影像實例。`,
+            resetMsg: "已將當前檔案中的影像外部物件清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。"
+        });
 
-                        const isSpecialA = (annotA.subtype === "Link" || annotA.subtype === "Widget");
-                        const isSpecialB = (annotB.subtype === "Link" || annotB.subtype === "Widget");
-                        if (isSpecialA && !isSpecialB) return 1;
-                        if (!isSpecialA && isSpecialB) return -1;
-
-                        if (annotA.subtype !== annotB.subtype) {
-                            return annotA.subtype.localeCompare(annotB.subtype);
-                        }
-                        return annotA.previewText.localeCompare(annotB.previewText);
-                    });
-
-                    sortedAnnots.forEach(([annotRefStr, annot]) => {
-                        const meta = annotSubtypeMeta[annot.subtype];
-                        const labelText = meta ? meta.label : `/${annot.subtype}`;
-                        const textColor = meta ? meta.color : "inherit";
-                        const isChecked = annotsToDestroy.includes(annotRefStr);
-
-                        const label = document.createElement("label");
-                        label.className = "annot-checkbox-label";
-                        if (textColor !== "inherit") {
-                            label.style.color = textColor;
-                        }
-
-                        const input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.name = "annotItem";
-                        input.value = annotRefStr;
-                        input.checked = isChecked;
-                        input.className = "annot-checkbox-input";
-
-                        label.appendChild(input);
-
-                        // 建立顯示文字：若有內容文字則包含引號，並皆加上頁碼標記
-                        const contentDisplay = annot.previewText ? ` "${annot.previewText}"` : "";
-                        const pageLabel = ` (第 ${annot.page} 頁)`;
-                        label.appendChild(document.createTextNode(`[${labelText}]${contentDisplay}${pageLabel}`));
-
-                        container.appendChild(label);
-                    });
+        // 5. 延伸圖形狀態 (ExtGState) Modal
+        new WatermarkStrategyModal({
+            modalId: "extGStateKeywordsModal",
+            openBtnId: "openExtGStateKeywordsModalBtn",
+            closeBtnId: "closeExtGStateKeywordsModalBtn",
+            applyBtnId: "applyExtGStateKeywordsBtn",
+            resetBtnId: "resetExtGStateBtn",
+            listContainerId: "extGStateListContainer",
+            descId: "extGStateModalDesc",
+            checkboxName: "extGStateItem",
+            emptyText: "📭 當前 PDF 檔案中未偵測到任何延伸圖形狀態 (ExtGState)。",
+            mainCheckboxId: "removeExtGState",
+            getDetectedMap: () => detectedExtGStates,
+            getDestroyList: () => extGStatesToDestroy,
+            setDestroyList: (list) => { extGStatesToDestroy = list; },
+            getSuspectState: (key, entry) => {
+                if (isSuspectedWatermark(entry.keyName)) return true;
+                const caMatch = entry.previewText.match(/c[aA]:\s*([0-9.]+)/g);
+                if (caMatch) {
+                    for (const match of caMatch) {
+                        const val = parseFloat(match.match(/[0-9.]+/)?.[0] || "1.0");
+                        if (val < 0.5) return true;
+                    }
                 }
-            }
-            annotsSettingsModal.classList.add("active");
+                return false;
+            },
+            getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
+            renderLabel: (labelEl, key, entry) => {
+                labelEl.style.display = "flex";
+                labelEl.style.alignItems = "center";
+                labelEl.style.gap = "8px";
+                labelEl.style.width = "100%";
+                labelEl.style.cursor = "pointer";
+                labelEl.appendChild(document.createTextNode(`[延伸圖形狀態] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`));
+            },
+            applyMsgTemplate: (len) => `已成功套用延伸圖形狀態清理設定！共選定清理 ${len} 個延伸圖形狀態實例。`,
+            resetMsg: "已將當前檔案中的延伸圖形狀態清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。"
         });
 
-        // 關閉 Modal
-        closeAnnotsSettingsModalBtn.addEventListener("click", () => {
-            annotsSettingsModal.classList.remove("active");
+        // 6. 選擇性內容群組 (OCG) Modal
+        new WatermarkStrategyModal({
+            modalId: "ocgKeywordsModal",
+            openBtnId: "openOCGKeywordsModalBtn",
+            closeBtnId: "closeOCGKeywordsModalBtn",
+            applyBtnId: "applyOCGKeywordsBtn",
+            resetBtnId: "resetOCGBtn",
+            listContainerId: "ocgListContainer",
+            descId: "ocgModalDesc",
+            checkboxName: "ocgItem",
+            emptyText: "📭 當前 PDF 檔案中未偵測到任何選擇性內容群組 (OCG)。",
+            mainCheckboxId: "removeOCG",
+            getDetectedMap: () => detectedOCGs,
+            getDestroyList: () => ocgsToDestroy,
+            setDestroyList: (list) => { ocgsToDestroy = list; },
+            getSuspectState: (key, entry) => isSuspectedWatermark(entry.name),
+            getSortCompare: (a, b) => a[1].name.localeCompare(b[1].name),
+            renderLabel: (labelEl, key, entry) => {
+                labelEl.style.display = "flex";
+                labelEl.style.alignItems = "center";
+                labelEl.style.gap = "8px";
+                labelEl.style.width = "100%";
+                labelEl.style.cursor = "pointer";
+                labelEl.appendChild(document.createTextNode(`[選擇性內容群組] "${entry.name}" (${entry.previewText})`));
+            },
+            applyMsgTemplate: (len) => `已成功套用選擇性內容群組清理設定！共選定隱藏 ${len} 個選擇性內容群組實例。`,
+            resetMsg: "已將當前檔案中的選擇性內容群組清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。"
         });
 
-        // 回復預設值
-        resetAnnotsSettingsBtn.addEventListener("click", () => {
-            const container = document.getElementById("annotsSubtypesContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="annotItem"]');
-                checkboxes.forEach(cb => {
-                    const annotRefStr = cb.value;
-                    const annot = detectedAnnotations.get(annotRefStr);
-                    if (annot) {
-                        cb.checked = (annot.subtype === "Watermark" || annot.subtype === "Stamp");
-                    }
-                });
-                addStatusMessage("已將當前檔案中的註解清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。", "info");
-            }
-        });
 
-        // 套用設定
-        applyAnnotsSettingsBtn.addEventListener("click", () => {
-            const container = document.getElementById("annotsSubtypesContainer");
-            if (container) {
-                const checkboxes = container.querySelectorAll('input[name="annotItem"]');
-                annotsToDestroy = [];
-                checkboxes.forEach(cb => {
-                    if (cb.checked) {
-                        annotsToDestroy.push(cb.value);
-                    }
-                });
-
-                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
-                if (annotsToDestroy.length > 0) {
-                    const mainCheckbox = document.getElementById("removeAnnotations");
-                    if (mainCheckbox && !mainCheckbox.checked) {
-                        mainCheckbox.checked = true;
-                    }
-                }
-
-                annotsSettingsModal.classList.remove("active");
-                addStatusMessage(`已成功套用註解清理設定！共選定清理 ${annotsToDestroy.length} 個註解實例。`, "success");
-            }
-        });
 
         // Before & After 預覽元件
         const previewContainer = document.getElementById("previewContainer");
@@ -2067,18 +1627,18 @@
             processButton.classList.add("hidden");
 
             // 6. 重置偵測到的註解類型與刪除清單
-            detectedAnnotations.clear();
-            annotsToDestroy = [];
             detectedFormXObjects.clear();
             formXObjectsToDestroy = [];
+            detectedAnnotations.clear();
+            annotsToDestroy = [];
             detectedDirectContents.clear();
             directContentsToDestroy = [];
+            detectedImages.clear();
+            imagesToDestroy = [];
             detectedExtGStates.clear();
             extGStatesToDestroy = [];
             detectedOCGs.clear();
             ocgsToDestroy = [];
-            detectedImages.clear();
-            imagesToDestroy = [];
 
             // 7. 隱藏清理策略選項區塊
             const optionsContainer = document.getElementById("optionsContainer");
@@ -2090,9 +1650,9 @@
             document.getElementById("removeFormXObject").checked = false;
             document.getElementById("removeAnnotations").checked = false;
             document.getElementById("removeDirectContent").checked = false;
+            document.getElementById("removeImageXObject").checked = false;
             document.getElementById("removeExtGState").checked = false;
             document.getElementById("removeOCG").checked = false;
-            document.getElementById("removeImageXObject").checked = false;
         }
 
         /**
@@ -2350,7 +1910,7 @@
                                                                 if (!previewText) previewText = key.value();
                                                                 if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
 
-                                                                detectedFormXObjects.set(rawStr, { previewText: previewText, pages: [i + 1] });
+                                                                detectedFormXObjects.set(rawStr, { keyName: key.value(), previewText: previewText, pages: [i + 1] });
                                                                 if (isSuspectedWatermark(previewText) || isSuspectedWatermark(key.value())) {
                                                                     formXObjectsToDestroy.push(rawStr);
                                                                 }
@@ -2431,7 +1991,10 @@
                                             let isSuspect = isSuspectedWatermark(keyName);
                                             if (gsObj instanceof PDFDict) {
                                                 const ca = gsObj.get(PDFName.of("ca"));
-                                                if (ca && typeof ca.value === "function" && ca.value() < 0.5) {
+                                                const CA = gsObj.get(PDFName.of("CA"));
+                                                const caVal = ca && typeof ca.value === "function" ? ca.value() : 1.0;
+                                                const CAVal = CA && typeof CA.value === "function" ? CA.value() : 1.0;
+                                                if (caVal < 0.5 || CAVal < 0.5) {
                                                     isSuspect = true;
                                                 }
                                             }
@@ -2547,9 +2110,9 @@
                 document.getElementById('optionRowFormXObject').classList.toggle('hidden', detectedFormXObjects.size === 0);
                 document.getElementById('optionRowAnnotations').classList.toggle('hidden', detectedAnnotations.size === 0);
                 document.getElementById('optionRowDirectContent').classList.toggle('hidden', detectedDirectContents.size === 0);
+                document.getElementById('optionRowImageXObject').classList.toggle('hidden', detectedImages.size === 0);
                 document.getElementById('optionRowExtGState').classList.toggle('hidden', detectedExtGStates.size === 0);
                 document.getElementById('optionRowOCG').classList.toggle('hidden', detectedOCGs.size === 0);
-                document.getElementById('optionRowImageXObject').classList.toggle('hidden', detectedImages.size === 0);
 
                 // 載入 PDF 後，將策略選項區塊恢復為可見
                 optionsContainer.classList.remove('hidden');
@@ -2558,16 +2121,16 @@
                 document.getElementById("removeFormXObject").checked = formXObjectsToDestroy.length > 0;
                 document.getElementById("removeAnnotations").checked = annotsToDestroy.length > 0;
                 document.getElementById("removeDirectContent").checked = directContentsToDestroy.length > 0;
+                document.getElementById("removeImageXObject").checked = imagesToDestroy.length > 0;
                 document.getElementById("removeExtGState").checked = extGStatesToDestroy.length > 0;
                 document.getElementById("removeOCG").checked = ocgsToDestroy.length > 0;
-                document.getElementById("removeImageXObject").checked = imagesToDestroy.length > 0;
 
                 const anySuspected = formXObjectsToDestroy.length > 0 ||
                     annotsToDestroy.length > 0 ||
                     directContentsToDestroy.length > 0 ||
+                    imagesToDestroy.length > 0 ||
                     extGStatesToDestroy.length > 0 ||
-                    ocgsToDestroy.length > 0 ||
-                    imagesToDestroy.length > 0;
+                    ocgsToDestroy.length > 0;
 
                 if (!anySuspected) {
                     addStatusMessage("掃描完成：未自動偵測到明顯的浮水印物件，您可以手動勾選合適的策略來嘗試清除。", "info");
@@ -2666,10 +2229,14 @@
                 return;
             }
 
+            // 每次開始新的處理時，主動隱藏下載區域與上一次的處理後預覽畫面，避免處理失敗時殘留舊狀態
             downloadArea.classList.add("hidden");
+            processedPreviewBox.classList.add("hidden");
+            processedPreview.src = "";
+
             clearStatusMessages();
             addStatusMessage("🚀 開始處理 PDF 文件，請稍候...", "info");
-            processButton.disabled = true; // 鎖定按鈕防止重複觸發
+            processButton.disabled = true; // 鎖定按鈕，防止使用者在處理過程中重複點擊觸發
             processButton.textContent = "處理中...";
 
             try {
@@ -2817,11 +2384,11 @@
          */
         function getOptions() {
             return {
-                removeAnnotations: document.getElementById("removeAnnotations").checked,
                 removeFormXObject: document.getElementById("removeFormXObject").checked,
-                removeExtGState: document.getElementById("removeExtGState").checked,
-                removeImageXObject: document.getElementById("removeImageXObject").checked,
+                removeAnnotations: document.getElementById("removeAnnotations").checked,
                 removeDirectContent: document.getElementById("removeDirectContent").checked,
+                removeImageXObject: document.getElementById("removeImageXObject").checked,
+                removeExtGState: document.getElementById("removeExtGState").checked,
                 removeOCG: document.getElementById("removeOCG").checked,
             };
         }
@@ -2864,10 +2431,21 @@
          * @param {Object} options - 清理選項
          * @returns {Object} 處理結果統計
          */
+        /**
+         * 核心重構清除引擎：遍歷 PDF 物件樹並執行浮水印置換
+         * 
+         * 為了防止直接刪除 PDF 字典物件導致內部資源樹引用斷裂（引發 PDF 檔損毀打不開），
+         * 本清除引擎採用「無損置換技術」—— 將需要清除的 Form/Image 物件替換成保留必要尺寸的「空白串流」，
+         * 並完全符合 PDF 1.7 規格標準。同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。
+         *
+         * @param {PDFDocument} pdfDoc - pdf-lib 的 PDF 文件物件
+         * @param {Object} options - 包含 6 大清理策略勾選狀態的布林值物件
+         * @returns {Object} 包含 modifiedObjects (已被修改/置換的物件總數) 的統計物件
+         */
         function processPdf(pdfDoc, options) {
             let modifiedObjects = 0;
 
-            // 循序處理每一頁
+            // 循序遍歷處理每一頁，確保修改的隔離性
             for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
                 const page = pdfDoc.getPage(pageIndex);
 
@@ -2905,18 +2483,18 @@
                     modifiedObjects += removeDirectContent(pdfDoc, page);
                 }
 
-                // 策略四：清除延伸圖形狀態 (ExtGState)
-                if (options.removeExtGState) {
-                    modifiedObjects += removeExtGState(pdfDoc, resources, pageIndex);
-                }
-
-                // 策略六：清除圖片型浮水印 Image XObject（在迴圈內執行，OCG 策略五則在迴圈外）
+                // 策略四：清除影像外部物件 (Image XObject)
                 if (options.removeImageXObject) {
                     modifiedObjects += removeImageXObjects(pdfDoc, resources, pageIndex);
                 }
+
+                // 策略五：清除延伸圖形狀態 (ExtGState)
+                if (options.removeExtGState) {
+                    modifiedObjects += removeExtGState(pdfDoc, resources, pageIndex);
+                }
             }
 
-            // 策略五：清理 OCG 圖層（定義於 Catalog 全域，於分頁迴圈外處理）
+            // 策略六：清理 OCG 圖層（定義於 Catalog 全域，於分頁迴圈外處理）
             if (options.removeOCG) {
                 modifiedObjects += removeOCG(pdfDoc);
             }
