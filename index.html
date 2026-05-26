@@ -1457,6 +1457,14 @@
                     }
                 });
 
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (directContentsToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeDirectContent");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
+
                 triggerWordsModal.classList.remove("active");
                 addStatusMessage(`已成功套用頁面直接內容清理設定！共選定清理 ${directContentsToDestroy.length} 個頁面直接內容實例。`, "success");
             }
@@ -1555,6 +1563,14 @@
                     }
                 });
 
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (imagesToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeImageXObject");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
+
                 imageKeywordsModal.classList.remove("active");
                 addStatusMessage(`已成功套用影像外部物件清理設定！共選定清除 ${imagesToDestroy.length} 個影像實例。`, "success");
             }
@@ -1649,6 +1665,14 @@
                     }
                 });
 
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (extGStatesToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeExtGState");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
+
                 extGStateKeywordsModal.classList.remove("active");
                 addStatusMessage(`已成功套用延伸圖形狀態清理設定！共選定清理 ${extGStatesToDestroy.length} 個延伸圖形狀態實例。`, "success");
             }
@@ -1741,6 +1765,14 @@
                     }
                 });
 
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (ocgsToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeOCG");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
+
                 ocgKeywordsModal.classList.remove("active");
                 addStatusMessage(`已成功套用選擇性內容群組清理設定！共選定隱藏 ${ocgsToDestroy.length} 個選擇性內容群組實例。`, "success");
             }
@@ -1830,6 +1862,15 @@
                         formXObjectsToDestroy.push(cb.dataset.rawText);
                     }
                 });
+
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (formXObjectsToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeFormXObject");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
+
                 addStatusMessage(`已選擇套用清理 ${formXObjectsToDestroy.length} 個表單外部物件。`, "success");
             }
             formXObjectKeywordsModal.classList.remove("active");
@@ -1968,6 +2009,14 @@
                         annotsToDestroy.push(cb.value);
                     }
                 });
+
+                // 若有選取任何選項且主策略 checkbox 未勾選，則自動勾選
+                if (annotsToDestroy.length > 0) {
+                    const mainCheckbox = document.getElementById("removeAnnotations");
+                    if (mainCheckbox && !mainCheckbox.checked) {
+                        mainCheckbox.checked = true;
+                    }
+                }
 
                 annotsSettingsModal.classList.remove("active");
                 addStatusMessage(`已成功套用註解清理設定！共選定清理 ${annotsToDestroy.length} 個註解實例。`, "success");
@@ -2494,13 +2543,13 @@
             // 更新 UI 選項顯示狀態
             const optionsContainer = document.getElementById('optionsContainer');
             if (!needsPassword || decryptedSuccessfully) {
-                // 確保所有策略選項列都顯示，以利使用者手動調整與嘗試
-                document.getElementById('optionRowFormXObject').classList.remove('hidden');
-                document.getElementById('optionRowAnnotations').classList.remove('hidden');
-                document.getElementById('optionRowDirectContent').classList.remove('hidden');
-                document.getElementById('optionRowExtGState').classList.remove('hidden');
-                document.getElementById('optionRowOCG').classList.remove('hidden');
-                document.getElementById('optionRowImageXObject').classList.remove('hidden');
+                // 根據各策略是否有偵測到可選物件，動態顯示或隱藏該策略選項列
+                document.getElementById('optionRowFormXObject').classList.toggle('hidden', detectedFormXObjects.size === 0);
+                document.getElementById('optionRowAnnotations').classList.toggle('hidden', detectedAnnotations.size === 0);
+                document.getElementById('optionRowDirectContent').classList.toggle('hidden', detectedDirectContents.size === 0);
+                document.getElementById('optionRowExtGState').classList.toggle('hidden', detectedExtGStates.size === 0);
+                document.getElementById('optionRowOCG').classList.toggle('hidden', detectedOCGs.size === 0);
+                document.getElementById('optionRowImageXObject').classList.toggle('hidden', detectedImages.size === 0);
 
                 // 載入 PDF 後，將策略選項區塊恢復為可見
                 optionsContainer.classList.remove('hidden');
