@@ -1965,11 +1965,11 @@
                                                                 if (!previewText) previewText = key.value();
                                                                 if (previewText.length > 50) previewText = previewText.substring(0, 50) + "...";
 
-                                                                 const entry = { keyName: key.value(), previewText: previewText, pages: [i + 1] };
-                                                                 detectedFormXObjects.set(rawStr, entry);
-                                                                 if (isSuspectFormXObject(entry)) {
-                                                                     formXObjectsToDestroy.push(rawStr);
-                                                                 }
+                                                                const entry = { keyName: key.value(), previewText: previewText, pages: [i + 1] };
+                                                                detectedFormXObjects.set(rawStr, entry);
+                                                                if (isSuspectFormXObject(entry)) {
+                                                                    formXObjectsToDestroy.push(rawStr);
+                                                                }
                                                             } else {
                                                                 const entry = detectedFormXObjects.get(rawStr);
                                                                 if (entry && !entry.pages.includes(i + 1)) {
@@ -2025,12 +2025,20 @@
 
                                             // 萃取特徵做為 previewText，例如透明度 ca/CA 與混合模式 BM
                                             let details = [];
+                                            let caVal = 1.0;
+                                            let CAVal = 1.0;
                                             if (gsObj instanceof PDFDict) {
                                                 const ca = gsObj.get(PDFName.of("ca"));
                                                 const CA = gsObj.get(PDFName.of("CA"));
                                                 const BM = gsObj.get(PDFName.of("BM"));
-                                                if (ca !== undefined) details.push(`ca: ${ca.toString()}`);
-                                                if (CA !== undefined) details.push(`CA: ${CA.toString()}`);
+                                                if (ca !== undefined) {
+                                                    details.push(`ca: ${ca.toString()}`);
+                                                    if (typeof ca.value === "function") caVal = ca.value();
+                                                }
+                                                if (CA !== undefined) {
+                                                    details.push(`CA: ${CA.toString()}`);
+                                                    if (typeof CA.value === "function") CAVal = CA.value();
+                                                }
                                                 if (BM !== undefined) details.push(`BM: ${BM.toString()}`);
                                             }
                                             const previewText = details.length > 0 ? details.join(", ") : "無透明度細節設定";
@@ -2040,20 +2048,13 @@
                                                 keyName: keyName,
                                                 previewText: previewText,
                                                 page: i + 1,
-                                                ref: gsObj
+                                                ref: gsObj,
+                                                caVal: caVal,
+                                                CAVal: CAVal
                                             });
 
                                             // 預設勾選：名稱疑似浮水印，或透明度低於 0.5 
-                                            let isSuspect = isSuspectedWatermark(keyName);
-                                            if (gsObj instanceof PDFDict) {
-                                                const ca = gsObj.get(PDFName.of("ca"));
-                                                const CA = gsObj.get(PDFName.of("CA"));
-                                                const caVal = ca && typeof ca.value === "function" ? ca.value() : 1.0;
-                                                const CAVal = CA && typeof CA.value === "function" ? CA.value() : 1.0;
-                                                if (caVal < 0.5 || CAVal < 0.5) {
-                                                    isSuspect = true;
-                                                }
-                                            }
+                                            let isSuspect = isSuspectedWatermark(keyName) || caVal < 0.5 || CAVal < 0.5;
                                             if (isSuspect) {
                                                 if (!extGStatesToDestroy.includes(uniqueKey)) {
                                                     extGStatesToDestroy.push(uniqueKey);
