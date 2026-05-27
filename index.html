@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。">
     <title>純前端 PDF 浮水印清除工具</title>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/text-encoding/0.7.0/encoding.min.js"
+        integrity="sha384-ZSs6LKr2GoUPDyHrN+rCQgyHL1yUyok5xMniSrgeRG7rUvA6vTmxronM1eZOfjgz"
         crossorigin="anonymous"></script>
 
     <style>
@@ -940,7 +944,11 @@
 
             <!-- 浮水印清除策略選項 -->
             <div class="options hidden" id="optionsContainer">
-                <h2>選擇清除策略</h2>
+                <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 16px; gap: 12px;">
+                    <h2 style="margin: 0;">選擇清除策略</h2>
+                    <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域關鍵字設定"
+                        aria-label="全域關鍵字設定">📝</button>
+                </div>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <div class="option-row" id="optionRowFormXObject">
                     <label><input type="checkbox" id="removeFormXObject" /> 清除表單外部物件 (Form XObject)</label>
@@ -1015,14 +1023,12 @@
                     <h2>💡 功能說明</h2>
                     <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
-                        <li><strong>清除表單外部物件 (Form XObject)</strong>：清除封裝在獨立子畫布中的向量或文字型物件（如最常見的背景浮水印格式），支援個體實例精確勾選。</li>
-                        <li><strong>清除註解 (Annotation)</strong>：清除覆蓋在文件上層的各種標記、電子印章或附註型物件，並保留超連結等其他有用註解。</li>
-                        <li><strong>清除頁面直接內容 (Direct Content)</strong>：精確偵測並清理解碼後的頁面核心內容流實例，完美保留正常的文字正文。</li>
-                        <li><strong>清除延伸圖形狀態 (ExtGState)</strong>：清除與浮水印相關的延伸狀態（透明度及混合模式等特徵），防止因模糊關鍵字匹配而誤殺正常渲染。</li>
-                        <li><strong>清除選擇性內容群組 (OCG)</strong>：隱藏不需要的選擇性內容圖層（圖層名稱解碼），支援個體實例精確勾選與預警。</li>
-                        <li><strong>清除影像外部物件 (Image XObject)</strong>：精確顯示並清除影像實例，提供寬高尺寸與壓縮格式等預覽，守護正常插圖與 Logo。</li>
-                        <li><strong>解除權限限制</strong>：對於僅設有編輯、列印或複製等操作限制（無開啟密碼）的 PDF，工具會自動嘗試解除限制後再進行處理。</li>
-                        <li><strong>解除開啟密碼保護</strong>：若 PDF 設有開啟密碼，可在處理前手動輸入密碼以解密，再進行後續的浮水印清除。</li>
+                        <li><strong>六大清除策略與精確勾選</strong>：涵蓋表單外部物件 (Form XObject)、註解 (Annotation)、頁面直接內容 (Direct
+                            Content)、延伸圖形狀態 (ExtGState)、選擇性內容群組 (OCG) 與影像外部物件 (Image XObject)，並支援全選/全不選的批次操作。</li>
+                        <li><strong>獨家即時預覽功能</strong>：在刪除任何物件前，可點擊預覽圖示精準查看該物件的實際外觀（紅框標示或單獨渲染），確保絕對不會誤刪重要內容。</li>
+                        <li><strong>智慧動態編碼匹配</strong>：內建動態轉譯引擎，能自動將中文轉換為標準 UTF-16BE 或舊式 Big5
+                            編碼的位元組特徵碼，完美相容台灣各種老舊企業系統或報表產出的文件。</li>
+                        <li><strong>無縫解除加密鎖定</strong>：自動解除無開啟密碼的編輯/列印限制；若文件受開啟密碼保護，也會在密碼驗證後自動於記憶體中快取，提升同批次檔案的處理效率。</li>
                     </ul>
                 </div>
                 <!-- 欄位二：免責聲明與備份安全指引 -->
@@ -1030,10 +1036,9 @@
                     <h2>⚠️ 免責聲明</h2>
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
-                        <li><strong>相容性限制</strong>：由於各 PDF 文件之製作規格與標準不同，本工具無法保證適用於所有檔案，部分加密或特殊排版之文件可能無法完整處理。</li>
-                        <li><strong>請務必備份原始檔案</strong>：清除浮水印會修改 PDF
-                            內部結構。<strong>請務必於處理前備份原始文件</strong>，以避免處理異常導致檔案損壞或資料遺失。</li>
-                        <li><strong>破壞性操作風險</strong>：部分進階清除策略（如「清除頁面直接內容」）若發生誤判，可能會造成文件正常內容遺失。請於下載前透過預覽功能仔細確認處理結果。</li>
+                        <li><strong>請務必於處理前備份</strong>：雖然本工具提供即時預覽功能來大幅降低誤刪機率，但清除浮水印仍會深度修改 PDF 內部結構，請保留原始檔案以防萬一。</li>
+                        <li><strong>相容性與解碼限制</strong>：由於 PDF 規格極度繁雜，部分採用特殊字型子集 (Subset) 或非標準架構的罕見文件，可能無法完美萃取或比對出文字特徵。
+                        </li>
                         <li><strong>合法使用授權</strong>：請確認您擁有該文件清除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因清除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
                         </li>
                     </ol>
@@ -1083,6 +1088,39 @@
                 </a>
             </div>
         </footer>
+    </div>
+
+    <!-- 全域關鍵字設定 Modal -->
+    <div id="globalKeywordsModal" class="modal-overlay">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ 全域關鍵字設定</h3>
+                <p style="font-size: 0.9rem; color: var(--muted); margin-top: 4px;">設定會自動儲存在瀏覽器中。多個關鍵字請以「逗號」分隔。</p>
+            </div>
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">1. 資源鍵名與圖層名稱關鍵字</label>
+                    <textarea id="keyKeywordsInput" rows="3"
+                        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: vertical;"
+                        placeholder="例如: watermark, confidential..."></textarea>
+                    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px; line-height: 1.4;">用於比對 PDF 底層資源名稱，建議輸入英文或簡寫。<br><span style="color: var(--primary);">適用策略：</span>表單外部物件 (Form XObject)、影像物件 (Image)、透明度圖層 (ExtGState) 與 可選內容群組 (OCG)。</p>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">2. 頁面直接內容關鍵字</label>
+                    <textarea id="contentKeywordsInput" rows="4"
+                        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: vertical;"
+                        placeholder="例如: 機密, 內部, 草稿..."></textarea>
+                    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px; line-height: 1.4;">用於比對畫面上實際顯示的文字（系統會自動為中文動態產生 UTF-16BE 與 Big5 特徵碼）。<br><span style="color: var(--primary);">適用策略：</span>頁面直接內容 (Direct Content) 與 標註物件 (Annotations)。</p>
+                </div>
+            </div>
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button id="resetGlobalKeywordsBtn" class="button btn-outline">回復預設值</button>
+                <div style="display: flex; gap: 12px;">
+                    <button id="closeGlobalKeywordsModalBtn" class="button">取消</button>
+                    <button id="saveGlobalKeywordsBtn" class="button button-primary">儲存並套用</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 密碼輸入彈窗 Modal -->
@@ -1274,21 +1312,33 @@
         // ==========================================
         // [Config Layer] 參數與設定 (全域浮水印判定關鍵字)
         // ==========================================
-        // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字 (包含簡寫與常見英文)
-        const WATERMARK_KEY_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo"];
+        const DEFAULT_KEY_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo"];
+        const DEFAULT_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
 
-        // 2. 專門用於比對實際呈現在畫面上的內容文字 (如 Direct Content) 的中文與英文關鍵字 (此處僅需填寫正規可讀的中文字串)
-        const WATERMARK_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+        // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字
+        let WATERMARK_KEY_KEYWORDS = [];
 
-        // === 內建常用中文浮水印的靜態 Big5 二進位特徵碼對照表 (確保完美相容老舊 Big5 編碼的 PDF) ===
-        const STATIC_BIG5_SIGNATURES = {
-            "僅供參考": "\u00B5\u00FB\u00B5\u00D1\u00B0\u00DF\u00AE\u00D2",
-            "機密": "\u00B7\u00F7\u00B8\u00A9",
-            "內部": "\u00A4\u00BA\u00B3\u00A1",
-            "草稿": "\u00B2\u00C4\u00BD\u0064",
-            "浮水印": "\u00B5\u00C5\u00A4\u00F4\u00E0\u00ED",
-            "水印": "\u00A4\u00F4\u00E0\u00ED"
-        };
+        // 2. 專門用於比對實際呈現在畫面上的內容文字 (如 Direct Content) 的中文與英文關鍵字
+        let WATERMARK_CONTENT_KEYWORDS = [];
+
+        /**
+         * 將字串動態編譯為 Big5 格式的 Latin1 字串
+         * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
+         */
+        function compileToBig5Latin1(str) {
+            try {
+                const encoder = new TextEncoder('big5', { NONSTANDARD_allowLegacyEncoding: true });
+                const bytes = encoder.encode(str);
+                let result = "";
+                for (let i = 0; i < bytes.length; i++) {
+                    result += String.fromCharCode(bytes[i]);
+                }
+                return result;
+            } catch (e) {
+                console.warn("Big5 動態編譯失敗，請確認已載入 text-encoding polyfill", e);
+                return "";
+            }
+        }
 
         /**
          * 將正規 UTF-8 字串動態編譯為 PDF 標準中文字型 UTF-16BE 在 Latin1 解碼流下的二進位特徵碼
@@ -1307,22 +1357,89 @@
         }
 
         // === 動態編譯並整合產生最終的高精度比對字串庫 ===
-        const FINAL_CONTENT_KEYWORDS = [];
-        WATERMARK_CONTENT_KEYWORDS.forEach(kw => {
-            // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解元數據等已處理過的文字)
-            FINAL_CONTENT_KEYWORDS.push(kw);
-            FINAL_CONTENT_KEYWORDS.push(kw.toLowerCase());
+        let FINAL_CONTENT_KEYWORDS = [];
 
-            // 2. 如果是中文字，則進行多重編碼轉譯
-            if (/[\u4e00-\u9fa5]/.test(kw)) {
-                // (A) 動態生成標準 UTF-16BE Latin1 特徵碼
-                FINAL_CONTENT_KEYWORDS.push(compileToUTF16BELatin1(kw));
+        function buildFinalContentKeywords() {
+            FINAL_CONTENT_KEYWORDS = [];
+            WATERMARK_CONTENT_KEYWORDS.forEach(kw => {
+                const trimmed = kw.trim();
+                if (!trimmed) return;
+                // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解元數據等已處理過的文字)
+                FINAL_CONTENT_KEYWORDS.push(trimmed);
+                FINAL_CONTENT_KEYWORDS.push(trimmed.toLowerCase());
 
-                // (B) 若為內建核心中文，從靜態對照表引入 Big5 特徵碼以相容老舊 PDF
-                if (STATIC_BIG5_SIGNATURES[kw]) {
-                    FINAL_CONTENT_KEYWORDS.push(STATIC_BIG5_SIGNATURES[kw]);
+                // 2. 如果是中文字，則進行多重編碼轉譯
+                if (/[\u4e00-\u9fa5]/.test(trimmed)) {
+                    // (A) 動態生成標準 UTF-16BE Latin1 特徵碼
+                    FINAL_CONTENT_KEYWORDS.push(compileToUTF16BELatin1(trimmed));
+
+                    // (B) 動態生成 Big5 特徵碼以相容老舊 PDF
+                    const big5Str = compileToBig5Latin1(trimmed);
+                    if (big5Str) {
+                        FINAL_CONTENT_KEYWORDS.push(big5Str);
+                    }
                 }
+            });
+        }
+
+        // ==========================================
+        // 關鍵字設定存取邏輯
+        // ==========================================
+        function loadGlobalKeywords() {
+            try {
+                const savedKeys = localStorage.getItem('WATERMARK_KEY_KEYWORDS');
+                const savedContents = localStorage.getItem('WATERMARK_CONTENT_KEYWORDS');
+                WATERMARK_KEY_KEYWORDS = savedKeys ? JSON.parse(savedKeys) : [...DEFAULT_KEY_KEYWORDS];
+                WATERMARK_CONTENT_KEYWORDS = savedContents ? JSON.parse(savedContents) : [...DEFAULT_CONTENT_KEYWORDS];
+            } catch (e) {
+                WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
+                WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];
             }
+            buildFinalContentKeywords();
+        }
+
+        function saveGlobalKeywords(keysArray, contentsArray) {
+            WATERMARK_KEY_KEYWORDS = keysArray;
+            WATERMARK_CONTENT_KEYWORDS = contentsArray;
+            localStorage.setItem('WATERMARK_KEY_KEYWORDS', JSON.stringify(keysArray));
+            localStorage.setItem('WATERMARK_CONTENT_KEYWORDS', JSON.stringify(contentsArray));
+            buildFinalContentKeywords();
+        }
+
+        // 初始載入
+        loadGlobalKeywords();
+
+        // 綁定設定介面事件
+        document.addEventListener("DOMContentLoaded", () => {
+            const modal = document.getElementById("globalKeywordsModal");
+            const keyInput = document.getElementById("keyKeywordsInput");
+            const contentInput = document.getElementById("contentKeywordsInput");
+
+            document.getElementById("openGlobalKeywordsModalBtn").addEventListener("click", () => {
+                keyInput.value = WATERMARK_KEY_KEYWORDS.join(", ");
+                contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(", ");
+                modal.classList.add("active");
+            });
+
+            document.getElementById("closeGlobalKeywordsModalBtn").addEventListener("click", () => {
+                modal.classList.remove("active");
+            });
+
+            document.getElementById("resetGlobalKeywordsBtn").addEventListener("click", () => {
+                if (confirm("確定要回復為預設關鍵字嗎？這將會覆寫您的自訂設定。")) {
+                    saveGlobalKeywords([...DEFAULT_KEY_KEYWORDS], [...DEFAULT_CONTENT_KEYWORDS]);
+                    modal.classList.remove("active");
+                    if (typeof appendLog === 'function') appendLog("已回復預設關鍵字。", "success");
+                }
+            });
+
+            document.getElementById("saveGlobalKeywordsBtn").addEventListener("click", () => {
+                const keysRaw = keyInput.value.split(",").map(s => s.trim()).filter(s => s);
+                const contentsRaw = contentInput.value.split(",").map(s => s.trim()).filter(s => s);
+                saveGlobalKeywords(keysRaw, contentsRaw);
+                modal.classList.remove("active");
+                if (typeof appendLog === 'function') appendLog("已儲存自訂關鍵字設定。", "success");
+            });
         });
 
         // ==========================================
@@ -2665,11 +2782,6 @@
             }
 
             // 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件 (Annots, XObject, ExtGState, OCG, Contents)
-            let hasFormXObject = false;
-            let hasImageXObject = false;
-            let hasExtGState = false;
-            let hasOCG = false;
-            let hasDirectContent = false;
 
             if (!needsPassword || decryptedSuccessfully) {
                 try {
@@ -2703,7 +2815,6 @@
                                                     ref: ocgRef
                                                 };
                                                 detectedOCGs.set(ocgRefStr, entry);
-                                                hasOCG = true;
 
                                                 // 預設勾選：使用統一的 OCG 判定函數
                                                 if (isSuspectOCG(entry)) {
@@ -2768,7 +2879,6 @@
                                             const subtype = xObj instanceof PDFRawStream ? scanDoc.context.lookup(xObj.dict.get(PDFName.of("Subtype"))) : null;
                                             if (subtype instanceof PDFName) {
                                                 if (subtype.toString() === "/Form") {
-                                                    hasFormXObject = true;
                                                     if (xObj instanceof PDFRawStream) {
                                                         try {
                                                             const data = xObj.getContents();
@@ -2793,7 +2903,6 @@
                                                     }
                                                 }
                                                 if (subtype.toString() === "/Image") {
-                                                    hasImageXObject = true;
                                                     if (xObj instanceof PDFRawStream) {
                                                         const keyName = key.value();
                                                         const uniqueKey = `${i}:${keyName}`;
