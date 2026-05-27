@@ -1560,7 +1560,7 @@
                         this.renderLabel(label, key, entry, isChecked);
                         
                         // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
-                        const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotsSubtypeItem"];
+                        const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotItem"];
                         if (previewTypes.includes(this.checkboxName)) {
                             const previewBtn = document.createElement("button");
                             previewBtn.type = "button";
@@ -1905,13 +1905,13 @@
                     previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
                 } else if (strategyType === "imageXObjectItem") {
                     titleEl.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
-                    previewUrl = await generateImageXObjectPreviewUrl(entry.ref, entry.rawStream);
+                    previewUrl = await generateImageXObjectPreviewUrl(entry.ref, entry.rawStream, entry.page - 1);
                 } else if (strategyType === "directContentItem") {
                     titleEl.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
                     previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1);
-                } else if (strategyType === "annotsSubtypeItem") {
+                } else if (strategyType === "annotItem") {
                     titleEl.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
-                    previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1);
+                    previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
                 }
 
                 if (previewUrl) {
@@ -2104,20 +2104,23 @@
             return url;
         }
 
-        async function generateImageXObjectPreviewUrl(xObjectRef, rawStream) {
+        async function generateImageXObjectPreviewUrl(xObjectRef, rawStream, pageIndex) {
+            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
-            let width = 500;
-            let height = 500;
+            const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+            const page = previewDoc.addPage(copiedPage);
+            
+            let imgWidth = 500;
+            let imgHeight = 500;
             if (rawStream instanceof PDFRawStream) {
                 const w = rawStream.dict.get(PDFName.of("Width"));
                 const h = rawStream.dict.get(PDFName.of("Height"));
-                if (w && typeof w.value === "function") width = w.value();
-                if (h && typeof h.value === "function") height = h.value();
+                if (w && typeof w.value === "function") imgWidth = w.value();
+                if (h && typeof h.value === "function") imgHeight = h.value();
             }
             
-            const page = previewDoc.addPage([width, height]);
+            // 【隔離策略】替換掉原本的 Resources 與 Contents，讓頁面完全乾淨只顯示圖片
             const ref = previewDoc.context.register(xObjectRef);
-            
             const xObjectKey = PDFName.of("TempImg");
             const resources = previewDoc.context.obj({});
             const xObjects = previewDoc.context.obj({});
@@ -2125,7 +2128,16 @@
             resources.set(PDFName.of("XObject"), xObjects);
             page.node.set(PDFName.of("Resources"), resources);
             
-            const drawCommand = `q ${width} 0 0 ${height} 0 0 cm /TempImg Do Q`;
+            // 將圖片置中於原頁面大小
+            const pageWidth = page.getWidth();
+            const pageHeight = page.getHeight();
+            const scale = Math.min((pageWidth * 0.8) / imgWidth, (pageHeight * 0.8) / imgHeight, 1);
+            const finalW = imgWidth * scale;
+            const finalH = imgHeight * scale;
+            const xOffset = (pageWidth - finalW) / 2;
+            const yOffset = (pageHeight - finalH) / 2;
+            
+            const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /TempImg Do Q`;
             const contentStream = previewDoc.context.stream(drawCommand);
             const contentStreamRef = previewDoc.context.register(contentStream);
             page.node.set(PDFName.of("Contents"), contentStreamRef);
@@ -2137,27 +2149,65 @@
             return url;
         }
 
-        async function generateAnnotationPreviewUrl(annotRefStr, pageIndex) {
+        async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-            previewDoc.addPage(copiedPage);
+            const page = previewDoc.addPage(copiedPage);
             
-            const pageNode = previewDoc.getPages()[0].node;
-            const annots = pageNode.lookup(PDFName.of("Annots"));
-            if (annots instanceof PDFArray) {
+            const pageNode = page.node;
+            
+            // 使用者要求：不展示原本頁面（清空背景），僅以紅框表示相對位置
+            pageNode.delete(PDFLib.PDFName.of("Contents"));
+            
+            const annots = pageNode.lookup(PDFLib.PDFName.of("Annots"));
+            let targetRect = null;
+            if (annots instanceof PDFLib.PDFArray) {
                 const newAnnots = previewDoc.context.obj([]);
                 for (let idx = 0; idx < annots.size(); idx++) {
                     const ref = annots.get(idx);
-                    if (ref.toString() === annotRefStr) {
+                    if (idx === annotIndex) {
                         newAnnots.push(ref);
+                        // 取得這個註解的 Rect 以便後續高亮標示
+                        const annotDict = previewDoc.context.lookup(ref);
+                        if (annotDict instanceof PDFLib.PDFDict) {
+                            const rect = annotDict.lookup(PDFLib.PDFName.of("Rect"));
+                            if (rect instanceof PDFLib.PDFArray && rect.size() === 4) {
+                                targetRect = [
+                                    rect.get(0).value(),
+                                    rect.get(1).value(),
+                                    rect.get(2).value(),
+                                    rect.get(3).value()
+                                ];
+                            }
+                        }
                     }
                 }
                 if (newAnnots.size() > 0) {
-                    pageNode.set(PDFName.of("Annots"), newAnnots);
+                    pageNode.set(PDFLib.PDFName.of("Annots"), newAnnots);
                 } else {
-                    pageNode.delete(PDFName.of("Annots"));
+                    pageNode.delete(PDFLib.PDFName.of("Annots"));
                 }
+            }
+            
+            // 由於很多註解（如 Link）沒有視覺外觀，我們在它所在的 Rect 位置畫一個半透明的紅色框來突顯它！
+            if (targetRect) {
+                const x0 = Math.min(targetRect[0], targetRect[2]);
+                const y0 = Math.min(targetRect[1], targetRect[3]);
+                const w = Math.abs(targetRect[2] - targetRect[0]);
+                const h = Math.abs(targetRect[3] - targetRect[1]);
+                
+                page.drawRectangle({
+                    x: x0,
+                    y: y0,
+                    width: w,
+                    height: h,
+                    borderWidth: 3,
+                    borderColor: PDFLib.rgb(1, 0.2, 0.2),
+                    color: PDFLib.rgb(1, 0.2, 0.2),
+                    opacity: 0.25,
+                    borderOpacity: 0.8
+                });
             }
             
             const pdfBytes = await previewDoc.save();
@@ -2173,6 +2223,12 @@
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
             const page = previewDoc.addPage(copiedPage);
             
+            // 【隔離策略】清空原本 Resources 裡面的 XObject，確保不會畫出圖片或 Form，只留純粹的 Direct Content
+            const resources = page.node.lookup(page.node.get(PDFName.of("Resources")));
+            if (resources instanceof PDFDict) {
+                resources.delete(PDFName.of("XObject"));
+            }
+
             const contentsKey = PDFName.of("Contents");
             const contents = page.node.lookup(page.node.get(contentsKey));
             if (contents instanceof PDFArray) {
@@ -2382,7 +2438,8 @@
                                             subtype: subtypeStr,
                                             previewText: previewText,
                                             page: i + 1,
-                                            ref: annotRef
+                                            ref: annotRef,
+                                            annotIndex: idx
                                         };
                                         detectedAnnotations.set(annotRefStr, entry);
 
