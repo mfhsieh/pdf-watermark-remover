@@ -1905,10 +1905,10 @@
                     previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
                 } else if (strategyType === "imageXObjectItem") {
                     titleEl.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
-                    previewUrl = await generateImageXObjectPreviewUrl(entry.ref, entry.rawStream, entry.page - 1);
+                    previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.page - 1);
                 } else if (strategyType === "directContentItem") {
                     titleEl.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
-                    previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1);
+                    previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
                 } else if (strategyType === "annotItem") {
                     titleEl.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
                     previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
@@ -2104,7 +2104,7 @@
             return url;
         }
 
-        async function generateImageXObjectPreviewUrl(xObjectRef, rawStream, pageIndex) {
+        async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
@@ -2119,15 +2119,6 @@
                 if (h && typeof h.value === "function") imgHeight = h.value();
             }
             
-            // 【隔離策略】替換掉原本的 Resources 與 Contents，讓頁面完全乾淨只顯示圖片
-            const ref = previewDoc.context.register(xObjectRef);
-            const xObjectKey = PDFName.of("TempImg");
-            const resources = previewDoc.context.obj({});
-            const xObjects = previewDoc.context.obj({});
-            xObjects.set(xObjectKey, ref);
-            resources.set(PDFName.of("XObject"), xObjects);
-            page.node.set(PDFName.of("Resources"), resources);
-            
             // 將圖片置中於原頁面大小
             const pageWidth = page.getWidth();
             const pageHeight = page.getHeight();
@@ -2137,7 +2128,9 @@
             const xOffset = (pageWidth - finalW) / 2;
             const yOffset = (pageHeight - finalH) / 2;
             
-            const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /TempImg Do Q`;
+            // 由於複製頁面已經連帶複製了 Resources 字典，該圖片物件依然以原 keyName 存在於該頁面的 XObject 中
+            const cleanKeyName = keyName.replace(/^\//, "");
+            const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${cleanKeyName} Do Q`;
             const contentStream = previewDoc.context.stream(drawCommand);
             const contentStreamRef = previewDoc.context.register(contentStream);
             page.node.set(PDFName.of("Contents"), contentStreamRef);
@@ -2217,7 +2210,7 @@
             return url;
         }
 
-        async function generateDirectContentPreviewUrl(streamRefStr, pageIndex) {
+        async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
@@ -2229,13 +2222,13 @@
                 resources.delete(PDFName.of("XObject"));
             }
 
-            const contentsKey = PDFName.of("Contents");
-            const contents = page.node.lookup(page.node.get(contentsKey));
-            if (contents instanceof PDFArray) {
+            const contentsKey = PDFLib.PDFName.of("Contents");
+            const contents = previewDoc.context.lookup(page.node.get(contentsKey));
+            if (contents instanceof PDFLib.PDFArray) {
                 const newContents = previewDoc.context.obj([]);
                 for (let idx = 0; idx < contents.size(); idx++) {
                     const ref = contents.get(idx);
-                    if (ref.toString() === streamRefStr) {
+                    if (idx === streamIndex) {
                         newContents.push(ref);
                     }
                 }
@@ -2618,7 +2611,8 @@
                                                 previewText: previewText,
                                                 page: i + 1,
                                                 ref: streamRef,
-                                                rawText: rawStr
+                                                rawText: rawStr,
+                                                streamIndex: entry.index
                                             });
 
                                             // 預設勾選：如果預覽文字或 rawText 中符合 suspect keywords，則預先標記
