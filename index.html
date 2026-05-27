@@ -1609,7 +1609,7 @@
                         this.renderLabel(label, key, entry, isChecked);
                         
                         // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
-                        const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotItem"];
+                        const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotItem", "ocgItem"];
                         if (previewTypes.includes(this.checkboxName)) {
                             const previewBtn = document.createElement("button");
                             previewBtn.type = "button";
@@ -1823,16 +1823,6 @@
             getSortCompare: (a, b) => a[1].name.localeCompare(b[1].name),
             renderLabel: (labelEl, key, entry) => {
                 labelEl.appendChild(document.createTextNode(`"${entry.name}"`));
-                
-                const previewBtn = document.createElement("button");
-                previewBtn.className = "small-preview-btn";
-                previewBtn.innerHTML = "👁️ 預覽移除效果";
-                previewBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openObjectPreview("ocgItem", key, entry);
-                };
-                labelEl.appendChild(previewBtn);
             },
             applyMsgTemplate: (len) => `已成功套用選擇性內容群組清理設定！共選定隱藏 ${len} 個選擇性內容群組實例。`,
             resetMsg: "已將當前檔案中的選擇性內容群組清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。"
