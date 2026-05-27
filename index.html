@@ -1034,11 +1034,24 @@
                     <h2>💡 功能說明</h2>
                     <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
                     <ul>
-                        <li><strong>六大清除策略與精確勾選</strong>：涵蓋「表單外部物件」 (Form XObject)、「註解」 (Annotation)、「頁面直接內容」 (Direct
-                            Content)、「延伸圖形狀態」 (ExtGState)、「選擇性內容群組」 (OCG) 與「影像外部物件」 (Image XObject)，並支援全選/全不選的批次操作。</li>
+                        <li><strong>六大精準清除策略</strong>：支援個別偵測、預覽與勾選，深入 PDF 底層結構：
+                            <ul
+                                style="margin: 6px 0 8px 0; padding-left: 20px; font-size: 0.82rem; color: var(--muted); line-height: 1.5; list-style-type: circle;">
+                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct
+                                        Content)</strong>：最常見的文字型浮水印，直接寫在頁面內容串流中的字樣（如「機密」、「限閱」）。</li>
+                                <li><strong style="color: var(--text);">「表單外部物件」 (Form
+                                        XObject)</strong>：獨立封裝的複用元件，常用作整頁重複疊加的半透明背景或滿版浮水印。</li>
+                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖影像（如 JPEG,
+                                    PNG）形式存在的浮水印，常是公司 Logo、章戳或掃描背景。</li>
+                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如
+                                    Acrobat 浮水印工具建立的獨立標記層）。</li>
+                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
+                                    值）與混合模式的狀態物件，許多半透明的向量背景、斜角字是透過此狀態控制。</li>
+                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF
+                                    的「圖層」（Layers），能控制特定背景或浮水印圖層的可見性。</li>
+                            </ul>
+                        </li>
                         <li><strong>獨家即時預覽功能</strong>：在刪除任何物件前，可點擊預覽圖示精準查看該物件的實際外觀（紅框標示或單獨渲染），確保絕對不會誤刪重要內容。</li>
-                        <li><strong>智慧動態編碼匹配</strong>：內建動態轉譯引擎，能自動將中文轉換為標準 UTF-16BE 或舊式 Big5
-                            編碼的位元組特徵碼，完美相容台灣各種老舊企業系統或報表產出的文件。</li>
                         <li><strong>無縫解除加密鎖定</strong>：自動解除無開啟密碼的編輯/列印限制；若文件受開啟密碼保護，也會在密碼驗證後自動於記憶體中快取，提升同批次檔案的處理效率。</li>
                     </ul>
                 </div>
@@ -1047,11 +1060,9 @@
                     <h2>⚠️ 免責聲明</h2>
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
-                        <li><strong>請務必於處理前備份</strong>：雖然本工具提供即時預覽功能來大幅降低誤刪機率，但清除浮水印仍會深度修改 PDF 內部結構，請保留原始檔案以防萬一。</li>
-                        <li><strong>相容性與解碼限制</strong>：由於 PDF 規格極度繁雜，部分採用特殊字型子集 (Subset) 或非標準架構的罕見文件，可能無法完美萃取或比對出文字特徵。
-                        </li>
-                        <li><strong>合法使用授權</strong>：請確認您擁有該文件清除浮水印之合法權利（例如個人學習、合理使用或已取得原作者之授權）。若因清除浮水印衍生任何版權爭議或法律責任，均須由使用者自行承擔。
-                        </li>
+                        <li><strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF 原始碼結構，請務必保留原始檔案備份以防萬一。</li>
+                        <li><strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集 (Subset)、自訂編碼 (CMap) 或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。</li>
+                        <li><strong>本地處理與法律責任</strong>：本工具採 100% 本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。</li>
                     </ol>
                 </div>
             </div>
