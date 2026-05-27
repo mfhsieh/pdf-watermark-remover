@@ -697,11 +697,15 @@
             font-weight: 600;
             width: 100%;
             color: inherit;
-            transition: color 0.2s ease;
+            transition: all 0.2s ease;
+            padding: 6px 12px 6px 8px; /* 右邊預留 12px 的內距，讓按鈕放大時不超出 */
+            border-radius: 6px;
+            box-sizing: border-box;
         }
 
         .annot-checkbox-label:hover {
             color: var(--primary);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .annot-checkbox-input {
@@ -710,6 +714,54 @@
             width: 15px;
             height: 15px;
             margin: 0;
+            flex-shrink: 0;
+        }
+
+        /* 彈出設定視窗專用的統一列表容器 */
+        .modal-list-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            margin: 15px 0;
+            width: 100%;
+            min-height: 50px;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            padding-right: 4px; /* 為滾動條與按鈕預留少許呼吸空間 */
+        }
+
+        /* OCG 專用的文字預覽按鈕樣式 */
+        .small-preview-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            margin-left: auto; /* 推至最右側以利對齊 */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .small-preview-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            transform: scale(1.04);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .small-preview-btn:active {
+            transform: scale(0.96);
         }
     </style>
 </head>
@@ -902,8 +954,7 @@
             <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="directContentListContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="directContentListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -926,8 +977,7 @@
             <p id="formXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="formXObjectListContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="formXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -950,8 +1000,7 @@
             <p id="annotsModalDesc" style="line-height: 1.8;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的註解（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="annotsSubtypesContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="annotsSubtypesContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -974,8 +1023,7 @@
             <p id="imageXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的影像外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="imageXObjectListContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="imageXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -998,8 +1046,7 @@
             <p id="extGStateModalDesc" style="line-height: 1.8;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="extGStateListContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="extGStateListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -1022,8 +1069,7 @@
             <p id="ocgModalDesc" style="line-height: 1.8;">請勾選您想要<strong
                     class="badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
-            <div id="ocgListContainer"
-                style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 15px 0; width: 100%; min-height: 50px; max-height: 300px; overflow-y: auto;">
+            <div id="ocgListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
@@ -1079,18 +1125,77 @@
         // ==========================================
         // 全域浮水印自動判定關鍵字設定（集中於開頭以利檢視與微調）
         // ==========================================
-        // 當偵測到 PDF 物件名稱或內容含有以下任一關鍵字時，該清理策略將會被自動預設勾選
-        const WATERMARK_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+        // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字 (包含簡寫與常見英文)
+        const WATERMARK_KEY_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo"];
+
+        // 2. 專門用於比對實際呈現在畫面上的內容文字 (如 Direct Content) 的中文與英文關鍵字 (此處僅需填寫正規可讀的中文字串)
+        const WATERMARK_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+
+        // === 內建常用中文浮水印的靜態 Big5 二進位特徵碼對照表 (確保完美相容老舊 Big5 編碼的 PDF) ===
+        const STATIC_BIG5_SIGNATURES = {
+            "僅供參考": "\u00B5\u00FB\u00B5\u00D1\u00B0\u00DF\u00AE\u00D2",
+            "機密": "\u00B7\u00F7\u00B8\u00A9",
+            "內部": "\u00A4\u00BA\u00B3\u00A1",
+            "草稿": "\u00B2\u00C4\u00BD\u0064",
+            "浮水印": "\u00B5\u00C5\u00A4\u00F4\u00E0\u00ED",
+            "水印": "\u00A4\u00F4\u00E0\u00ED"
+        };
 
         /**
-         * 判定文字或元件命名是否含有疑似浮水印的特徵
-         * @param {string} text - 待檢查的目標字串
-         * @returns {boolean} 是否符合特徵，若符合則對應清理策略會被預設自動勾選
+         * 將正規 UTF-8 字串動態編譯為 PDF 標準中文字型 UTF-16BE 在 Latin1 解碼流下的二進位特徵碼
+         * @param {string} str - 輸入中文
+         * @returns {string} Latin1 格式的特徵碼
          */
-        function isSuspectedWatermark(text) {
+        function compileToUTF16BELatin1(str) {
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i);
+                const hi = code >> 8;
+                const lo = code & 0xFF;
+                result += String.fromCharCode(hi, lo);
+            }
+            return result;
+        }
+
+        // === 動態編譯並整合產生最終的高精度比對字串庫 ===
+        const FINAL_CONTENT_KEYWORDS = [];
+        WATERMARK_CONTENT_KEYWORDS.forEach(kw => {
+            // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解元數據等已處理過的文字)
+            FINAL_CONTENT_KEYWORDS.push(kw);
+            FINAL_CONTENT_KEYWORDS.push(kw.toLowerCase());
+            
+            // 2. 如果是中文字，則進行多重編碼轉譯
+            if (/[\u4e00-\u9fa5]/.test(kw)) {
+                // (A) 動態生成標準 UTF-16BE Latin1 特徵碼
+                FINAL_CONTENT_KEYWORDS.push(compileToUTF16BELatin1(kw));
+                
+                // (B) 若為內建核心中文，從靜態對照表引入 Big5 特徵碼以相容老舊 PDF
+                if (STATIC_BIG5_SIGNATURES[kw]) {
+                    FINAL_CONTENT_KEYWORDS.push(STATIC_BIG5_SIGNATURES[kw]);
+                }
+            }
+        });
+
+        /**
+         * 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
+         * @param {string} text - 鍵名或圖層名稱
+         * @returns {boolean}
+         */
+        function isSuspectKeyName(text) {
             if (!text) return false;
             const lower = text.toLowerCase();
-            return WATERMARK_KEYWORDS.some(kw => lower.includes(kw));
+            return WATERMARK_KEY_KEYWORDS.some(kw => lower.includes(kw));
+        }
+
+        /**
+         * 判定實際內容文字流中是否含有疑似浮水印的特徵
+         * @param {string} text - 內容流文字
+         * @returns {boolean}
+         */
+        function isSuspectContentText(text) {
+            if (!text) return false;
+            const lower = text.toLowerCase();
+            return FINAL_CONTENT_KEYWORDS.some(kw => lower.includes(kw));
         }
 
         /**
@@ -1100,7 +1205,7 @@
          */
         function isSuspectFormXObject(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.keyName);
+            return isSuspectKeyName(entry.keyName);
         }
 
         /**
@@ -1120,7 +1225,7 @@
          */
         function isSuspectDirectContent(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.rawText);
+            return isSuspectContentText(entry.rawText);
         }
 
         /**
@@ -1130,7 +1235,7 @@
          */
         function isSuspectImageXObject(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.keyName);
+            return isSuspectKeyName(entry.keyName);
         }
 
         /**
@@ -1140,7 +1245,7 @@
          */
         function isSuspectExtGState(entry) {
             if (!entry) return false;
-            if (isSuspectedWatermark(entry.keyName)) return true;
+            if (isSuspectKeyName(entry.keyName)) return true;
             const caVal = entry.caVal !== undefined ? entry.caVal : 1.0;
             const CAVal = entry.CAVal !== undefined ? entry.CAVal : 1.0;
             return caVal < 0.5 || CAVal < 0.5;
@@ -1153,7 +1258,7 @@
          */
         function isSuspectOCG(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.name);
+            return isSuspectKeyName(entry.name);
         }
 
         /**
@@ -1577,7 +1682,8 @@
             getSortCompare: () => 0, // 無特定排序需求
             renderLabel: (labelEl, key, entry) => {
                 const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
-                labelEl.appendChild(document.createTextNode(`[表單外部物件] /${entry.keyName}${pageLabel}`));
+                const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
+                labelEl.appendChild(document.createTextNode(`${displayName}${pageLabel}`));
             },
             applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個表單外部物件。`,
             resetMsg: "已將當前檔案中的表單外部物件清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。"
@@ -1641,7 +1747,7 @@
             getSuspectState: (key, entry) => isSuspectDirectContent(entry),
             getSortCompare: (a, b) => a[1].page - b[1].page,
             renderLabel: (labelEl, key, entry) => {
-                const labelText = `[頁面直接內容] (第 ${entry.page} 頁)`;
+                const labelText = `第 ${entry.page} 頁`;
                 labelEl.appendChild(document.createTextNode(labelText));
             },
             applyMsgTemplate: (len) => `已成功套用頁面直接內容清理設定！共選定清理 ${len} 個頁面直接內容實例。`,
@@ -1666,12 +1772,8 @@
             getSuspectState: (key, entry) => isSuspectImageXObject(entry),
             getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
             renderLabel: (labelEl, key, entry) => {
-                labelEl.style.display = "flex";
-                labelEl.style.alignItems = "center";
-                labelEl.style.gap = "8px";
-                labelEl.style.width = "100%";
-                labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[影像外部物件] /${entry.keyName} (${entry.width}x${entry.height}, ${entry.filterStr}) (第 ${entry.page} 頁)`));
+                const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
+                labelEl.appendChild(document.createTextNode(`${displayName} (${entry.width}x${entry.height}, ${entry.filterStr}) (第 ${entry.page} 頁)`));
             },
             applyMsgTemplate: (len) => `已成功套用影像外部物件清理設定！共選定清除 ${len} 個影像實例。`,
             resetMsg: "已將當前檔案中的影像外部物件清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。"
@@ -1695,12 +1797,8 @@
             getSuspectState: (key, entry) => isSuspectExtGState(entry),
             getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
             renderLabel: (labelEl, key, entry) => {
-                labelEl.style.display = "flex";
-                labelEl.style.alignItems = "center";
-                labelEl.style.gap = "8px";
-                labelEl.style.width = "100%";
-                labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[延伸圖形狀態] /${entry.keyName} (${entry.detailText}) (第 ${entry.page} 頁)`));
+                const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
+                labelEl.appendChild(document.createTextNode(`${displayName} (${entry.detailText}) (第 ${entry.page} 頁)`));
             },
             applyMsgTemplate: (len) => `已成功套用延伸圖形狀態清理設定！共選定清理 ${len} 個延伸圖形狀態實例。`,
             resetMsg: "已將當前檔案中的延伸圖形狀態清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。"
@@ -1724,12 +1822,7 @@
             getSuspectState: (key, entry) => isSuspectOCG(entry),
             getSortCompare: (a, b) => a[1].name.localeCompare(b[1].name),
             renderLabel: (labelEl, key, entry) => {
-                labelEl.style.display = "flex";
-                labelEl.style.alignItems = "center";
-                labelEl.style.gap = "8px";
-                labelEl.style.width = "100%";
-                labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[選擇性內容群組] "${entry.name}"`));
+                labelEl.appendChild(document.createTextNode(`"${entry.name}"`));
                 
                 const previewBtn = document.createElement("button");
                 previewBtn.className = "small-preview-btn";
@@ -2501,7 +2594,7 @@
                                                         });
 
                                                         // 預設勾選：若名稱疑似浮水印，則預先打勾
-                                                        if (isSuspectedWatermark(keyName)) {
+                                                        if (isSuspectKeyName(keyName)) {
                                                             if (!imagesToDestroy.includes(uniqueKey)) {
                                                                 imagesToDestroy.push(uniqueKey);
                                                             }
@@ -2553,7 +2646,7 @@
                                             });
 
                                             // 預設勾選：名稱疑似浮水印，或透明度低於 0.5 
-                                            let isSuspect = isSuspectedWatermark(keyName) || caVal < 0.5 || CAVal < 0.5;
+                                            let isSuspect = isSuspectKeyName(keyName) || caVal < 0.5 || CAVal < 0.5;
                                             if (isSuspect) {
                                                 if (!extGStatesToDestroy.includes(uniqueKey)) {
                                                     extGStatesToDestroy.push(uniqueKey);
@@ -2601,7 +2694,7 @@
                                             });
 
                                             // 預設勾選：如果 rawText 中符合 suspect keywords，則預先標記
-                                            if (isSuspectedWatermark(rawStr)) {
+                                            if (isSuspectContentText(rawStr)) {
                                                 if (!directContentsToDestroy.includes(refStr)) {
                                                     directContentsToDestroy.push(refStr);
                                                 }
