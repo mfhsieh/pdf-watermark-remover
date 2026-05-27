@@ -886,24 +886,47 @@
         .modal-select-controls {
             display: flex;
             justify-content: flex-start;
-            gap: 15px;
-            margin-bottom: 10px;
-            padding-left: 5px;
+            gap: 10px;
+            margin: 0 0 12px 2px;
         }
 
-        /* 全選 / 全不選 連結按鈕 */
+        /* 全選 / 全不選 精美微型按鈕 */
         .modal-select-btn {
-            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 500;
             text-decoration: none;
             cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
 
         .modal-select-btn.select-all {
+            background-color: rgba(99, 102, 241, 0.08);
             color: var(--primary);
+            border-color: rgba(99, 102, 241, 0.15);
+        }
+
+        .modal-select-btn.select-all:hover {
+            background-color: rgba(99, 102, 241, 0.14);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-1px);
         }
 
         .modal-select-btn.deselect-all {
+            background-color: rgba(107, 114, 128, 0.08);
             color: var(--muted);
+            border-color: rgba(107, 114, 128, 0.15);
+        }
+
+        .modal-select-btn.deselect-all:hover {
+            background-color: rgba(107, 114, 128, 0.14);
+            border-color: rgba(107, 114, 128, 0.3);
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -1102,8 +1125,10 @@
                         style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: none; overflow-y: hidden; box-sizing: border-box; min-height: 40px;"
                         placeholder="例如: 機密, 內部, 草稿..."></textarea>
                     <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px; line-height: 1.4;">
-                        用於比對頁面內容串流（Content Stream）中實際顯示的文字（系統會自動為非 ASCII 字元動態產生 UTF-16BE 特徵碼，含有中文時則額外產生 Big5
-                        特徵碼）。<br><span style="color: var(--primary);">適用策略：</span>「頁面直接內容」 (Direct Content)。
+                        用於比對內容串流（Content Stream）中實際顯示的文字。<br>
+                        <span style="color: var(--primary);">適用策略：</span>「頁面直接內容」 (Direct Content)。<br>
+                        <span style="color: var(--danger); font-weight: 600;">限制：</span>若 PDF 採用自訂字型編碼
+                        (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
                     </p>
                 </div>
             </div>
@@ -1137,9 +1162,9 @@
         aria-labelledby="triggerWordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「頁面直接內容」清理選項</h3>
-            <p id="triggerWordsModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「頁面直接內容」（未勾選的項目將會<strong
-                    class="badge badge-success">保留</strong>）：</p>
+            <p id="triggerWordsModalDesc" class="modal-desc">請勾選想要<strong
+                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="directContentListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1160,9 +1185,9 @@
         aria-labelledby="formXObjectKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「表單外部物件」清理選項</h3>
-            <p id="formXObjectModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「表單外部物件」（未勾選的項目將會<strong
-                    class="badge badge-success">保留</strong>）：</p>
+            <p id="formXObjectModalDesc" class="modal-desc">請勾選想要<strong
+                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="formXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1183,9 +1208,8 @@
         aria-labelledby="annotsSettingsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「註解」清理選項</h3>
-            <p id="annotsModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「註解」（未勾選的項目將會<strong
-                    class="badge badge-success">保留</strong>）：
+            <p id="annotsModalDesc" class="modal-desc">請勾選想要<strong
+                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="annotsSubtypesContainer" class="modal-list-container">
@@ -1207,9 +1231,9 @@
         aria-labelledby="imageKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「影像外部物件」清理選項</h3>
-            <p id="imageXObjectModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「影像外部物件」（未勾選的項目將會<strong
-                    class="badge badge-success">保留</strong>）：</p>
+            <p id="imageXObjectModalDesc" class="modal-desc">請勾選想要<strong
+                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="imageXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1230,9 +1254,9 @@
         aria-labelledby="extGStateKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「延伸圖形狀態」清理選項</h3>
-            <p id="extGStateModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「延伸圖形狀態」（未勾選的項目將會<strong
-                    class="badge badge-success">保留</strong>）：</p>
+            <p id="extGStateModalDesc" class="modal-desc">請勾選想要<strong
+                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="extGStateListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1253,8 +1277,7 @@
         aria-labelledby="ocgKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「選擇性內容群組」清理選項</h3>
-            <p id="ocgModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge badge-danger">清除</strong>的「選擇性內容群組」（未勾選的項目將會<strong
+            <p id="ocgModalDesc" class="modal-desc">請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：</p>
 
             <div id="ocgListContainer" class="modal-list-container">
@@ -1877,6 +1900,12 @@
 
                 this.listContainer.innerHTML = "";
 
+                // 清除之前渲染可能留在 listContainer 上方的「全選/全不選」控制列
+                const prevSibling = this.listContainer.previousElementSibling;
+                if (prevSibling && prevSibling.classList.contains("modal-select-controls")) {
+                    prevSibling.remove();
+                }
+
                 if (map.size === 0) {
                     if (this.desc) this.desc.classList.add("hidden");
                     this.listContainer.innerHTML = `
@@ -1917,7 +1946,7 @@
 
                     controlsRow.appendChild(selectAllBtn);
                     controlsRow.appendChild(deselectAllBtn);
-                    this.listContainer.appendChild(controlsRow);
+                    this.listContainer.before(controlsRow);
 
                     const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
                     let index = 0;
