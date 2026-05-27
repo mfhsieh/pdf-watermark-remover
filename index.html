@@ -296,6 +296,41 @@
             text-decoration: none;
         }
 
+        /* 旋轉動畫定義 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 物件預覽按鈕 (👁️) 的微動畫與高質感樣式 */
+        .preview-item-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 0.85rem;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            vertical-align: middle;
+        }
+
+        .preview-item-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            transform: scale(1.08);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .preview-item-btn:active {
+            transform: scale(0.95);
+        }
+
         /* 公用隱藏樣式 */
         .hidden {
             display: none !important;
@@ -1003,6 +1038,31 @@
             </div>
         </div>
     </div>
+    
+    <!-- 浮水印物件即時預覽 Modal (磨砂玻璃科技感) -->
+    <div id="objectPreviewModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 800px; width: 90%; height: 80vh; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
+                <h3 id="objectPreviewTitle" style="margin: 0; font-size: 1.3rem; color: var(--text);">🔍 即時預覽</h3>
+                <button id="closeObjectPreviewModalBtn" class="icon-btn" style="border: none; background: transparent; font-size: 1.5rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;" title="關閉預覽">×</button>
+            </div>
+            
+            <div style="flex: 1; position: relative; width: 100%; height: calc(100% - 130px); background: rgba(0, 0, 0, 0.15); border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <!-- 載入動畫 Spinner -->
+                <div id="objectPreviewSpinner" style="display: none; text-align: center;">
+                    <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="color: var(--muted); margin: 0; font-size: 0.9rem;">正在從 PDF 中提取資源並渲染預覽中...</p>
+                </div>
+                
+                <!-- PDF 預覽 Iframe -->
+                <iframe id="objectPreviewIframe" style="width: 100%; height: 100%; border: none; display: none;" src=""></iframe>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 15px; display: flex; justify-content: flex-end; width: 100%;">
+                <button id="closeObjectPreviewBtn" class="button" style="padding: 10px 24px;">關閉預覽</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
@@ -1498,6 +1558,32 @@
 
                         label.appendChild(input);
                         this.renderLabel(label, key, entry, isChecked);
+                        
+                        // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
+                        const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotsSubtypeItem"];
+                        if (previewTypes.includes(this.checkboxName)) {
+                            const previewBtn = document.createElement("button");
+                            previewBtn.type = "button";
+                            previewBtn.className = "preview-item-btn";
+                            previewBtn.title = "即時預覽該浮水印物件";
+                            previewBtn.innerHTML = "👁️";
+                            previewBtn.style.marginLeft = "auto"; // 推至最右側以利對齊
+                            previewBtn.style.padding = "2px 8px";
+                            
+                            previewBtn.addEventListener("click", (e) => {
+                                e.preventDefault();
+                                e.stopPropagation(); // 阻止點擊事件冒泡，防止誤觸核取方塊的狀態
+                                openObjectPreview(this.checkboxName, key, entry);
+                            });
+                            
+                            // 確保 label 具有 flex 排版，使 marginLeft: auto 能夠漂亮對齊
+                            label.style.display = "flex";
+                            label.style.alignItems = "center";
+                            label.style.width = "100%";
+                            
+                            label.appendChild(previewBtn);
+                        }
+
                         this.listContainer.appendChild(label);
                         index++;
                     });
@@ -1722,6 +1808,7 @@
         let processedUrl = null;    // 處理後 PDF 於瀏覽器端動態建立的 Blob URL
         let cachedPassword = null;  // 本次選檔後使用者輸入的開啟密碼快取（換檔時清除）
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
+        let previewUrlCache = []; // 預覽 Blob URL 快取（換檔時清除）
         let lastSuccessPassword = null;  // 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存）
         let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解實例
 
@@ -1734,6 +1821,7 @@
                 URL.revokeObjectURL(processedUrl);
                 processedUrl = null;
             }
+            clearPreviewUrlCache(); // 釋放項目預覽 Blob URL 快取
 
             // 2. 隱藏下載按鈕並重置連結
             downloadArea.classList.add("hidden");
@@ -1781,6 +1869,331 @@
         }
 
         /**
+         * 釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏
+         */
+        function clearPreviewUrlCache() {
+            previewUrlCache.forEach(url => {
+                try { URL.revokeObjectURL(url); } catch (e) {}
+            });
+            previewUrlCache = [];
+        }
+
+        /**
+         * 開啟物件即時預覽彈窗
+         */
+        async function openObjectPreview(strategyType, key, entry) {
+            const modal = document.getElementById("objectPreviewModal");
+            const titleEl = document.getElementById("objectPreviewTitle");
+            const spinner = document.getElementById("objectPreviewSpinner");
+            const iframe = document.getElementById("objectPreviewIframe");
+
+            titleEl.textContent = `🔍 即時預覽：正在載入項目...`;
+            spinner.style.display = "block";
+            iframe.style.display = "none";
+            iframe.src = "";
+            modal.classList.add("active");
+
+            try {
+                if (!cachedDecryptedBytes) {
+                    throw new Error("無法讀取 PDF 原始資料。");
+                }
+
+                let previewUrl = "";
+                
+                if (strategyType === "formXObjectItem") {
+                    titleEl.textContent = `🔍 表單外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.pages[0]} 頁)`;
+                    previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
+                } else if (strategyType === "imageXObjectItem") {
+                    titleEl.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
+                    previewUrl = await generateImageXObjectPreviewUrl(entry.ref, entry.rawStream);
+                } else if (strategyType === "directContentItem") {
+                    titleEl.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
+                    previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1);
+                } else if (strategyType === "annotsSubtypeItem") {
+                    titleEl.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
+                    previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1);
+                }
+
+                if (previewUrl) {
+                    iframe.src = previewUrl;
+                    iframe.style.display = "block";
+                } else {
+                    throw new Error("不支援此物件類型的預覽。");
+                }
+            } catch (err) {
+                console.error("預覽生成失敗", err);
+                titleEl.textContent = `❌ 預覽失敗：${err.message}`;
+            } finally {
+                spinner.style.display = "none";
+            }
+        }
+
+        /**
+         * 關閉物件即時預覽彈窗
+         */
+        function closeObjectPreview() {
+            const modal = document.getElementById("objectPreviewModal");
+            const iframe = document.getElementById("objectPreviewIframe");
+            modal.classList.remove("active");
+            iframe.src = "";
+        }
+
+        // 綁定關閉預覽彈窗事件
+        document.getElementById("closeObjectPreviewModalBtn").addEventListener("click", closeObjectPreview);
+        document.getElementById("closeObjectPreviewBtn").addEventListener("click", closeObjectPreview);
+
+        // ==========================================
+        // 四大即時預覽 PDF 生成器實作
+        // ==========================================
+
+        // 【工具函數】從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
+        async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
+            const page = srcDoc.getPage(pageIndex);
+            const contentsRef = page.node.get(PDFName.of("Contents"));
+            const contents = srcDoc.context.lookup(contentsRef);
+            
+            const streams = [];
+            if (contents instanceof PDFArray) {
+                for (let i = 0; i < contents.size(); i++) {
+                    streams.push(srcDoc.context.lookup(contents.get(i)));
+                }
+            } else if (contents) {
+                streams.push(contents);
+            }
+            
+            const doToken = `/${cleanKeyName} Do`;
+            
+            for (const stream of streams) {
+                if (!(stream instanceof PDFRawStream)) continue;
+                
+                let data = stream.contents;
+                // 嘗試解壓縮（FlateDecode）
+                const filter = stream.dict.get(PDFName.of("Filter"));
+                if (filter && filter.toString() === "/FlateDecode") {
+                    try {
+                        // PDF 的 FlateDecode 是 zlib 格式（帶 header），在瀏覽器中對應 "deflate"（非 "deflate-raw"）
+                        const ds = new DecompressionStream("deflate");
+                        const writer = ds.writable.getWriter();
+                        const reader = ds.readable.getReader();
+                        writer.write(data);
+                        writer.close();
+                        const chunks = [];
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            chunks.push(value);
+                        }
+                        const total = chunks.reduce((a, c) => a + c.length, 0);
+                        const merged = new Uint8Array(total);
+                        let offset = 0;
+                        for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+                        data = merged;
+                    } catch (e) {
+                        console.warn("解壓縮失敗，嘗試 deflate-raw", e);
+                        try {
+                            const ds = new DecompressionStream("deflate-raw");
+                            const writer = ds.writable.getWriter();
+                            const reader = ds.readable.getReader();
+                            writer.write(stream.contents);
+                            writer.close();
+                            const chunks = [];
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                chunks.push(value);
+                            }
+                            const total = chunks.reduce((a, c) => a + c.length, 0);
+                            const merged = new Uint8Array(total);
+                            let offset = 0;
+                            for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+                            data = merged;
+                        } catch (e2) {
+                            console.warn("deflate-raw 也失敗，使用原始資料");
+                        }
+                    }
+                }
+                
+                // 轉為字串搜尋
+                const text = new TextDecoder("latin1").decode(data);
+                const doIdx = text.indexOf(doToken);
+                if (doIdx === -1) continue;
+                
+                // 向前搜尋最近的 'q' 指令（儲存 graphics state）
+                const before = text.slice(0, doIdx);
+                let qIdx = before.lastIndexOf("\nq\n");
+                if (qIdx === -1) qIdx = before.lastIndexOf(" q\n");
+                if (qIdx === -1) qIdx = before.lastIndexOf("\nq ");
+                if (qIdx === -1) qIdx = before.lastIndexOf("\nq");
+                
+                const block = qIdx !== -1 ? before.slice(qIdx).trim() : "";
+                
+                // 確認 block 中有 cm 矩陣
+                const hasCM = /[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+cm/.test(block);
+                if (hasCM) {
+                    // 移除開頭的 'q'（後面我們自己加），回傳純淨的繪圖指令（cm + 顏色等）
+                    return block.replace(/^q\s*/, "");
+                }
+            }
+            return null;
+        }
+        
+        async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
+            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+            const previewDoc = await PDFDocument.create();
+            
+            const srcPage = srcDoc.getPage(pageIndex);
+            const originalResources = srcPage.node.lookup(PDFName.of("Resources"));
+            
+            // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
+            const cleanKeyName = keyName.replace(/^\//, "");
+            
+            // 1. 深入尋找該 Form XObject 的物件參照
+            let fmObj = null;
+            
+            if (originalResources instanceof PDFDict) {
+                const xObjects = srcDoc.context.lookup(originalResources.get(PDFName.of("XObject")));
+                if (xObjects instanceof PDFDict && xObjects.has(PDFName.of(cleanKeyName))) {
+                    fmObj = srcDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
+                }
+            }
+            
+            if (!fmObj) {
+                throw new Error("找不到該 Form 物件，無法產生預覽。");
+            }
+            
+            // 2. 直接「拷貝原頁面」，從而完美繼承原頁面中所有的字型資源、編碼、CMap 與環境上下文！
+            const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+            const page = previewDoc.addPage(copiedPage);
+            // 保留原頁面尺寸，讓浮水印顯示在原始位置（含旋轉角度）
+            
+            // 3. 解決 OCG 圖層遮罩導致預覽空白的致命 Bug：
+            // 在拷貝出來的頁面中，直接找到 /XObject 中的該 Form 物件，將其 /OC 屬性刪除，強制讓它 100% 渲染！
+            const pageResources = page.node.lookup(PDFName.of("Resources"));
+            if (pageResources instanceof PDFDict) {
+                const xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of("XObject")));
+                if (xObjects instanceof PDFDict && xObjects.has(PDFName.of(cleanKeyName))) {
+                    const clonedFm = previewDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
+                    if (clonedFm instanceof PDFRawStream) {
+                        clonedFm.dict.delete(PDFName.of("OC"));
+                    }
+                }
+            }
+            
+            // 4. 嘗試從原頁面 Contents Stream 中提取原始的 cm 變換矩陣（含旋轉角度）
+            // 若找得到，就用原始矩陣還原浮水印的真實角度；找不到則退回 BBox 平移模式
+            let drawBlock = await extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName);
+            
+            let drawCommand;
+            if (drawBlock) {
+                // 用原始的完整繪圖區塊（cm 矩陣 + 顏色 + Do），完美還原旋轉！
+                drawCommand = `q\n${drawBlock}\n/${cleanKeyName} Do\nQ`;
+            } else {
+                // Fallback：不再強制平移至 (0,0)，讓 XObject 保持在自己 BBox 的原始座標上
+                // 這樣在預覽時才不會覺得物件明顯跑到左下角（偏移）
+                drawCommand = `q /${cleanKeyName} Do Q`;
+            }
+            
+            const contentStream = previewDoc.context.stream(drawCommand);
+            const contentStreamRef = previewDoc.context.register(contentStream);
+            page.node.set(PDFName.of("Contents"), contentStreamRef);
+            
+            const pdfBytes = await previewDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            previewUrlCache.push(url);
+            return url;
+        }
+
+        async function generateImageXObjectPreviewUrl(xObjectRef, rawStream) {
+            const previewDoc = await PDFDocument.create();
+            let width = 500;
+            let height = 500;
+            if (rawStream instanceof PDFRawStream) {
+                const w = rawStream.dict.get(PDFName.of("Width"));
+                const h = rawStream.dict.get(PDFName.of("Height"));
+                if (w && typeof w.value === "function") width = w.value();
+                if (h && typeof h.value === "function") height = h.value();
+            }
+            
+            const page = previewDoc.addPage([width, height]);
+            const ref = previewDoc.context.register(xObjectRef);
+            
+            const xObjectKey = PDFName.of("TempImg");
+            const resources = previewDoc.context.obj({});
+            const xObjects = previewDoc.context.obj({});
+            xObjects.set(xObjectKey, ref);
+            resources.set(PDFName.of("XObject"), xObjects);
+            page.node.set(PDFName.of("Resources"), resources);
+            
+            const drawCommand = `q ${width} 0 0 ${height} 0 0 cm /TempImg Do Q`;
+            const contentStream = previewDoc.context.stream(drawCommand);
+            const contentStreamRef = previewDoc.context.register(contentStream);
+            page.node.set(PDFName.of("Contents"), contentStreamRef);
+            
+            const pdfBytes = await previewDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            previewUrlCache.push(url);
+            return url;
+        }
+
+        async function generateAnnotationPreviewUrl(annotRefStr, pageIndex) {
+            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+            const previewDoc = await PDFDocument.create();
+            const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+            previewDoc.addPage(copiedPage);
+            
+            const pageNode = previewDoc.getPages()[0].node;
+            const annots = pageNode.lookup(PDFName.of("Annots"));
+            if (annots instanceof PDFArray) {
+                const newAnnots = previewDoc.context.obj([]);
+                for (let idx = 0; idx < annots.size(); idx++) {
+                    const ref = annots.get(idx);
+                    if (ref.toString() === annotRefStr) {
+                        newAnnots.push(ref);
+                    }
+                }
+                if (newAnnots.size() > 0) {
+                    pageNode.set(PDFName.of("Annots"), newAnnots);
+                } else {
+                    pageNode.delete(PDFName.of("Annots"));
+                }
+            }
+            
+            const pdfBytes = await previewDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            previewUrlCache.push(url);
+            return url;
+        }
+
+        async function generateDirectContentPreviewUrl(streamRefStr, pageIndex) {
+            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+            const previewDoc = await PDFDocument.create();
+            const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+            const page = previewDoc.addPage(copiedPage);
+            
+            const contentsKey = PDFName.of("Contents");
+            const contents = page.node.lookup(page.node.get(contentsKey));
+            if (contents instanceof PDFArray) {
+                const newContents = previewDoc.context.obj([]);
+                for (let idx = 0; idx < contents.size(); idx++) {
+                    const ref = contents.get(idx);
+                    if (ref.toString() === streamRefStr) {
+                        newContents.push(ref);
+                    }
+                }
+                page.node.set(contentsKey, newContents);
+            }
+            
+            const pdfBytes = await previewDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            previewUrlCache.push(url);
+            return url;
+        }
+
+        /**
          * 載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
          * 並將解密後的位元組與密碼快取，最後顯示預覽。
          * @param {File} file - 使用者上傳的原始 PDF 檔案
@@ -1804,9 +2217,10 @@
             let decryptedSuccessfully = false; // 用於在 showOriginalPreview 函式末端判斷是否成功解密，以決定是否顯示按鈕
 
             try {
-                // 先嘗試直接用 pdf-lib 載入；若有加密會拋錯
                 const testDoc = await PDFDocument.load(rawBytes, { updateMetadata: false });
                 testDoc.getPageCount(); // 觸發 lazy-parsing
+                // 正常無加密 PDF，直接快取解密後的原始位元組
+                cachedDecryptedBytes = rawBytes;
             } catch (e) {
                 // 進一步確認：嘗試以空密碼解密（空密碼可解開「僅有編輯權限限制」的 PDF）
                 try {
