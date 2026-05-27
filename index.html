@@ -936,8 +936,8 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>純前端 PDF 浮水印清除工具 <span class="version-badge">v1.2.0</span></h1>
-            <p>所有處理在瀏覽器端執行，檔案不會上傳至伺服器</p>
+            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.0.0</span></h1>
+            <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
         </header>
 
         <!-- 主互動控制卡片 -->
@@ -1032,27 +1032,21 @@
                 <!-- 欄位一：深入淺出的技術與功能說明 -->
                 <div class="info-column">
                     <h2>💡 功能說明</h2>
-                    <p>此工具完全在您的瀏覽器端直接處理 PDF 檔案，處理過程中您的檔案<strong>絕對不會上傳至任何伺服器</strong>，守護您的文件隱私與資訊安全。</p>
+                    <p>此工具在瀏覽器端直接處理 PDF 檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。</p>
                     <ul>
-                        <li><strong>六大精準清除策略</strong>：支援個別偵測、預覽與勾選，深入 PDF 底層結構：
+                        <li><strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF 底層結構進行清除：
                             <ul
                                 style="margin: 6px 0 8px 0; padding-left: 20px; font-size: 0.82rem; color: var(--muted); line-height: 1.5; list-style-type: circle;">
-                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct
-                                        Content)</strong>：最常見的文字型浮水印，直接寫在頁面內容串流中的字樣（如「機密」、「限閱」）。</li>
-                                <li><strong style="color: var(--text);">「表單外部物件」 (Form
-                                        XObject)</strong>：獨立封裝的複用元件，常用作整頁重複疊加的半透明背景或滿版浮水印。</li>
-                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖影像（如 JPEG,
-                                    PNG）形式存在的浮水印，常是公司 Logo、章戳或掃描背景。</li>
-                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如
-                                    Acrobat 浮水印工具建立的獨立標記層）。</li>
-                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
-                                    值）與混合模式的狀態物件，許多半透明的向量背景、斜角字是透過此狀態控制。</li>
-                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF
-                                    的「圖層」（Layers），能控制特定背景或浮水印圖層的可見性。</li>
+                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
+                                <li><strong style="color: var(--text);">「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
+                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。</li>
+                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如浮水印標記層）。</li>
+                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha 值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。</li>
+                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF 的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
                             </ul>
                         </li>
-                        <li><strong>獨家即時預覽功能</strong>：在刪除任何物件前，可點擊預覽圖示精準查看該物件的實際外觀（紅框標示或單獨渲染），確保絕對不會誤刪重要內容。</li>
-                        <li><strong>無縫解除加密鎖定</strong>：自動解除無開啟密碼的編輯/列印限制；若文件受開啟密碼保護，也會在密碼驗證後自動於記憶體中快取，提升同批次檔案的處理效率。</li>
+                        <li><strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。</li>
+                        <li><strong>權限解鎖與密碼沿用</strong>：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。</li>
                     </ul>
                 </div>
                 <!-- 欄位二：免責聲明與備份安全指引 -->
@@ -1061,8 +1055,10 @@
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
                         <li><strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF 原始碼結構，請務必保留原始檔案備份以防萬一。</li>
-                        <li><strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集 (Subset)、自訂編碼 (CMap) 或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。</li>
-                        <li><strong>本地處理與法律責任</strong>：本工具採 100% 本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。</li>
+                        <li><strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集 (Subset)、自訂編碼 (CMap)
+                            或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。</li>
+                        <li><strong>本地處理與法律責任</strong>：本工具採
+                            本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。</li>
                     </ol>
                 </div>
             </div>
@@ -1321,7 +1317,7 @@
                 <!-- 載入動畫 Spinner（預設隱藏） -->
                 <div id="objectPreviewSpinner" class="preview-modal-spinner hidden">
                     <div class="preview-modal-spinner-icon"></div>
-                    <p class="preview-modal-spinner-text">正在從 PDF 中提取資源並渲染預覽中...</p>
+                    <p class="preview-modal-spinner-text">正在產生預覽，請稍候...</p>
                 </div>
 
                 <!-- PDF 預覽 Iframe（預設隱藏，預覽生成後顯現） -->
@@ -1801,6 +1797,7 @@
         // ==========================================
         // [UI Components] DOM 元素選取與介面控制
         // ==========================================
+
         const fileInput = document.getElementById("fileInput");
         const fileArea = document.getElementById("fileArea");
         const fileAreaInner = document.querySelector(".file-area-inner");
@@ -1808,6 +1805,27 @@
         const processButton = document.getElementById("processButton");
         const downloadArea = document.getElementById("downloadArea");
         const downloadLink = document.getElementById("downloadLink");
+        const optionsContainer = document.getElementById("optionsContainer");
+
+        // PDF 雙欄預覽容器與 iframe
+        const previewContainer = document.getElementById("previewContainer");
+        const originalPreview = document.getElementById("originalPreview");
+        const processedPreviewBox = document.getElementById("processedPreviewBox");
+        const processedPreview = document.getElementById("processedPreview");
+
+        // 物件即時預覽彈窗 (Object Preview Modal) 元件
+        const objectPreviewModal = document.getElementById("objectPreviewModal");
+        const objectPreviewTitle = document.getElementById("objectPreviewTitle");
+        const objectPreviewSpinner = document.getElementById("objectPreviewSpinner");
+        const objectPreviewIframe = document.getElementById("objectPreviewIframe");
+
+        // 六大清理策略控制選項
+        const chkRemoveFormXObject = document.getElementById("removeFormXObject");
+        const chkRemoveAnnotations = document.getElementById("removeAnnotations");
+        const chkRemoveDirectContent = document.getElementById("removeDirectContent");
+        const chkRemoveImageXObject = document.getElementById("removeImageXObject");
+        const chkRemoveExtGState = document.getElementById("removeExtGState");
+        const chkRemoveOCG = document.getElementById("removeOCG");
 
         // ==========================================
         // 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
@@ -2199,13 +2217,6 @@
         });
 
 
-
-        // Before & After 預覽元件
-        const previewContainer = document.getElementById("previewContainer");
-        const originalPreview = document.getElementById("originalPreview");
-        const processedPreviewBox = document.getElementById("processedPreviewBox");
-        const processedPreview = document.getElementById("processedPreview");
-
         // ==========================================
         // 全域狀態變數與暫存快取
         // ==========================================
@@ -2263,15 +2274,13 @@
             ocgsToDestroy = [];
 
             // 7. 隱藏清理策略選項區塊
-            const optionsContainer = document.getElementById("optionsContainer");
             if (optionsContainer) {
                 optionsContainer.classList.add("hidden");
             }
 
             // 8. 重置所有清理策略為預設不勾選
-            ["removeFormXObject", "removeAnnotations", "removeDirectContent",
-                "removeImageXObject", "removeExtGState", "removeOCG"].forEach(id => {
-                    const el = document.getElementById(id);
+            [chkRemoveFormXObject, chkRemoveAnnotations, chkRemoveDirectContent,
+                chkRemoveImageXObject, chkRemoveExtGState, chkRemoveOCG].forEach(el => {
                     if (el) el.checked = false;
                 });
         }
@@ -2290,17 +2299,12 @@
          * 開啟物件即時預覽彈窗
          */
         async function openObjectPreview(strategyType, key, entry) {
-            const modal = document.getElementById("objectPreviewModal");
-            const titleEl = document.getElementById("objectPreviewTitle");
-            const spinner = document.getElementById("objectPreviewSpinner");
-            const iframe = document.getElementById("objectPreviewIframe");
-
-            titleEl.textContent = `🔍 即時預覽：正在載入項目...`;
+            objectPreviewTitle.textContent = `🔍 即時預覽：正在載入項目...`;
             // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
-            spinner.classList.remove("hidden");
-            iframe.classList.add("hidden");
-            iframe.src = "";
-            modal.classList.add("active");
+            objectPreviewSpinner.classList.remove("hidden");
+            objectPreviewIframe.classList.add("hidden");
+            objectPreviewIframe.src = "";
+            objectPreviewModal.classList.add("active");
 
             try {
                 if (!cachedDecryptedBytes) {
@@ -2310,44 +2314,57 @@
                 let previewUrl = "";
 
                 if (strategyType === "formXObjectItem") {
-                    titleEl.textContent = `🔍 表單外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.pages[0]} 頁)`;
+                    objectPreviewTitle.textContent = `🔍 表單外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.pages[0]} 頁)`;
                     previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
                 } else if (strategyType === "imageXObjectItem") {
-                    titleEl.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
                     previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.page - 1);
                 } else if (strategyType === "directContentItem") {
-                    titleEl.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
                     previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
                 } else if (strategyType === "annotItem") {
-                    titleEl.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
                     previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
                 } else if (strategyType === "ocgItem") {
-                    titleEl.textContent = `🔍 圖層移除效果預覽：${entry.name} (全份文件)`;
+                    objectPreviewTitle.textContent = `🔍 圖層移除效果預覽：${entry.name} (全份文件)`;
                     previewUrl = await generateOCGPreviewUrl(key);
                 }
 
                 if (previewUrl) {
-                    iframe.src = previewUrl;
-                    iframe.classList.remove("hidden");
+                    objectPreviewIframe.src = previewUrl;
+                    objectPreviewIframe.classList.remove("hidden");
                 } else {
                     throw new Error("不支援此物件類型的預覽。");
                 }
             } catch (err) {
                 console.error("預覽生成失敗", err);
-                titleEl.textContent = `❌ 預覽失敗：${err.message}`;
+                objectPreviewTitle.textContent = `❌ 預覽失敗：${err.message}`;
             } finally {
-                spinner.classList.add("hidden");
+                objectPreviewSpinner.classList.add("hidden");
             }
         }
 
         /**
-         * 關閉物件即時預覽彈窗
+         * 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
          */
         function closeObjectPreview() {
-            const modal = document.getElementById("objectPreviewModal");
-            const iframe = document.getElementById("objectPreviewIframe");
-            modal.classList.remove("active");
-            iframe.src = "";
+            objectPreviewModal.classList.remove("active");
+
+            // 即時釋放預覽 PDF 的 Blob URL 記憶體
+            const currentSrc = objectPreviewIframe.src;
+            if (currentSrc && currentSrc.startsWith("blob:")) {
+                try {
+                    URL.revokeObjectURL(currentSrc);
+                    // 從快取清單中移出，避免後續重複釋放
+                    const cacheIdx = previewUrlCache.indexOf(currentSrc);
+                    if (cacheIdx > -1) {
+                        previewUrlCache.splice(cacheIdx, 1);
+                    }
+                } catch (e) {
+                    console.warn("釋放即時預覽 Blob URL 失敗:", e);
+                }
+            }
+            objectPreviewIframe.src = "";
         }
 
         // 綁定關閉預覽彈窗事件
@@ -3114,7 +3131,6 @@
             }
 
             // 更新 UI 選項顯示狀態
-            const optionsContainer = document.getElementById('optionsContainer');
             if (!needsPassword || decryptedSuccessfully) {
                 updateScanResultUI(optionsContainer);
             } else {
@@ -3306,18 +3322,14 @@
             fileAreaInner.appendChild(spanEl);
         }
 
-        /**
-         * 輔助函數：獲取當前前端 checkbox 的勾選狀態
-         * @returns {Object} 包含各項清理選項之布林值的物件
-         */
         function getOptions() {
             return {
-                removeFormXObject: document.getElementById("removeFormXObject").checked,
-                removeAnnotations: document.getElementById("removeAnnotations").checked,
-                removeDirectContent: document.getElementById("removeDirectContent").checked,
-                removeImageXObject: document.getElementById("removeImageXObject").checked,
-                removeExtGState: document.getElementById("removeExtGState").checked,
-                removeOCG: document.getElementById("removeOCG").checked,
+                removeFormXObject: chkRemoveFormXObject.checked,
+                removeAnnotations: chkRemoveAnnotations.checked,
+                removeDirectContent: chkRemoveDirectContent.checked,
+                removeImageXObject: chkRemoveImageXObject.checked,
+                removeExtGState: chkRemoveExtGState.checked,
+                removeOCG: chkRemoveOCG.checked,
             };
         }
 
