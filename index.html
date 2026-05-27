@@ -39,7 +39,9 @@
         /* ==========================================
        全域樣式與 Reset 設定
        ========================================== */
-        * {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
         }
 
@@ -95,7 +97,6 @@
             color: var(--muted);
             max-width: 700px;
             font-size: clamp(0.75rem, 3.5vw, 1.05rem);
-            white-space: nowrap;
         }
 
         /* ==========================================
@@ -307,32 +308,52 @@
             }
         }
 
-        /* 物件預覽按鈕 (👁️) 的微動畫與高質感樣式 */
-        .preview-item-btn {
+        /* ==========================================
+           物件預覽按鈕（👁️）共用基底樣式
+           .preview-item-btn 用於清單項目旁；.small-preview-btn 僅縮小尺寸供 OCG 等場景使用
+           ========================================== */
+        .preview-item-btn,
+        .small-preview-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 4px;
             color: var(--muted);
             cursor: pointer;
-            padding: 2px 6px;
-            font-size: 0.85rem;
-            margin-left: 8px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 4px;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            flex-shrink: 0;
             vertical-align: middle;
         }
 
-        .preview-item-btn:hover {
+        /* 預覽按鈕 - 大尺寸（清單項目旁，推至最右側） */
+        .preview-item-btn {
+            padding: 2px 8px;
+            font-size: 0.85rem;
+            margin-left: auto;
+        }
+
+        /* 預覽按鈕 - 小尺寸（OCG 等場景） */
+        .small-preview-btn {
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            margin-left: auto;
+        }
+
+        .preview-item-btn:hover,
+        .small-preview-btn:hover {
             background: var(--primary);
             border-color: var(--primary);
             color: #ffffff;
-            transform: scale(1.08);
+            transform: scale(1.06);
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
         }
 
-        .preview-item-btn:active {
+        .preview-item-btn:active,
+        .small-preview-btn:active {
             transform: scale(0.95);
         }
 
@@ -697,23 +718,22 @@
             background: rgba(47, 107, 235, 0.06);
         }
 
-        /* 視覺高對比膠囊徽章 (Badges) */
-        .badge-danger {
-            color: var(--danger);
-            background: rgba(217, 45, 32, 0.08);
+        /* 視覺高對比膠囊徽章 (Badges) - 共用基底樣式 */
+        .badge {
             padding: 2px 6px;
             border-radius: 4px;
             font-weight: 700;
             white-space: nowrap;
         }
 
+        .badge-danger {
+            color: var(--danger);
+            background: rgba(217, 45, 32, 0.08);
+        }
+
         .badge-success {
             color: #0f973d;
             background: rgba(15, 151, 61, 0.08);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 700;
-            white-space: nowrap;
         }
 
         /* 無註解提示卡片樣式 */
@@ -786,36 +806,113 @@
             /* 為滾動條與按鈕預留少許呼吸空間 */
         }
 
-        /* OCG 專用的文字預覽按鈕樣式 */
-        .small-preview-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 4px;
+        /* ==========================================
+           即時預覽彈窗內部區塊 CSS 化（取代 HTML inline styles）
+           ========================================== */
+        .preview-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .preview-modal-title {
+            margin: 0;
+            font-size: 1.3rem;
+            color: var(--text);
+        }
+
+        .preview-modal-close-btn {
+            border: none;
+            background: transparent;
+            font-size: 1.5rem;
             color: var(--muted);
             cursor: pointer;
-            padding: 2px 8px;
-            font-size: 0.8rem;
-            margin-left: auto;
-            /* 推至最右側以利對齊 */
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            white-space: nowrap;
-            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
         }
 
-        .small-preview-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #ffffff;
-            transform: scale(1.04);
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        .preview-modal-body {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: calc(100% - 130px);
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
-        .small-preview-btn:active {
-            transform: scale(0.96);
+        .preview-modal-spinner {
+            /* 初始狀態由 HTML class="hidden" 控制，此處只設版面 */
+            text-align: center;
+        }
+
+        .preview-modal-spinner-icon {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .preview-modal-spinner-text {
+            color: var(--muted);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .preview-modal-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .preview-modal-footer {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        .preview-modal-footer .button {
+            padding: 10px 24px;
+            width: auto;
+        }
+
+        /* 彈出設定視窗的「全選／全不選」控制列 */
+        .modal-select-controls {
+            display: flex;
+            justify-content: flex-start;
+            gap: 15px;
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+
+        /* 全選 / 全不選 連結按鈕 */
+        .modal-select-btn {
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-select-btn.select-all {
+            color: var(--primary);
+        }
+
+        .modal-select-btn.deselect-all {
+            color: var(--muted);
         }
     </style>
 </head>
@@ -892,7 +989,7 @@
 
             <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
             <div id="downloadArea" class="download-area hidden">
-                <a id="downloadLink" class="button button-primary" href="// ">下載處理後 PDF</a>
+                <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
             </div>
 
             <!-- Before & After 對照預覽區（預設隱藏） -->
@@ -948,7 +1045,8 @@
         <footer class="footer">
             <div class="footer-content">
                 <!-- 導向 GitHub 開源倉庫連結 -->
-                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" class="github-link">
+                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" rel="noopener noreferrer"
+                    class="github-link">
                     <svg xmlns="http://www.w3.org/2000/svg" class="github-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path
                             d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
@@ -958,7 +1056,7 @@
 
                 <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
                 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" target="_blank"
-                    class="cc-badge">
+                    rel="noopener noreferrer" class="cc-badge">
                     <div class="cc-icons">
                         <!-- CC (Creative Commons) 圖標 -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
@@ -1006,7 +1104,8 @@
         <div class="modal-card modal-lg">
             <h3>⚙ 設定頁面直接內容清理選項</h3>
             <p id="triggerWordsModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+                    class="badge badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會<strong
+                    class="badge badge-success">保留</strong>）：</p>
 
             <div id="directContentListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1027,7 +1126,8 @@
         <div class="modal-card modal-lg">
             <h3>⚙ 設定表單外部物件清理選項</h3>
             <p id="formXObjectModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+                    class="badge badge-danger">清除</strong>的表單外部物件（未勾選的項目將會<strong
+                    class="badge badge-success">保留</strong>）：</p>
 
             <div id="formXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1047,8 +1147,9 @@
     <div id="annotsSettingsModal" class="modal-overlay">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定註解清理選項</h3>
-            <p id="annotsModalDesc" class="modal-desc">請勾選您想要<strong class="badge-danger">清除</strong>的註解（未勾選的項目將會<strong
-                    class="badge-success">保留</strong>）：</p>
+            <p id="annotsModalDesc" class="modal-desc">請勾選您想要<strong
+                    class="badge badge-danger">清除</strong>的註解（未勾選的項目將會<strong class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="annotsSubtypesContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1069,7 +1170,8 @@
         <div class="modal-card modal-lg">
             <h3>⚙ 設定影像外部物件清理選項</h3>
             <p id="imageXObjectModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的影像外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+                    class="badge badge-danger">清除</strong>的影像外部物件（未勾選的項目將會<strong
+                    class="badge badge-success">保留</strong>）：</p>
 
             <div id="imageXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1090,7 +1192,8 @@
         <div class="modal-card modal-lg">
             <h3>⚙ 設定延伸圖形狀態清理選項</h3>
             <p id="extGStateModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+                    class="badge badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會<strong
+                    class="badge badge-success">保留</strong>）：</p>
 
             <div id="extGStateListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1111,7 +1214,8 @@
         <div class="modal-card modal-lg">
             <h3>⚙ 設定選擇性內容群組清理選項</h3>
             <p id="ocgModalDesc" class="modal-desc">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+                    class="badge badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會<strong
+                    class="badge badge-success">保留</strong>）：</p>
 
             <div id="ocgListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -1130,31 +1234,27 @@
     <!-- 浮水印物件即時預覽 Modal (磨砂玻璃科技感) -->
     <div id="objectPreviewModal" class="modal-overlay">
         <div class="modal-card modal-xl">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
-                <h3 id="objectPreviewTitle" style="margin: 0; font-size: 1.3rem; color: var(--text);">🔍 即時預覽</h3>
-                <button id="closeObjectPreviewModalBtn" class="icon-btn"
-                    style="border: none; background: transparent; font-size: 1.5rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;"
-                    title="關閉預覽">×</button>
+            <!-- 標題列 -->
+            <div class="preview-modal-header">
+                <h3 id="objectPreviewTitle" class="preview-modal-title">🔍 即時預覽</h3>
+                <button id="closeObjectPreviewModalBtn" class="icon-btn preview-modal-close-btn" title="關閉預覽">×</button>
             </div>
 
-            <div
-                style="flex: 1; position: relative; width: 100%; height: calc(100% - 130px); background: rgba(0, 0, 0, 0.15); border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                <!-- 載入動畫 Spinner -->
-                <div id="objectPreviewSpinner" style="display: none; text-align: center;">
-                    <div
-                        style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;">
-                    </div>
-                    <p style="color: var(--muted); margin: 0; font-size: 0.9rem;">正在從 PDF 中提取資源並渲染預覽中...</p>
+            <!-- 預覽本體（iframe + 載入 spinner） -->
+            <div class="preview-modal-body">
+                <!-- 載入動畫 Spinner（預設隱藏） -->
+                <div id="objectPreviewSpinner" class="preview-modal-spinner hidden">
+                    <div class="preview-modal-spinner-icon"></div>
+                    <p class="preview-modal-spinner-text">正在從 PDF 中提取資源並渲染預覽中...</p>
                 </div>
 
-                <!-- PDF 預覽 Iframe -->
-                <iframe id="objectPreviewIframe" style="width: 100%; height: 100%; border: none; display: none;"
-                    src=""></iframe>
+                <!-- PDF 預覽 Iframe（預設隱藏，預覽生成後顯現） -->
+                <iframe id="objectPreviewIframe" class="preview-modal-iframe hidden" src=""></iframe>
             </div>
 
-            <div class="modal-actions" style="margin-top: 15px; display: flex; justify-content: flex-end; width: 100%;">
-                <button id="closeObjectPreviewBtn" class="button" style="padding: 10px 24px;">關閉預覽</button>
+            <!-- 底部關閉按鈕 -->
+            <div class="preview-modal-footer modal-actions">
+                <button id="closeObjectPreviewBtn" class="button">關閉預覽</button>
             </div>
         </div>
     </div>
@@ -1242,13 +1342,26 @@
 
         /**
          * 判定實際內容文字流中是否含有疑似浮水印的特徵
-         * @param {string} text - 內容流文字
+         *
+         * 注意：FINAL_CONTENT_KEYWORDS 同時包含：
+         *   1. 可讀的英文/中文字串（toLowerCase 比對）
+         *   2. UTF-16BE Latin1 / Big5 的二進位特徵碼（不可 toLowerCase，否則會破壞位元組值）
+         * 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
+         *
+         * @param {string} text - 內容流文字（以 Latin1 解碼的二進位字串）
          * @returns {boolean}
          */
         function isSuspectContentText(text) {
             if (!text) return false;
             const lower = text.toLowerCase();
-            return FINAL_CONTENT_KEYWORDS.some(kw => lower.includes(kw));
+            return FINAL_CONTENT_KEYWORDS.some(kw => {
+                // 若關鍵字為純 ASCII（toLowerCase 不會改變它），用小寫比對即可
+                if (kw === kw.toLowerCase()) {
+                    return lower.includes(kw);
+                }
+                // 否則為二進位特徵碼（Big5 / UTF-16BE），必須對原始 text 比對以避免位元組值被破壞
+                return text.includes(kw);
+            });
         }
 
         /**
@@ -1339,6 +1452,7 @@
         let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
 
         // 要刪除的特定註解參照 (annotRefStr) 清單
+        let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）
         let annotsToDestroy = [];
 
         // 頁面直接內容 (Direct Content) 處理模式設定
@@ -1618,33 +1732,27 @@
                 this.listContainer.innerHTML = "";
 
                 if (map.size === 0) {
-                    if (this.desc) this.desc.style.display = "none";
+                    if (this.desc) this.desc.classList.add("hidden");
                     this.listContainer.innerHTML = `
-                        <div class="no-annots-card" style="width: 100%; text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted);">
+                        <div class="no-annots-card">
                             ${this.emptyText}
                         </div>
                     `;
                     if (this.resetBtn) this.resetBtn.disabled = true;
                     if (this.applyBtn) this.applyBtn.disabled = true;
                 } else {
-                    if (this.desc) this.desc.style.display = "block";
+                    if (this.desc) this.desc.classList.remove("hidden");
                     if (this.resetBtn) this.resetBtn.disabled = false;
                     if (this.applyBtn) this.applyBtn.disabled = false;
 
                     // 加入「全選/全不選」控制項
                     const controlsRow = document.createElement("div");
-                    controlsRow.style.display = "flex";
-                    controlsRow.style.justifyContent = "flex-start";
-                    controlsRow.style.gap = "15px";
-                    controlsRow.style.marginBottom = "10px";
-                    controlsRow.style.paddingLeft = "5px";
+                    controlsRow.className = "modal-select-controls";
 
                     const selectAllBtn = document.createElement("a");
                     selectAllBtn.href = "#";
                     selectAllBtn.textContent = "☑️ 全選";
-                    selectAllBtn.style.color = "var(--primary)";
-                    selectAllBtn.style.fontSize = "0.85rem";
-                    selectAllBtn.style.textDecoration = "none";
+                    selectAllBtn.className = "modal-select-btn select-all";
                     selectAllBtn.addEventListener("click", (e) => {
                         e.preventDefault();
                         const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
@@ -1654,9 +1762,7 @@
                     const deselectAllBtn = document.createElement("a");
                     deselectAllBtn.href = "#";
                     deselectAllBtn.textContent = "✖️ 全不選";
-                    deselectAllBtn.style.color = "var(--muted)";
-                    deselectAllBtn.style.fontSize = "0.85rem";
-                    deselectAllBtn.style.textDecoration = "none";
+                    deselectAllBtn.className = "modal-select-btn deselect-all";
                     deselectAllBtn.addEventListener("click", (e) => {
                         e.preventDefault();
                         const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
@@ -1700,19 +1806,13 @@
                             previewBtn.className = "preview-item-btn";
                             previewBtn.title = "即時預覽該浮水印物件";
                             previewBtn.innerHTML = "👁️";
-                            previewBtn.style.marginLeft = "auto"; // 推至最右側以利對齊
-                            previewBtn.style.padding = "2px 8px";
+                            // margin-left: auto 與 padding 已由 .preview-item-btn CSS 定義，無需重複設定
 
                             previewBtn.addEventListener("click", (e) => {
                                 e.preventDefault();
                                 e.stopPropagation(); // 阻止點擊事件冒泡，防止誤觸核取方塊的狀態
                                 openObjectPreview(this.checkboxName, key, entry);
                             });
-
-                            // 確保 label 具有 flex 排版，使 marginLeft: auto 能夠漂亮對齊
-                            label.style.display = "flex";
-                            label.style.alignItems = "center";
-                            label.style.width = "100%";
 
                             label.appendChild(previewBtn);
                         }
@@ -1930,7 +2030,6 @@
         let cachedDecryptedBytes = null; // 使用密碼解密後的 PDF 位元組快取（換檔時清除）
         let previewUrlCache = []; // 預覽 Blob URL 快取（換檔時清除）
         let lastSuccessPassword = null;  // 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存）
-        let detectedAnnotations = new Map(); // 當前 PDF 檔案中偵測到的所有註解實例
 
         /**
          * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
@@ -1984,12 +2083,11 @@
             }
 
             // 8. 重置所有清理策略為預設不勾選
-            document.getElementById("removeFormXObject").checked = false;
-            document.getElementById("removeAnnotations").checked = false;
-            document.getElementById("removeDirectContent").checked = false;
-            document.getElementById("removeImageXObject").checked = false;
-            document.getElementById("removeExtGState").checked = false;
-            document.getElementById("removeOCG").checked = false;
+            ["removeFormXObject", "removeAnnotations", "removeDirectContent",
+                "removeImageXObject", "removeExtGState", "removeOCG"].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.checked = false;
+                });
         }
 
         /**
@@ -2012,8 +2110,9 @@
             const iframe = document.getElementById("objectPreviewIframe");
 
             titleEl.textContent = `🔍 即時預覽：正在載入項目...`;
-            spinner.style.display = "block";
-            iframe.style.display = "none";
+            // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
+            spinner.classList.remove("hidden");
+            iframe.classList.add("hidden");
             iframe.src = "";
             modal.classList.add("active");
 
@@ -2043,7 +2142,7 @@
 
                 if (previewUrl) {
                     iframe.src = previewUrl;
-                    iframe.style.display = "block";
+                    iframe.classList.remove("hidden");
                 } else {
                     throw new Error("不支援此物件類型的預覽。");
                 }
@@ -2051,7 +2150,7 @@
                 console.error("預覽生成失敗", err);
                 titleEl.textContent = `❌ 預覽失敗：${err.message}`;
             } finally {
-                spinner.style.display = "none";
+                spinner.classList.add("hidden");
             }
         }
 
@@ -2072,6 +2171,50 @@
         // ==========================================
         // [Preview Engine] PDF 即時預覽生成器
         // ==========================================
+
+        /**
+         * 輔助函數：將 Uint8Array 以 zlib/deflate 解壓縮
+         * PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 "deflate"。
+         * 若失敗則嘗試 "deflate-raw"（無 zlib header 的 raw deflate）。
+         * @param {Uint8Array} data - 壓縮後的原始位元組
+         * @returns {Promise<Uint8Array>} 解壓縮後的位元組
+         */
+        async function decompressFlateDecode(data) {
+            /**
+             * 使用指定格式進行解壓縮的內部實作
+             * @param {string} format - 'deflate' 或 'deflate-raw'
+             */
+            async function tryDecompress(format) {
+                const ds = new DecompressionStream(format);
+                const writer = ds.writable.getWriter();
+                const reader = ds.readable.getReader();
+                writer.write(data);
+                writer.close();
+                const chunks = [];
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                }
+                const total = chunks.reduce((a, c) => a + c.length, 0);
+                const merged = new Uint8Array(total);
+                let offset = 0;
+                for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+                return merged;
+            }
+
+            try {
+                return await tryDecompress("deflate");
+            } catch (e) {
+                console.warn("deflate 解壓縮失敗，嘗試 deflate-raw", e);
+                try {
+                    return await tryDecompress("deflate-raw");
+                } catch (e2) {
+                    console.warn("deflate-raw 也失敗，使用原始未壓縮資料", e2);
+                    return data;
+                }
+            }
+        }
 
         // 【工具函數】從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
         async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
@@ -2094,50 +2237,10 @@
                 if (!(stream instanceof PDFRawStream)) continue;
 
                 let data = stream.contents;
-                // 嘗試解壓縮（FlateDecode）
+                // 嘗試解壓縮（FlateDecode），統一由輔助函數處理
                 const filter = stream.dict.get(PDFName.of("Filter"));
                 if (filter && filter.toString() === "/FlateDecode") {
-                    try {
-                        // PDF 的 FlateDecode 是 zlib 格式（帶 header），在瀏覽器中對應 "deflate"（非 "deflate-raw"）
-                        const ds = new DecompressionStream("deflate");
-                        const writer = ds.writable.getWriter();
-                        const reader = ds.readable.getReader();
-                        writer.write(data);
-                        writer.close();
-                        const chunks = [];
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            chunks.push(value);
-                        }
-                        const total = chunks.reduce((a, c) => a + c.length, 0);
-                        const merged = new Uint8Array(total);
-                        let offset = 0;
-                        for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
-                        data = merged;
-                    } catch (e) {
-                        console.warn("解壓縮失敗，嘗試 deflate-raw", e);
-                        try {
-                            const ds = new DecompressionStream("deflate-raw");
-                            const writer = ds.writable.getWriter();
-                            const reader = ds.readable.getReader();
-                            writer.write(stream.contents);
-                            writer.close();
-                            const chunks = [];
-                            while (true) {
-                                const { done, value } = await reader.read();
-                                if (done) break;
-                                chunks.push(value);
-                            }
-                            const total = chunks.reduce((a, c) => a + c.length, 0);
-                            const merged = new Uint8Array(total);
-                            let offset = 0;
-                            for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
-                            data = merged;
-                        } catch (e2) {
-                            console.warn("deflate-raw 也失敗，使用原始資料");
-                        }
-                    }
+                    data = await decompressFlateDecode(stream.contents);
                 }
 
                 // 轉為字串搜尋
@@ -2433,6 +2536,43 @@
         }
 
         /**
+         * 掃描完成後更新 UI：根據偵測結果顯示/隱藏策略列、自動勾選疑似浮水印策略，並給出掃描摘要提示。
+         * @param {HTMLElement} optionsContainer - 策略選項容器 DOM 元素
+         */
+        function updateScanResultUI(optionsContainer) {
+            // 策略列 ID → 對應偵測 Map 的對應關係
+            const strategyRows = [
+                { rowId: 'optionRowFormXObject', map: detectedFormXObjects, destroyList: formXObjectsToDestroy, checkboxId: 'removeFormXObject' },
+                { rowId: 'optionRowAnnotations', map: detectedAnnotations, destroyList: annotsToDestroy, checkboxId: 'removeAnnotations' },
+                { rowId: 'optionRowDirectContent', map: detectedDirectContents, destroyList: directContentsToDestroy, checkboxId: 'removeDirectContent' },
+                { rowId: 'optionRowImageXObject', map: detectedImages, destroyList: imagesToDestroy, checkboxId: 'removeImageXObject' },
+                { rowId: 'optionRowExtGState', map: detectedExtGStates, destroyList: extGStatesToDestroy, checkboxId: 'removeExtGState' },
+                { rowId: 'optionRowOCG', map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG' },
+            ];
+
+            let anySuspected = false;
+
+            strategyRows.forEach(({ rowId, map, destroyList, checkboxId }) => {
+                // 根據偵測結果動態顯示或隱藏策略選項列
+                document.getElementById(rowId).classList.toggle('hidden', map.size === 0);
+                // 自動勾選：若有偵測到疑似浮水印的物件
+                const checked = destroyList.length > 0;
+                document.getElementById(checkboxId).checked = checked;
+                if (checked) anySuspected = true;
+            });
+
+            // 顯示策略選項區塊
+            optionsContainer.classList.remove('hidden');
+
+            // 給出掃描結果摘要訊息
+            if (!anySuspected) {
+                addStatusMessage("掃描完成：未自動偵測到明顯的浮水印物件，您可以手動勾選合適的策略來嘗試清除。", "info");
+            } else {
+                addStatusMessage("掃描完成：已自動勾選偵測到疑似浮水印的清除策略，您也可以手動調整。", "success");
+            }
+        }
+
+        /**
          * 載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
          * 並將解密後的位元組與密碼快取，最後顯示預覽。
          * @param {File} file - 使用者上傳的原始 PDF 檔案
@@ -2441,9 +2581,7 @@
             // 0. 主動清空並重置所有舊狀態（含密碼快取）
             resetAllState();
 
-            // 1. 釋放先前的預覽資源 (已移至 resetAllState 統一處理)
-
-            // 2. 讀取原始位元組，嘗試偵測是否有開啟密碼
+            // 1. 讀取原始位元組，嘗試偵測是否有開啟密碼
             const rawBuffer = await file.arrayBuffer();
             const rawBytes = new Uint8Array(rawBuffer);
 
@@ -2640,7 +2778,10 @@
                                                                 const entry = { keyName: keyName, pages: [i + 1] };
                                                                 detectedFormXObjects.set(rawStr, entry);
                                                                 if (isSuspectFormXObject(entry)) {
-                                                                    formXObjectsToDestroy.push(rawStr);
+                                                                    // 防止同一份 raw stream 出現在多頁時重複加入
+                                                                    if (!formXObjectsToDestroy.includes(rawStr)) {
+                                                                        formXObjectsToDestroy.push(rawStr);
+                                                                    }
                                                                 }
                                                             } else {
                                                                 const entry = detectedFormXObjects.get(rawStr);
@@ -2797,37 +2938,7 @@
             // 更新 UI 選項顯示狀態
             const optionsContainer = document.getElementById('optionsContainer');
             if (!needsPassword || decryptedSuccessfully) {
-                // 根據各策略是否有偵測到可選物件，動態顯示或隱藏該策略選項列
-                document.getElementById('optionRowFormXObject').classList.toggle('hidden', detectedFormXObjects.size === 0);
-                document.getElementById('optionRowAnnotations').classList.toggle('hidden', detectedAnnotations.size === 0);
-                document.getElementById('optionRowDirectContent').classList.toggle('hidden', detectedDirectContents.size === 0);
-                document.getElementById('optionRowImageXObject').classList.toggle('hidden', detectedImages.size === 0);
-                document.getElementById('optionRowExtGState').classList.toggle('hidden', detectedExtGStates.size === 0);
-                document.getElementById('optionRowOCG').classList.toggle('hidden', detectedOCGs.size === 0);
-
-                // 載入 PDF 後，將策略選項區塊恢復為可見
-                optionsContainer.classList.remove('hidden');
-
-                // 根據是否自動偵測到疑似浮水印的特定物件，來自動勾選對應策略
-                document.getElementById("removeFormXObject").checked = formXObjectsToDestroy.length > 0;
-                document.getElementById("removeAnnotations").checked = annotsToDestroy.length > 0;
-                document.getElementById("removeDirectContent").checked = directContentsToDestroy.length > 0;
-                document.getElementById("removeImageXObject").checked = imagesToDestroy.length > 0;
-                document.getElementById("removeExtGState").checked = extGStatesToDestroy.length > 0;
-                document.getElementById("removeOCG").checked = ocgsToDestroy.length > 0;
-
-                const anySuspected = formXObjectsToDestroy.length > 0 ||
-                    annotsToDestroy.length > 0 ||
-                    directContentsToDestroy.length > 0 ||
-                    imagesToDestroy.length > 0 ||
-                    extGStatesToDestroy.length > 0 ||
-                    ocgsToDestroy.length > 0;
-
-                if (!anySuspected) {
-                    addStatusMessage("掃描完成：未自動偵測到明顯的浮水印物件，您可以手動勾選合適的策略來嘗試清除。", "info");
-                } else {
-                    addStatusMessage("掃描完成：已自動勾選偵測到疑似浮水印的清除策略，您也可以手動調整。", "success");
-                }
+                updateScanResultUI(optionsContainer);
             } else {
                 if (optionsContainer) optionsContainer.classList.add('hidden');
             }
@@ -3068,12 +3179,6 @@
             return pdfDoc.context.register(stream);
         }
 
-        /**
-         * 依據設定依序處理每一頁的底層結構
-         * @param {PDFDocument} pdfDoc - PDF 文件物件
-         * @param {Object} options - 清理選項
-         * @returns {Object} 處理結果統計
-         */
         /**
          * 核心重構清除引擎：遍歷 PDF 物件樹並執行浮水印置換
          * 
