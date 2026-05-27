@@ -1100,7 +1100,7 @@
          */
         function isSuspectFormXObject(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.keyName);
+            return isSuspectedWatermark(entry.keyName);
         }
 
         /**
@@ -1120,7 +1120,7 @@
          */
         function isSuspectDirectContent(entry) {
             if (!entry) return false;
-            return isSuspectedWatermark(entry.previewText) || isSuspectedWatermark(entry.rawText);
+            return isSuspectedWatermark(entry.rawText);
         }
 
         /**
@@ -1170,63 +1170,7 @@
             return str;
         }
 
-        /**
-         * 從 PDF 內容流的二進位資料中，解碼並提取出可讀的預覽文字，並處理編碼異常與降級 fallback
-         * @param {Uint8Array} data - 內容流的原始二進位資料
-         * @param {Object} options - 設定選項
-         * @param {string} [options.customEncodingLabel=""] - 自訂編碼時顯示的附加標記，如 " Fm1"
-         * @param {string} [options.fallbackText=""] - 沒有文字時降級顯示的文字，例如元件資源名稱或大小說明
-         * @returns {string} 可讀預覽字串（限制長度為 50 字元）
-         */
-        function extractPreviewTextFromRawStream(data, options = {}) {
-            const { customEncodingLabel = "", fallbackText = "" } = options;
 
-            // 統一使用 decodeBinaryToText 進行精確 of 二進位轉字串，防止 TextDecoder 的 UTF-8 替代字元干擾正則比對
-            const rawStr = decodeBinaryToText(data);
-
-            const textMatches = rawStr.match(/\((.*?)\)/g);
-            let previewText = "";
-            if (textMatches) {
-                previewText = textMatches.map(m => {
-                    const inner = m.slice(1, -1);
-                    try { return PDFString.of(inner).decodeText(); } catch (e) { return inner; }
-                }).join(' ').trim();
-            }
-            
-            const hexMatches = rawStr.match(/<([0-9a-fA-F]+)>/g);
-            if (hexMatches && !previewText) {
-                previewText = hexMatches.map(m => {
-                    const inner = m.slice(1, -1);
-                    try { return PDFHexString.of(inner).decodeText(); } catch (e) { return "[Hex Data]"; }
-                }).join(' ').trim();
-            }
-
-            // 檢查是否包含過多無法顯示的編碼字元
-            let validCount = 0;
-            for (let cIdx = 0; cIdx < previewText.length; cIdx++) {
-                const code = previewText.charCodeAt(cIdx);
-                const isAscii = (code >= 32 && code <= 126);
-                const isWhitespace = (code === 9 || code === 10 || code === 13);
-                const isCjk = (code >= 0x3000 && code <= 0x9FFF) || (code >= 0xFF00 && code <= 0xFFEF);
-                if (isAscii || isWhitespace || isCjk) {
-                    validCount++;
-                }
-            }
-
-            if (previewText.length > 0 && (validCount / previewText.length) < 0.8) {
-                previewText = `[自訂編碼字元${customEncodingLabel}]`;
-            }
-
-            if (!previewText) {
-                previewText = fallbackText;
-            }
-
-            if (previewText.length > 50) {
-                previewText = previewText.substring(0, 50) + "...";
-            }
-
-            return previewText;
-        }
 
         // Form XObject 表單外部物件處理模式設定
         let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
@@ -1236,19 +1180,19 @@
         let annotsToDestroy = [];
 
         // 頁面直接內容 (Direct Content) 處理模式設定
-        let detectedDirectContents = new Map(); // key = streamRefStr, value = { previewText, page, ref, rawText }
+        let detectedDirectContents = new Map(); // key = streamRefStr, value = { page, ref, rawText, streamIndex }
         let directContentsToDestroy = []; // 儲存選定要清空的頁面直接內容參照字串
 
         // 影像外部物件 (Image XObject) 狀態管理變數
-        let detectedImages = new Map(); // key = `${page}:${name}`, value = { keyName, previewText, page, ref, rawStream }
+        let detectedImages = new Map(); // key = `${page}:${name}`, value = { keyName, page, ref, rawStream, width, height, filterStr }
         let imagesToDestroy = []; // 儲存選定要清除的影像外部物件鍵值
 
         // 延伸圖形狀態 (ExtGState) 狀態管理變數
-        let detectedExtGStates = new Map(); // key = `${page}:${name}`, value = { keyName, previewText, page, ref }
+        let detectedExtGStates = new Map(); // key = `${page}:${name}`, value = { keyName, page, ref, detailText, caVal, CAVal }
         let extGStatesToDestroy = []; // 儲存選定要清除的延伸圖形狀態鍵值
 
         // 選擇性內容群組 (OCG) 狀態管理變數
-        let detectedOCGs = new Map(); // key = ocgRefStr, value = { name, previewText, ref }
+        let detectedOCGs = new Map(); // key = ocgRefStr, value = { name, ref }
         let ocgsToDestroy = []; // 儲存選定要隱藏的 OCG 參照字串
 
         /**
@@ -1633,7 +1577,7 @@
             getSortCompare: () => 0, // 無特定排序需求
             renderLabel: (labelEl, key, entry) => {
                 const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
-                labelEl.appendChild(document.createTextNode(entry.previewText + pageLabel));
+                labelEl.appendChild(document.createTextNode(`[表單外部物件] /${entry.keyName}${pageLabel}`));
             },
             applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個表單外部物件。`,
             resetMsg: "已將當前檔案中的表單外部物件清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。"
@@ -1664,14 +1608,14 @@
                 if (isSpecialA && !isSpecialB) return 1;
                 if (!isSpecialA && isSpecialB) return -1;
                 if (annotA.subtype !== annotB.subtype) return annotA.subtype.localeCompare(annotB.subtype);
-                return annotA.previewText.localeCompare(annotB.previewText);
+                return 0;
             },
             renderLabel: (labelEl, key, entry) => {
                 const meta = annotSubtypeMeta[entry.subtype];
                 const labelText = meta ? meta.label : `/${entry.subtype}`;
                 const textColor = meta ? meta.color : "inherit";
                 if (textColor !== "inherit") labelEl.style.color = textColor;
-                const contentDisplay = entry.previewText ? ` "${entry.previewText}"` : "";
+                const contentDisplay = "";
                 const pageLabel = ` (第 ${entry.page} 頁)`;
                 labelEl.appendChild(document.createTextNode(`[${labelText}]${contentDisplay}${pageLabel}`));
             },
@@ -1695,10 +1639,9 @@
             getDestroyList: () => directContentsToDestroy,
             setDestroyList: (list) => { directContentsToDestroy = list; },
             getSuspectState: (key, entry) => isSuspectDirectContent(entry),
-            getSortCompare: (a, b) => a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].previewText.localeCompare(b[1].previewText),
+            getSortCompare: (a, b) => a[1].page - b[1].page,
             renderLabel: (labelEl, key, entry) => {
-                let labelText = entry.previewText.startsWith("[") ? entry.previewText : `[頁面直接內容] "${entry.previewText}"`;
-                labelText += ` (第 ${entry.page} 頁)`;
+                const labelText = `[頁面直接內容] (第 ${entry.page} 頁)`;
                 labelEl.appendChild(document.createTextNode(labelText));
             },
             applyMsgTemplate: (len) => `已成功套用頁面直接內容清理設定！共選定清理 ${len} 個頁面直接內容實例。`,
@@ -1728,7 +1671,7 @@
                 labelEl.style.gap = "8px";
                 labelEl.style.width = "100%";
                 labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[影像外部物件] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`));
+                labelEl.appendChild(document.createTextNode(`[影像外部物件] /${entry.keyName} (${entry.width}x${entry.height}, ${entry.filterStr}) (第 ${entry.page} 頁)`));
             },
             applyMsgTemplate: (len) => `已成功套用影像外部物件清理設定！共選定清除 ${len} 個影像實例。`,
             resetMsg: "已將當前檔案中的影像外部物件清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。"
@@ -1757,7 +1700,7 @@
                 labelEl.style.gap = "8px";
                 labelEl.style.width = "100%";
                 labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[延伸圖形狀態] /${entry.keyName} (${entry.previewText}) (第 ${entry.page} 頁)`));
+                labelEl.appendChild(document.createTextNode(`[延伸圖形狀態] /${entry.keyName} (${entry.detailText}) (第 ${entry.page} 頁)`));
             },
             applyMsgTemplate: (len) => `已成功套用延伸圖形狀態清理設定！共選定清理 ${len} 個延伸圖形狀態實例。`,
             resetMsg: "已將當前檔案中的延伸圖形狀態清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。"
@@ -1786,7 +1729,7 @@
                 labelEl.style.gap = "8px";
                 labelEl.style.width = "100%";
                 labelEl.style.cursor = "pointer";
-                labelEl.appendChild(document.createTextNode(`[選擇性內容群組] "${entry.name}" (${entry.previewText})`));
+                labelEl.appendChild(document.createTextNode(`[選擇性內容群組] "${entry.name}"`));
                 
                 const previewBtn = document.createElement("button");
                 previewBtn.className = "small-preview-btn";
@@ -2444,7 +2387,7 @@
                                                 const name = nameObject.decodeText();
                                                 const entry = {
                                                     name: name,
-                                                    previewText: `參照 ID: ${ocgRefStr}`,
+
                                                     ref: ocgRef
                                                 };
                                                 detectedOCGs.set(ocgRefStr, entry);
@@ -2480,25 +2423,8 @@
                                         const subtypeStr = subtype.toString().replace(/^\//, "");
                                         const annotRefStr = annotRef.toString();
 
-                                        // 萃取內文 /Contents
-                                        let previewText = "";
-                                        const contentsObj = scanDoc.context.lookup(annot.get(PDFName.of("Contents")));
-                                        if (contentsObj instanceof PDFString || contentsObj instanceof PDFHexString) {
-                                            try {
-                                                previewText = contentsObj.decodeText();
-                                            } catch (e) {
-                                                previewText = contentsObj.toString();
-                                            }
-                                        }
-
-                                        // 限制顯示長度
-                                        if (previewText.length > 50) {
-                                            previewText = previewText.substring(0, 50) + "...";
-                                        }
-
                                         const entry = {
                                             subtype: subtypeStr,
-                                            previewText: previewText,
                                             page: i + 1,
                                             ref: annotRef,
                                             annotIndex: idx
@@ -2537,12 +2463,7 @@
                                                             const rawStr = decodeBinaryToText(data);
                                                             if (!detectedFormXObjects.has(rawStr)) {
                                                                 const keyName = key.value();
-                                                                const previewText = extractPreviewTextFromRawStream(data, {
-                                                                    customEncodingLabel: " " + keyName,
-                                                                    fallbackText: keyName
-                                                                });
-
-                                                                const entry = { keyName: keyName, previewText: previewText, pages: [i + 1] };
+                                                                const entry = { keyName: keyName, pages: [i + 1] };
                                                                 detectedFormXObjects.set(rawStr, entry);
                                                                 if (isSuspectFormXObject(entry)) {
                                                                     formXObjectsToDestroy.push(rawStr);
@@ -2567,12 +2488,13 @@
                                                         const height = xObj.dict.get(PDFName.of("Height"));
                                                         const filter = xObj.dict.get(PDFName.of("Filter"));
 
-                                                        let filterStr = filter ? filter.toString() : "RAW";
-                                                        let previewText = `尺寸: ${width}x${height}, 壓縮格式: ${filterStr}`;
+                                                        const filterStr = filter ? filter.toString() : "RAW";
 
                                                         detectedImages.set(uniqueKey, {
                                                             keyName: keyName,
-                                                            previewText: previewText,
+                                                            width: width,
+                                                            height: height,
+                                                            filterStr: filterStr,
                                                             page: i + 1,
                                                             ref: xObjects.get(key),
                                                             rawStream: xObj
@@ -2600,7 +2522,7 @@
                                             const keyName = key.value();
                                             const gsObj = scanDoc.context.lookup(extGState.get(key));
 
-                                            // 萃取特徵做為 previewText，例如透明度 ca/CA 與混合模式 BM
+                                            // 萃取特徵，例如透明度 ca/CA 與混合模式 BM
                                             let details = [];
                                             let caVal = 1.0;
                                             let CAVal = 1.0;
@@ -2618,12 +2540,12 @@
                                                 }
                                                 if (BM !== undefined) details.push(`BM: ${BM.toString()}`);
                                             }
-                                            const previewText = details.length > 0 ? details.join(", ") : "無透明度細節設定";
+                                            const detailText = details.length > 0 ? details.join(", ") : "無透明度細節設定";
                                             const uniqueKey = `${i}:${keyName}`;
 
                                             detectedExtGStates.set(uniqueKey, {
                                                 keyName: keyName,
-                                                previewText: previewText,
+                                                detailText: detailText,
                                                 page: i + 1,
                                                 ref: gsObj,
                                                 caVal: caVal,
@@ -2671,21 +2593,15 @@
                                             const data = stream.getContents();
                                             const rawStr = decodeBinaryToText(data);
 
-                                            const previewText = extractPreviewTextFromRawStream(data, {
-                                                customEncodingLabel: "",
-                                                fallbackText: `[頁面直接內容 (大小: ${data.length} bytes)]`
-                                            });
-
                                             detectedDirectContents.set(refStr, {
-                                                previewText: previewText,
                                                 page: i + 1,
                                                 ref: streamRef,
                                                 rawText: rawStr,
                                                 streamIndex: entry.index
                                             });
 
-                                            // 預設勾選：如果預覽文字或 rawText 中符合 suspect keywords，則預先標記
-                                            if (isSuspectedWatermark(previewText) || isSuspectedWatermark(rawStr)) {
+                                            // 預設勾選：如果 rawText 中符合 suspect keywords，則預先標記
+                                            if (isSuspectedWatermark(rawStr)) {
                                                 if (!directContentsToDestroy.includes(refStr)) {
                                                     directContentsToDestroy.push(refStr);
                                                 }
