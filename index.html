@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。">
-    <title>純前端 PDF 浮水印清除工具</title>
+    <title>PDF 浮水印清除工具</title>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
         crossorigin="anonymous"></script>
@@ -73,7 +73,7 @@
 
         header h1 {
             margin: 0;
-            font-size: clamp(1.25rem, 4.5vw, 2.2rem);
+            font-size: clamp(1.5rem, 7.5vw, 2.5rem);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -97,7 +97,7 @@
             margin: 12px auto 0;
             color: var(--muted);
             max-width: 700px;
-            font-size: clamp(0.75rem, 3.5vw, 1.05rem);
+            font-size: clamp(0.75rem, 3.75vw, 1.0rem);
             white-space: nowrap;
         }
 
@@ -1037,12 +1037,18 @@
                         <li><strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF 底層結構進行清除：
                             <ul
                                 style="margin: 6px 0 8px 0; padding-left: 20px; font-size: 0.82rem; color: var(--muted); line-height: 1.5; list-style-type: circle;">
-                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
-                                <li><strong style="color: var(--text);">「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
-                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。</li>
-                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如浮水印標記層）。</li>
-                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha 值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。</li>
-                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF 的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
+                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct
+                                        Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
+                                <li><strong style="color: var(--text);">「表單外部物件」 (Form
+                                        XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
+                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
+                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。</li>
+                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF
+                                    的互動註解、圖示或蓋章（如浮水印標記層）。</li>
+                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
+                                    值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。</li>
+                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF
+                                    的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
                             </ul>
                         </li>
                         <li><strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。</li>
