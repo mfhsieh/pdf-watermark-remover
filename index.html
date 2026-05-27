@@ -1787,6 +1787,16 @@
                 labelEl.style.width = "100%";
                 labelEl.style.cursor = "pointer";
                 labelEl.appendChild(document.createTextNode(`[選擇性內容群組] "${entry.name}" (${entry.previewText})`));
+                
+                const previewBtn = document.createElement("button");
+                previewBtn.className = "small-preview-btn";
+                previewBtn.innerHTML = "👁️ 預覽移除效果";
+                previewBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openObjectPreview("ocgItem", key, entry);
+                };
+                labelEl.appendChild(previewBtn);
             },
             applyMsgTemplate: (len) => `已成功套用選擇性內容群組清理設定！共選定隱藏 ${len} 個選擇性內容群組實例。`,
             resetMsg: "已將當前檔案中的選擇性內容群組清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。"
@@ -1912,6 +1922,9 @@
                 } else if (strategyType === "annotItem") {
                     titleEl.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
                     previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
+                } else if (strategyType === "ocgItem") {
+                    titleEl.textContent = `🔍 圖層移除效果預覽：${entry.name} (全份文件)`;
+                    previewUrl = await generateOCGPreviewUrl(key);
                 }
 
                 if (previewUrl) {
@@ -2136,6 +2149,62 @@
             page.node.set(PDFName.of("Contents"), contentStreamRef);
             
             const pdfBytes = await previewDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            previewUrlCache.push(url);
+            return url;
+        }
+
+        async function generateOCGPreviewUrl(ocgRefStr) {
+            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+            const catalog = srcDoc.context.lookup(srcDoc.catalog);
+            const ocProperties = srcDoc.context.lookup(catalog.get(PDFLib.PDFName.of("OCProperties")));
+            
+            if (ocProperties instanceof PDFLib.PDFDict) {
+                const dDict = srcDoc.context.lookup(ocProperties.get(PDFLib.PDFName.of("D")));
+                if (dDict instanceof PDFLib.PDFDict) {
+                    // 尋找目標 OCG 的 Reference
+                    const ocgsArray = srcDoc.context.lookup(ocProperties.get(PDFLib.PDFName.of("OCGs")));
+                    let targetRef = null;
+                    if (ocgsArray instanceof PDFLib.PDFArray) {
+                        for (let i = 0; i < ocgsArray.size(); i++) {
+                            const ref = ocgsArray.get(i);
+                            if (ref.toString() === ocgRefStr) {
+                                targetRef = ref;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (targetRef) {
+                        // 加入 OFF 陣列
+                        const offArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("OFF")));
+                        const newOffArray = srcDoc.context.obj([]);
+                        if (offArray instanceof PDFLib.PDFArray) {
+                            for (let i = 0; i < offArray.size(); i++) {
+                                newOffArray.push(offArray.get(i));
+                            }
+                        }
+                        newOffArray.push(targetRef);
+                        dDict.set(PDFLib.PDFName.of("OFF"), newOffArray);
+                        
+                        // 從 ON 陣列中移除
+                        const onArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("ON")));
+                        if (onArray instanceof PDFLib.PDFArray) {
+                            const newOnArray = srcDoc.context.obj([]);
+                            for (let i = 0; i < onArray.size(); i++) {
+                                const ref = onArray.get(i);
+                                if (ref.toString() !== ocgRefStr) {
+                                    newOnArray.push(ref);
+                                }
+                            }
+                            dDict.set(PDFLib.PDFName.of("ON"), newOnArray);
+                        }
+                    }
+                }
+            }
+            
+            const pdfBytes = await srcDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             previewUrlCache.push(url);
