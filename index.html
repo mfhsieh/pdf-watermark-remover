@@ -298,8 +298,13 @@
 
         /* 旋轉動畫定義 */
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* 物件預覽按鈕 (👁️) 的微動畫與高質感樣式 */
@@ -560,6 +565,21 @@
             transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
+        .modal-card.modal-lg {
+            max-width: 500px;
+        }
+
+        .modal-card.modal-xl {
+            max-width: 800px;
+            width: 90%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            padding: 25px;
+        }
+
         .modal-overlay.active .modal-card {
             transform: scale(1);
         }
@@ -577,6 +597,11 @@
             color: var(--muted);
             font-size: 0.95rem;
             line-height: 1.5;
+        }
+
+        .modal-card p.modal-desc {
+            line-height: 1.8;
+            margin-bottom: 8px;
         }
 
         .modal-card input[type="password"] {
@@ -607,11 +632,37 @@
             justify-content: flex-end;
         }
 
+        .modal-actions.bar {
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .modal-actions .right-group {
+            display: flex;
+            gap: 12px;
+        }
+
         .modal-actions .button {
             width: auto;
             min-width: 100px;
             padding: 10px 16px;
             font-size: 0.95rem;
+        }
+
+        .modal-actions .btn-outline {
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            min-width: auto;
+        }
+
+        .modal-actions .btn-outline:hover {
+            color: var(--text);
+            border-color: var(--muted);
         }
 
 
@@ -698,7 +749,8 @@
             width: 100%;
             color: inherit;
             transition: all 0.2s ease;
-            padding: 6px 12px 6px 8px; /* 右邊預留 12px 的內距，讓按鈕放大時不超出 */
+            padding: 6px 12px 6px 8px;
+            /* 右邊預留 12px 的內距，讓按鈕放大時不超出 */
             border-radius: 6px;
             box-sizing: border-box;
         }
@@ -730,7 +782,8 @@
             overflow-y: auto;
             overflow-x: hidden;
             box-sizing: border-box;
-            padding-right: 4px; /* 為滾動條與按鈕預留少許呼吸空間 */
+            padding-right: 4px;
+            /* 為滾動條與按鈕預留少許呼吸空間 */
         }
 
         /* OCG 專用的文字預覽按鈕樣式 */
@@ -742,7 +795,8 @@
             cursor: pointer;
             padding: 2px 8px;
             font-size: 0.8rem;
-            margin-left: auto; /* 推至最右側以利對齊 */
+            margin-left: auto;
+            /* 推至最右側以利對齊 */
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -751,7 +805,7 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
-        
+
         .small-preview-btn:hover {
             background: var(--primary);
             border-color: var(--primary);
@@ -759,7 +813,7 @@
             transform: scale(1.04);
             box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
         }
-        
+
         .small-preview-btn:active {
             transform: scale(0.96);
         }
@@ -949,20 +1003,18 @@
 
     <!-- 頁面直接內容 (Direct Content) 設定 Modal -->
     <div id="triggerWordsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定頁面直接內容清理選項</h3>
-            <p id="triggerWordsModalDesc" style="line-height: 1.8; margin-bottom: 8px;">請勾選您想要<strong
+            <p id="triggerWordsModalDesc" class="modal-desc">請勾選您想要<strong
                     class="badge-danger">清除</strong>的頁面直接內容（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="directContentListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetTriggerWordsBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetTriggerWordsBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeTriggerWordsModalBtn" class="button">取消</button>
                     <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
                 </div>
@@ -972,20 +1024,18 @@
 
     <!-- 表單外部物件 (Form XObject) 設定 Modal -->
     <div id="formXObjectKeywordsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定表單外部物件清理選項</h3>
-            <p id="formXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+            <p id="formXObjectModalDesc" class="modal-desc">請勾選您想要<strong
                     class="badge-danger">清除</strong>的表單外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="formXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetFormXObjectBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetFormXObjectBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeFormXObjectKeywordsModalBtn" class="button">取消</button>
                     <button id="applyFormXObjectKeywordsBtn" class="button button-primary">套用</button>
                 </div>
@@ -995,20 +1045,18 @@
 
     <!-- 註解 (Annotation) 設定 Modal -->
     <div id="annotsSettingsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定註解清理選項</h3>
-            <p id="annotsModalDesc" style="line-height: 1.8;">請勾選您想要<strong
-                    class="badge-danger">清除</strong>的註解（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
+            <p id="annotsModalDesc" class="modal-desc">請勾選您想要<strong class="badge-danger">清除</strong>的註解（未勾選的項目將會<strong
+                    class="badge-success">保留</strong>）：</p>
 
             <div id="annotsSubtypesContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetAnnotsSettingsBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetAnnotsSettingsBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeAnnotsSettingsModalBtn" class="button">取消</button>
                     <button id="applyAnnotsSettingsBtn" class="button button-primary">套用</button>
                 </div>
@@ -1018,20 +1066,18 @@
 
     <!-- 影像外部物件 (Image XObject) 設定 Modal -->
     <div id="imageKeywordsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定影像外部物件清理選項</h3>
-            <p id="imageXObjectModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+            <p id="imageXObjectModalDesc" class="modal-desc">請勾選您想要<strong
                     class="badge-danger">清除</strong>的影像外部物件（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="imageXObjectListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetImageXObjectBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetImageXObjectBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeImageKeywordsModalBtn" class="button">取消</button>
                     <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
                 </div>
@@ -1041,20 +1087,18 @@
 
     <!-- 延伸圖形狀態 (ExtGState) 設定 Modal -->
     <div id="extGStateKeywordsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定延伸圖形狀態清理選項</h3>
-            <p id="extGStateModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+            <p id="extGStateModalDesc" class="modal-desc">請勾選您想要<strong
                     class="badge-danger">清除</strong>的延伸圖形狀態（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="extGStateListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetExtGStateBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetExtGStateBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
                     <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
                 </div>
@@ -1064,46 +1108,51 @@
 
     <!-- 選擇性內容群組 (OCG) 設定 Modal -->
     <div id="ocgKeywordsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card modal-lg">
             <h3>⚙ 設定選擇性內容群組清理選項</h3>
-            <p id="ocgModalDesc" style="line-height: 1.8;">請勾選您想要<strong
+            <p id="ocgModalDesc" class="modal-desc">請勾選您想要<strong
                     class="badge-danger">清除</strong>的選擇性內容群組（未勾選的項目將會<strong class="badge-success">保留</strong>）：</p>
 
             <div id="ocgListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
             </div>
 
-            <div class="modal-actions"
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 15px;">
-                <button id="resetOCGBtn" class="button"
-                    style="padding: 10px 14px; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--muted); min-width: auto;">回復預設值</button>
-                <div style="display: flex; gap: 12px;">
+            <div class="modal-actions bar">
+                <button id="resetOCGBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
                     <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
                     <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- 浮水印物件即時預覽 Modal (磨砂玻璃科技感) -->
     <div id="objectPreviewModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 800px; width: 90%; height: 80vh; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 25px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
+        <div class="modal-card modal-xl">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
                 <h3 id="objectPreviewTitle" style="margin: 0; font-size: 1.3rem; color: var(--text);">🔍 即時預覽</h3>
-                <button id="closeObjectPreviewModalBtn" class="icon-btn" style="border: none; background: transparent; font-size: 1.5rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;" title="關閉預覽">×</button>
+                <button id="closeObjectPreviewModalBtn" class="icon-btn"
+                    style="border: none; background: transparent; font-size: 1.5rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;"
+                    title="關閉預覽">×</button>
             </div>
-            
-            <div style="flex: 1; position: relative; width: 100%; height: calc(100% - 130px); background: rgba(0, 0, 0, 0.15); border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+
+            <div
+                style="flex: 1; position: relative; width: 100%; height: calc(100% - 130px); background: rgba(0, 0, 0, 0.15); border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
                 <!-- 載入動畫 Spinner -->
                 <div id="objectPreviewSpinner" style="display: none; text-align: center;">
-                    <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <div
+                        style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;">
+                    </div>
                     <p style="color: var(--muted); margin: 0; font-size: 0.9rem;">正在從 PDF 中提取資源並渲染預覽中...</p>
                 </div>
-                
+
                 <!-- PDF 預覽 Iframe -->
-                <iframe id="objectPreviewIframe" style="width: 100%; height: 100%; border: none; display: none;" src=""></iframe>
+                <iframe id="objectPreviewIframe" style="width: 100%; height: 100%; border: none; display: none;"
+                    src=""></iframe>
             </div>
-            
+
             <div class="modal-actions" style="margin-top: 15px; display: flex; justify-content: flex-end; width: 100%;">
                 <button id="closeObjectPreviewBtn" class="button" style="padding: 10px 24px;">關閉預覽</button>
             </div>
@@ -1123,7 +1172,7 @@
         } = PDFLib;
 
         // ==========================================
-        // 全域浮水印自動判定關鍵字設定（集中於開頭以利檢視與微調）
+        // [Config Layer] 參數與設定 (全域浮水印判定關鍵字)
         // ==========================================
         // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字 (包含簡寫與常見英文)
         const WATERMARK_KEY_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo"];
@@ -1163,18 +1212,22 @@
             // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解元數據等已處理過的文字)
             FINAL_CONTENT_KEYWORDS.push(kw);
             FINAL_CONTENT_KEYWORDS.push(kw.toLowerCase());
-            
+
             // 2. 如果是中文字，則進行多重編碼轉譯
             if (/[\u4e00-\u9fa5]/.test(kw)) {
                 // (A) 動態生成標準 UTF-16BE Latin1 特徵碼
                 FINAL_CONTENT_KEYWORDS.push(compileToUTF16BELatin1(kw));
-                
+
                 // (B) 若為內建核心中文，從靜態對照表引入 Big5 特徵碼以相容老舊 PDF
                 if (STATIC_BIG5_SIGNATURES[kw]) {
                     FINAL_CONTENT_KEYWORDS.push(STATIC_BIG5_SIGNATURES[kw]);
                 }
             }
         });
+
+        // ==========================================
+        // [Core Utilities] 核心工具與輔助函式
+        // ==========================================
 
         /**
          * 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
@@ -1277,6 +1330,10 @@
 
 
 
+        // ==========================================
+        // [State Management] 全域狀態與記憶體暫存
+        // ==========================================
+
         // Form XObject 表單外部物件處理模式設定
         let detectedFormXObjects = new Map(); // key = raw stream text, value = extracted display string
         let formXObjectsToDestroy = []; // 儲存使用者勾選要刪除的 raw stream text
@@ -1326,15 +1383,6 @@
 
 
 
-        /**
-         * 使用 qpdf-wasm 引擎解密 PDF（延遲載入，僅在需要時從 CDN 載入約 1.8MB）
-         * 支援所有 PDF 加密格式：AES-256、AES-128、RC4-128、RC4-40
-         * 能正確處理 XRef Stream、Object Stream 等複雜的 PDF 1.5+ 格式
-         *
-         * @param {Uint8Array} pdfBytes - 原始 PDF 位元組
-         * @param {string} password - 密碼（預設空字串）
-         * @returns {Promise<Uint8Array>} - 解密後的 PDF 位元組
-         */
         /**
          * 使用 qpdf-wasm 引擎解密加密的 PDF 文件
          * 
@@ -1457,7 +1505,7 @@
         }
 
         // ==========================================
-        //  DOM 元素選取與控制
+        // [UI Components] DOM 元素選取與介面控制
         // ==========================================
         const fileInput = document.getElementById("fileInput");
         const fileArea = document.getElementById("fileArea");
@@ -1583,6 +1631,42 @@
                     if (this.resetBtn) this.resetBtn.disabled = false;
                     if (this.applyBtn) this.applyBtn.disabled = false;
 
+                    // 加入「全選/全不選」控制項
+                    const controlsRow = document.createElement("div");
+                    controlsRow.style.display = "flex";
+                    controlsRow.style.justifyContent = "flex-start";
+                    controlsRow.style.gap = "15px";
+                    controlsRow.style.marginBottom = "10px";
+                    controlsRow.style.paddingLeft = "5px";
+
+                    const selectAllBtn = document.createElement("a");
+                    selectAllBtn.href = "#";
+                    selectAllBtn.textContent = "☑️ 全選";
+                    selectAllBtn.style.color = "var(--primary)";
+                    selectAllBtn.style.fontSize = "0.85rem";
+                    selectAllBtn.style.textDecoration = "none";
+                    selectAllBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
+                        checkboxes.forEach(cb => cb.checked = true);
+                    });
+
+                    const deselectAllBtn = document.createElement("a");
+                    deselectAllBtn.href = "#";
+                    deselectAllBtn.textContent = "✖️ 全不選";
+                    deselectAllBtn.style.color = "var(--muted)";
+                    deselectAllBtn.style.fontSize = "0.85rem";
+                    deselectAllBtn.style.textDecoration = "none";
+                    deselectAllBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
+                        checkboxes.forEach(cb => cb.checked = false);
+                    });
+
+                    controlsRow.appendChild(selectAllBtn);
+                    controlsRow.appendChild(deselectAllBtn);
+                    this.listContainer.appendChild(controlsRow);
+
                     const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
                     let index = 0;
                     sortedEntries.forEach(([key, entry]) => {
@@ -1607,7 +1691,7 @@
 
                         label.appendChild(input);
                         this.renderLabel(label, key, entry, isChecked);
-                        
+
                         // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
                         const previewTypes = ["formXObjectItem", "imageXObjectItem", "directContentItem", "annotItem", "ocgItem"];
                         if (previewTypes.includes(this.checkboxName)) {
@@ -1618,18 +1702,18 @@
                             previewBtn.innerHTML = "👁️";
                             previewBtn.style.marginLeft = "auto"; // 推至最右側以利對齊
                             previewBtn.style.padding = "2px 8px";
-                            
+
                             previewBtn.addEventListener("click", (e) => {
                                 e.preventDefault();
                                 e.stopPropagation(); // 阻止點擊事件冒泡，防止誤觸核取方塊的狀態
                                 openObjectPreview(this.checkboxName, key, entry);
                             });
-                            
+
                             // 確保 label 具有 flex 排版，使 marginLeft: auto 能夠漂亮對齊
                             label.style.display = "flex";
                             label.style.alignItems = "center";
                             label.style.width = "100%";
-                            
+
                             label.appendChild(previewBtn);
                         }
 
@@ -1857,6 +1941,10 @@
                 URL.revokeObjectURL(processedUrl);
                 processedUrl = null;
             }
+            if (originalUrl) {
+                URL.revokeObjectURL(originalUrl);
+                originalUrl = null;
+            }
             clearPreviewUrlCache(); // 釋放項目預覽 Blob URL 快取
 
             // 2. 隱藏下載按鈕並重置連結
@@ -1909,7 +1997,7 @@
          */
         function clearPreviewUrlCache() {
             previewUrlCache.forEach(url => {
-                try { URL.revokeObjectURL(url); } catch (e) {}
+                try { URL.revokeObjectURL(url); } catch (e) { }
             });
             previewUrlCache = [];
         }
@@ -1935,7 +2023,7 @@
                 }
 
                 let previewUrl = "";
-                
+
                 if (strategyType === "formXObjectItem") {
                     titleEl.textContent = `🔍 表單外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.pages[0]} 頁)`;
                     previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
@@ -1982,7 +2070,7 @@
         document.getElementById("closeObjectPreviewBtn").addEventListener("click", closeObjectPreview);
 
         // ==========================================
-        // 四大即時預覽 PDF 生成器實作
+        // [Preview Engine] PDF 即時預覽生成器
         // ==========================================
 
         // 【工具函數】從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
@@ -1990,7 +2078,7 @@
             const page = srcDoc.getPage(pageIndex);
             const contentsRef = page.node.get(PDFName.of("Contents"));
             const contents = srcDoc.context.lookup(contentsRef);
-            
+
             const streams = [];
             if (contents instanceof PDFArray) {
                 for (let i = 0; i < contents.size(); i++) {
@@ -1999,12 +2087,12 @@
             } else if (contents) {
                 streams.push(contents);
             }
-            
+
             const doToken = `/${cleanKeyName} Do`;
-            
+
             for (const stream of streams) {
                 if (!(stream instanceof PDFRawStream)) continue;
-                
+
                 let data = stream.contents;
                 // 嘗試解壓縮（FlateDecode）
                 const filter = stream.dict.get(PDFName.of("Filter"));
@@ -2051,21 +2139,21 @@
                         }
                     }
                 }
-                
+
                 // 轉為字串搜尋
                 const text = new TextDecoder("latin1").decode(data);
                 const doIdx = text.indexOf(doToken);
                 if (doIdx === -1) continue;
-                
+
                 // 向前搜尋最近的 'q' 指令（儲存 graphics state）
                 const before = text.slice(0, doIdx);
                 let qIdx = before.lastIndexOf("\nq\n");
                 if (qIdx === -1) qIdx = before.lastIndexOf(" q\n");
                 if (qIdx === -1) qIdx = before.lastIndexOf("\nq ");
                 if (qIdx === -1) qIdx = before.lastIndexOf("\nq");
-                
+
                 const block = qIdx !== -1 ? before.slice(qIdx).trim() : "";
-                
+
                 // 確認 block 中有 cm 矩陣
                 const hasCM = /[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+cm/.test(block);
                 if (hasCM) {
@@ -2075,36 +2163,36 @@
             }
             return null;
         }
-        
+
         async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
-            
+
             const srcPage = srcDoc.getPage(pageIndex);
             const originalResources = srcPage.node.lookup(PDFName.of("Resources"));
-            
+
             // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
             const cleanKeyName = keyName.replace(/^\//, "");
-            
+
             // 1. 深入尋找該 Form XObject 的物件參照
             let fmObj = null;
-            
+
             if (originalResources instanceof PDFDict) {
                 const xObjects = srcDoc.context.lookup(originalResources.get(PDFName.of("XObject")));
                 if (xObjects instanceof PDFDict && xObjects.has(PDFName.of(cleanKeyName))) {
                     fmObj = srcDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
                 }
             }
-            
+
             if (!fmObj) {
                 throw new Error("找不到該 Form 物件，無法產生預覽。");
             }
-            
+
             // 2. 直接「拷貝原頁面」，從而完美繼承原頁面中所有的字型資源、編碼、CMap 與環境上下文！
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
             const page = previewDoc.addPage(copiedPage);
             // 保留原頁面尺寸，讓浮水印顯示在原始位置（含旋轉角度）
-            
+
             // 3. 解決 OCG 圖層遮罩導致預覽空白的致命 Bug：
             // 在拷貝出來的頁面中，直接找到 /XObject 中的該 Form 物件，將其 /OC 屬性刪除，強制讓它 100% 渲染！
             const pageResources = page.node.lookup(PDFName.of("Resources"));
@@ -2117,11 +2205,11 @@
                     }
                 }
             }
-            
+
             // 4. 嘗試從原頁面 Contents Stream 中提取原始的 cm 變換矩陣（含旋轉角度）
             // 若找得到，就用原始矩陣還原浮水印的真實角度；找不到則退回 BBox 平移模式
             let drawBlock = await extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName);
-            
+
             let drawCommand;
             if (drawBlock) {
                 // 用原始的完整繪圖區塊（cm 矩陣 + 顏色 + Do），完美還原旋轉！
@@ -2131,11 +2219,11 @@
                 // 這樣在預覽時才不會覺得物件明顯跑到左下角（偏移）
                 drawCommand = `q /${cleanKeyName} Do Q`;
             }
-            
+
             const contentStream = previewDoc.context.stream(drawCommand);
             const contentStreamRef = previewDoc.context.register(contentStream);
             page.node.set(PDFName.of("Contents"), contentStreamRef);
-            
+
             const pdfBytes = await previewDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
@@ -2148,7 +2236,7 @@
             const previewDoc = await PDFDocument.create();
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
             const page = previewDoc.addPage(copiedPage);
-            
+
             let imgWidth = 500;
             let imgHeight = 500;
             if (rawStream instanceof PDFRawStream) {
@@ -2157,7 +2245,7 @@
                 if (w && typeof w.value === "function") imgWidth = w.value();
                 if (h && typeof h.value === "function") imgHeight = h.value();
             }
-            
+
             // 將圖片置中於原頁面大小
             const pageWidth = page.getWidth();
             const pageHeight = page.getHeight();
@@ -2166,14 +2254,14 @@
             const finalH = imgHeight * scale;
             const xOffset = (pageWidth - finalW) / 2;
             const yOffset = (pageHeight - finalH) / 2;
-            
+
             // 由於複製頁面已經連帶複製了 Resources 字典，該圖片物件依然以原 keyName 存在於該頁面的 XObject 中
             const cleanKeyName = keyName.replace(/^\//, "");
             const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${cleanKeyName} Do Q`;
             const contentStream = previewDoc.context.stream(drawCommand);
             const contentStreamRef = previewDoc.context.register(contentStream);
             page.node.set(PDFName.of("Contents"), contentStreamRef);
-            
+
             const pdfBytes = await previewDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
@@ -2185,7 +2273,7 @@
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const catalog = srcDoc.context.lookup(srcDoc.catalog);
             const ocProperties = srcDoc.context.lookup(catalog.get(PDFLib.PDFName.of("OCProperties")));
-            
+
             if (ocProperties instanceof PDFLib.PDFDict) {
                 const dDict = srcDoc.context.lookup(ocProperties.get(PDFLib.PDFName.of("D")));
                 if (dDict instanceof PDFLib.PDFDict) {
@@ -2201,7 +2289,7 @@
                             }
                         }
                     }
-                    
+
                     if (targetRef) {
                         // 加入 OFF 陣列
                         const offArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("OFF")));
@@ -2213,7 +2301,7 @@
                         }
                         newOffArray.push(targetRef);
                         dDict.set(PDFLib.PDFName.of("OFF"), newOffArray);
-                        
+
                         // 從 ON 陣列中移除
                         const onArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("ON")));
                         if (onArray instanceof PDFLib.PDFArray) {
@@ -2229,7 +2317,7 @@
                     }
                 }
             }
-            
+
             const pdfBytes = await srcDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
@@ -2238,79 +2326,86 @@
         }
 
         async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
-            const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-            const previewDoc = await PDFDocument.create();
-            const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-            const page = previewDoc.addPage(copiedPage);
-            
-            const pageNode = page.node;
-            
-            // 使用者要求：不展示原本頁面（清空背景），僅以紅框表示相對位置
-            pageNode.delete(PDFLib.PDFName.of("Contents"));
-            
-            const annots = pageNode.lookup(PDFLib.PDFName.of("Annots"));
-            let targetRect = null;
-            if (annots instanceof PDFLib.PDFArray) {
-                const newAnnots = previewDoc.context.obj([]);
-                for (let idx = 0; idx < annots.size(); idx++) {
-                    const ref = annots.get(idx);
-                    if (idx === annotIndex) {
-                        newAnnots.push(ref);
-                        // 取得這個註解的 Rect 以便後續高亮標示
-                        const annotDict = previewDoc.context.lookup(ref);
-                        if (annotDict instanceof PDFLib.PDFDict) {
-                            const rect = annotDict.lookup(PDFLib.PDFName.of("Rect"));
-                            if (rect instanceof PDFLib.PDFArray && rect.size() === 4) {
-                                targetRect = [
-                                    rect.get(0).value(),
-                                    rect.get(1).value(),
-                                    rect.get(2).value(),
-                                    rect.get(3).value()
-                                ];
+            try {
+                const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+                const previewDoc = await PDFDocument.create();
+                const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+                const page = previewDoc.addPage(copiedPage);
+
+                const pageNode = page.node;
+
+                // 使用者要求：不展示原本頁面（清空背景），僅以紅框表示相對位置
+                pageNode.delete(PDFLib.PDFName.of("Contents"));
+
+                const annots = pageNode.lookup(PDFLib.PDFName.of("Annots"));
+                let targetRect = null;
+                if (annots instanceof PDFLib.PDFArray) {
+                    const newAnnots = previewDoc.context.obj([]);
+                    for (let idx = 0; idx < annots.size(); idx++) {
+                        const ref = annots.get(idx);
+                        if (idx === annotIndex) {
+                            newAnnots.push(ref);
+                            // 取得這個註解的 Rect 以便後續高亮標示
+                            const annotDict = previewDoc.context.lookup(ref);
+                            if (annotDict instanceof PDFLib.PDFDict) {
+                                const rect = annotDict.lookup(PDFLib.PDFName.of("Rect"));
+                                if (rect instanceof PDFLib.PDFArray && rect.size() === 4) {
+                                    targetRect = [
+                                        rect.get(0).value(),
+                                        rect.get(1).value(),
+                                        rect.get(2).value(),
+                                        rect.get(3).value()
+                                    ];
+                                }
                             }
                         }
                     }
+                    if (newAnnots.size() > 0) {
+                        pageNode.set(PDFLib.PDFName.of("Annots"), newAnnots);
+                    } else {
+                        pageNode.delete(PDFLib.PDFName.of("Annots"));
+                    }
                 }
-                if (newAnnots.size() > 0) {
-                    pageNode.set(PDFLib.PDFName.of("Annots"), newAnnots);
-                } else {
-                    pageNode.delete(PDFLib.PDFName.of("Annots"));
+
+                // 由於很多註解（如 Link）沒有視覺外觀，我們在它所在的 Rect 位置畫一個半透明的紅色框來突顯它！
+                if (targetRect) {
+                    const x0 = Math.min(targetRect[0], targetRect[2]);
+                    const y0 = Math.min(targetRect[1], targetRect[3]);
+                    const w = Math.abs(targetRect[2] - targetRect[0]);
+                    const h = Math.abs(targetRect[3] - targetRect[1]);
+
+                    page.drawRectangle({
+                        x: x0,
+                        y: y0,
+                        width: w,
+                        height: h,
+                        borderWidth: 3,
+                        borderColor: PDFLib.rgb(1, 0.2, 0.2),
+                        color: PDFLib.rgb(1, 0.2, 0.2),
+                        opacity: 0.25,
+                        borderOpacity: 0.8
+                    });
                 }
+
+
+                const pdfBytes = await previewDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                previewUrlCache.push(url);
+                return url;
+            } catch (error) {
+                console.error("生成註解預覽時發生錯誤:", error);
+                throw error;
             }
-            
-            // 由於很多註解（如 Link）沒有視覺外觀，我們在它所在的 Rect 位置畫一個半透明的紅色框來突顯它！
-            if (targetRect) {
-                const x0 = Math.min(targetRect[0], targetRect[2]);
-                const y0 = Math.min(targetRect[1], targetRect[3]);
-                const w = Math.abs(targetRect[2] - targetRect[0]);
-                const h = Math.abs(targetRect[3] - targetRect[1]);
-                
-                page.drawRectangle({
-                    x: x0,
-                    y: y0,
-                    width: w,
-                    height: h,
-                    borderWidth: 3,
-                    borderColor: PDFLib.rgb(1, 0.2, 0.2),
-                    color: PDFLib.rgb(1, 0.2, 0.2),
-                    opacity: 0.25,
-                    borderOpacity: 0.8
-                });
-            }
-            
-            const pdfBytes = await previewDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            previewUrlCache.push(url);
-            return url;
         }
+
 
         async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
             const previewDoc = await PDFDocument.create();
             const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
             const page = previewDoc.addPage(copiedPage);
-            
+
             // 【隔離策略】清空原本 Resources 裡面的 XObject，確保不會畫出圖片或 Form，只留純粹的 Direct Content
             const resources = page.node.lookup(page.node.get(PDFName.of("Resources")));
             if (resources instanceof PDFDict) {
@@ -2329,7 +2424,7 @@
                 }
                 page.node.set(contentsKey, newContents);
             }
-            
+
             const pdfBytes = await previewDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
@@ -2346,11 +2441,7 @@
             // 0. 主動清空並重置所有舊狀態（含密碼快取）
             resetAllState();
 
-            // 1. 若先前已有建立好的 Blob URL，必須主動將其釋放 (Revoke)，避免記憶體洩漏 (Memory Leak)
-            if (originalUrl) {
-                URL.revokeObjectURL(originalUrl);
-                originalUrl = null;
-            }
+            // 1. 釋放先前的預覽資源 (已移至 resetAllState 統一處理)
 
             // 2. 讀取原始位元組，嘗試偵測是否有開啟密碼
             const rawBuffer = await file.arrayBuffer();
@@ -2759,6 +2850,10 @@
 
 
 
+        // ==========================================
+        // [Event Controllers] 事件綁定與流程控制
+        // ==========================================
+
         // 監聽傳統點擊選擇檔案事件
         fileInput.addEventListener("change", (event) => {
             if (event.target.files.length > 0) {
@@ -2829,65 +2924,21 @@
 
             try {
                 // 1. 決定本次處理要使用的 PDF 位元組來源
-                // 優先使用選檔時已解密並快取的位元組，否則重新讀取原始檔案
-                let pdfBytes;
-                let pdfDoc;
-
-                if (cachedDecryptedBytes) {
-                    // 選檔時已完成解密（開啟密碼或編輯權限限制），直接沿用快取
-                    pdfBytes = cachedDecryptedBytes;
-                    if (cachedPassword) {
-                        addStatusMessage("🔓 使用已快取的開啟密碼，跳過重新解密。", "info");
-                    } else {
-                        addStatusMessage("🔓 使用已解除編輯權限限制的解密快取。", "info");
-                    }
-                    pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
-                    pdfDoc.getPageCount();
-                } else {
-                    // 無快取：讀取原始檔案並嘗試載入
-                    addStatusMessage("讀取檔案至記憶體...", "info");
-                    const rawBuffer = await selectedFile.arrayBuffer();
-                    pdfBytes = new Uint8Array(rawBuffer);
-
-                    try {
-                        pdfDoc = await PDFDocument.load(pdfBytes, { updateMetadata: false });
-                        pdfDoc.getPageCount(); // 觸發 lazy-parsing
-                        addStatusMessage("📄 載入無加密 PDF 成功，正在分析浮水印結構...", "info");
-                    } catch (loadError) {
-                        // 載入失敗：有加密，先嘗試空密碼（僅有編輯權限限制時可成功）
-                        try {
-                            const decrypted = await decryptWithQpdfWasm(pdfBytes, "");
-                            pdfDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
-                            pdfDoc.getPageCount();
-                            pdfBytes = decrypted;
-                            cachedDecryptedBytes = decrypted;
-                            addStatusMessage("⚠️ 偵測到編輯權限限制，已自動解除。正在分析浮水印結構...", "info");
-                        } catch {
-                            // 空密碼也失敗：需要開啟密碼（理論上選檔時應已處理，此為保險機制）
-                            addStatusMessage("🔒 偵測到開啟密碼限制，請輸入密碼。", "info");
-                            let attempts = 0;
-                            while (true) {
-                                const pwd = await promptForPassword(attempts > 0);
-                                if (pwd === null) {
-                                    throw new Error("使用者已取消密碼輸入，無法處理加密的文件。");
-                                }
-                                attempts++;
-                                try {
-                                    const decrypted = await decryptWithQpdfWasm(pdfBytes, pwd);
-                                    pdfDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
-                                    pdfDoc.getPageCount();
-                                    pdfBytes = decrypted;
-                                    cachedPassword = pwd;
-                                    cachedDecryptedBytes = decrypted;
-                                    addStatusMessage("🔓 密碼驗證成功，開啟密碼保護已解除！正在分析浮水印結構...", "success");
-                                    break;
-                                } catch {
-                                    // 密碼錯誤，繼續迴圈
-                                }
-                            }
-                        }
-                    }
+                // 當前執行時，UI 已確保 cachedDecryptedBytes 存在，因此直接使用記憶體快取，避免重複解碼
+                if (!cachedDecryptedBytes) {
+                    throw new Error("無法取得 PDF 記憶體快取，請重新選擇檔案。");
                 }
+
+                if (cachedPassword) {
+                    addStatusMessage("🔓 使用已快取的開啟密碼，跳過重新解密。", "info");
+                } else if (lastSuccessPassword) {
+                    addStatusMessage("🔓 使用前次成功解密的密碼快取。", "info");
+                } else {
+                    addStatusMessage("✅ 已取得 PDF 記憶體快取，開始處理...", "info");
+                }
+
+                const pdfDoc = await PDFDocument.load(cachedDecryptedBytes, { updateMetadata: false });
+                pdfDoc.getPageCount();
 
                 // 2. 取得目前畫面中 checkbox 勾選的清理選項
                 addStatusMessage("載入浮水印清除選項設定...", "info");
@@ -2980,6 +3031,10 @@
                 removeOCG: document.getElementById("removeOCG").checked,
             };
         }
+
+        // ==========================================
+        // [PDF Processor Engine] 核心清除與置換引擎
+        // ==========================================
 
         /**
          * 在 PDF 中建立一個「空串流」置換浮水印物件，避免直接刪除導致結構損壞
