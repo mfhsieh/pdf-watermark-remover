@@ -56,6 +56,12 @@
             background: radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
                 radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%),
                 var(--bg);
+            scrollbar-gutter: stable;
+        }
+
+        /* 防止 Modal 開啟時底層主畫面滾動（滾動穿透） */
+        body:has(.modal-overlay.active) {
+            overflow: hidden;
         }
 
         /* 容器與排版布局 */
@@ -438,7 +444,28 @@
 
         @media (max-width: 640px) {
             .container {
-                padding: 18px 14px 32px;
+                padding: 14px 8px 24px;
+            }
+
+            .card,
+            .info-card {
+                padding: 20px 14px;
+                border-radius: 14px;
+                /* 在小螢幕下使用稍小的圓角以保持緊湊美感 */
+            }
+
+            .file-area {
+                padding: 12px 14px;
+            }
+
+            .status {
+                padding: 12px 10px;
+                font-size: 0.8rem;
+            }
+
+            .preview-iframe {
+                height: 400px;
+                /* 小螢幕下微調預覽框高度 */
             }
         }
 
@@ -928,6 +955,28 @@
             border-color: rgba(107, 114, 128, 0.3);
             transform: translateY(-1px);
         }
+
+        /* 窄螢幕下優化 Modal 空間與內距，放置於底部確保覆蓋前面的常規樣式 */
+        @media (max-width: 640px) {
+            .modal-overlay {
+                padding: 12px; /* 避免卡片直接貼住螢幕邊緣，保持精緻感 */
+            }
+            .modal-card {
+                padding: 20px 16px; /* 縮減 padding（原 32px）以增加可用空間 */
+                border-radius: 16px; /* 微調圓角以維持視覺緊湊度 */
+            }
+            .modal-card.modal-xl {
+                padding: 16px; /* 針對大版面 Modal 進行極限空間優化（原 25px） */
+            }
+            .modal-actions {
+                gap: 8px; /* 縮減按鈕之間的間距（原 12px） */
+            }
+            .modal-actions .button {
+                min-width: 70px; /* 縮減按鈕的最小寬度（原 100px）以增加可用空間 */
+                padding: 8px 12px; /* 略微縮減按鈕內距以適應窄螢幕 */
+                font-size: 0.9rem; /* 微調字型大小 */
+            }
+        }
     </style>
 </head>
 
@@ -1150,7 +1199,7 @@
                 <button id="resetGlobalKeywordsBtn" class="button btn-outline">回復預設值</button>
                 <div class="right-group">
                     <button id="closeGlobalKeywordsModalBtn" class="button">取消</button>
-                    <button id="saveGlobalKeywordsBtn" class="button button-primary">儲存並套用</button>
+                    <button id="saveGlobalKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
@@ -1352,8 +1401,8 @@
         // ==========================================
         // [Config Layer] 參數與設定 (全域浮水印判定關鍵字)
         // ==========================================
-        const DEFAULT_KEY_KEYWORDS = ["watermark", "wm", "confidential", "draft", "sample", "internal", "copy", "trial", "evaluation", "demo"];
-        const DEFAULT_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+        const DEFAULT_KEY_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "authorized", "wm", "copy", "trial", "evaluation", "demo"];
+        const DEFAULT_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "authorized", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
 
         // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字
         let WATERMARK_KEY_KEYWORDS = [];
@@ -1420,7 +1469,7 @@
                         decodedStr += String.fromCharCode(byteVal);
                     }
                     expandedText += " " + decodedStr;
-                } catch (e) {}
+                } catch (e) { }
             }
             return expandedText;
         }
@@ -3031,8 +3080,8 @@
                                                             const refStr = xObjRef.toString();
                                                             if (!detectedFormXObjects.has(refStr)) {
                                                                 const keyName = key.value();
-                                                                const entry = { 
-                                                                    keyName: keyName, 
+                                                                const entry = {
+                                                                    keyName: keyName,
                                                                     pages: [i + 1],
                                                                     rawStr: rawStr,
                                                                     ref: xObjRef
