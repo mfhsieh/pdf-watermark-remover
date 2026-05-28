@@ -3529,7 +3529,20 @@
                 Subtype: PDFName.of(subtype),
             });
 
-            // 保留維持 PDF 正常顯示渲染所需的必要屬性字典（如尺寸）
+            if (subtype === "Image") {
+                // PDF 的 Image XObject 需要實際的像素資料，若直接給空串流會導致 Acrobat Reader 報錯。
+                // 這裡改為產生一個 1x1 的透明遮罩 (ImageMask)，完全符合 PDF 規範且不顯示任何內容。
+                dict.set(PDFName.of("Width"), pdfDoc.context.obj(1));
+                dict.set(PDFName.of("Height"), pdfDoc.context.obj(1));
+                dict.set(PDFName.of("ImageMask"), pdfDoc.context.obj(true));
+                dict.set(PDFName.of("BitsPerComponent"), pdfDoc.context.obj(1));
+                dict.set(PDFName.of("IsWatermarkRemoved"), pdfDoc.context.obj(true));
+                // 1 byte 的 255 (二進位 11111111)。在 ImageMask 預設 Decode [0 1] 下，1 代表透明不繪製。
+                const stream = pdfDoc.context.stream(new Uint8Array([255]), dict);
+                return pdfDoc.context.register(stream);
+            }
+
+            // 對於 Form XObject 等其他類型，保留維持 PDF 正常顯示渲染所需的必要屬性字典（如 BBox）
             for (const keyName of keepKeys) {
                 const key = PDFName.of(keyName);
                 const value = originalStream.dict.lookup(key);
