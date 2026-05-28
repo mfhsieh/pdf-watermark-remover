@@ -104,7 +104,6 @@
             color: var(--muted);
             max-width: 700px;
             font-size: clamp(0.75rem, 3.75vw, 1.0rem);
-            white-space: nowrap;
         }
 
         /* 卡片與功能面板樣式 */
@@ -472,8 +471,7 @@
         /* 頁尾與創用 CC BY-NC-SA 4.0 授權徽章 */
         .footer {
             margin-top: 40px;
-            padding-top: 30px;
-            padding-bottom: 30px;
+            padding-block: 30px;
             border-top: 1px solid var(--border);
             text-align: center;
         }
@@ -959,23 +957,111 @@
         /* 窄螢幕下優化 Modal 空間與內距，放置於底部確保覆蓋前面的常規樣式 */
         @media (max-width: 640px) {
             .modal-overlay {
-                padding: 12px; /* 避免卡片直接貼住螢幕邊緣，保持精緻感 */
+                padding: 12px;
+                /* 避免卡片直接貼住螢幕邊緣，保持精緻感 */
             }
+
             .modal-card {
-                padding: 20px 16px; /* 縮減 padding（原 32px）以增加可用空間 */
-                border-radius: 16px; /* 微調圓角以維持視覺緊湊度 */
+                padding: 20px 16px;
+                /* 縮減 padding（原 32px）以增加可用空間 */
+                border-radius: 16px;
+                /* 微調圓角以維持視覺緊湊度 */
             }
+
             .modal-card.modal-xl {
-                padding: 16px; /* 針對大版面 Modal 進行極限空間優化（原 25px） */
+                padding: 16px;
+                /* 針對大版面 Modal 進行極限空間優化（原 25px） */
             }
+
             .modal-actions {
-                gap: 8px; /* 縮減按鈕之間的間距（原 12px） */
+                gap: 8px;
+                /* 縮減按鈕之間的間距（原 12px） */
             }
+
             .modal-actions .button {
-                min-width: 70px; /* 縮減按鈕的最小寬度（原 100px）以增加可用空間 */
-                padding: 8px 12px; /* 略微縮減按鈕內距以適應窄螢幕 */
-                font-size: 0.9rem; /* 微調字型大小 */
+                min-width: 70px;
+                /* 縮減按鈕的最小寬度（原 100px）以增加可用空間 */
+                padding: 8px 12px;
+                /* 略微縮減按鈕內距以適應窄螢幕 */
+                font-size: 0.9rem;
+                /* 微調字型大小 */
             }
+        }
+
+        /* 策略選項標題列：標題 + 齒輪按鈕橫排 */
+        .options-heading-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .options-heading-row h2 {
+            margin: 0;
+        }
+
+        /* 全域關鍵字設定 Modal 內的欄位標籤 */
+        .keywords-field-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        /* 全域關鍵字設定 Modal 內的 Textarea */
+        .keywords-textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: monospace;
+            resize: none;
+            overflow-y: hidden;
+            box-sizing: border-box;
+            min-height: 40px;
+            color: var(--text);
+            background: var(--surface);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .keywords-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* 關鍵字說明文字 */
+        .keywords-hint {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* 說明文字中的強調色 */
+        .keywords-hint .hint-primary {
+            color: var(--primary);
+        }
+
+        .keywords-hint .hint-danger {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* 功能說明卡片內的次要清單 */
+        .feature-sub-list {
+            margin: 6px 0 8px 0;
+            padding-left: 20px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.5;
+            list-style-type: circle;
+        }
+
+        /* 功能說明清單中的強調文字 */
+        .feature-sub-list strong {
+            color: var(--text);
         }
     </style>
 </head>
@@ -1003,9 +1089,8 @@
 
             <!-- 浮水印清除策略選項 -->
             <div class="options hidden" id="optionsContainer">
-                <div
-                    style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 16px; gap: 12px;">
-                    <h2 style="margin: 0;">選擇清除策略</h2>
+                <div class="options-heading-row">
+                    <h2>選擇清除策略</h2>
                     <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域關鍵字設定"
                         aria-label="全域關鍵字設定">📝</button>
                 </div>
@@ -1084,20 +1169,15 @@
                     <p>此工具在瀏覽器端直接處理 PDF 檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。</p>
                     <ul>
                         <li><strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF 底層結構進行清除：
-                            <ul
-                                style="margin: 6px 0 8px 0; padding-left: 20px; font-size: 0.82rem; color: var(--muted); line-height: 1.5; list-style-type: circle;">
-                                <li><strong style="color: var(--text);">「頁面直接內容」 (Direct
-                                        Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
-                                <li><strong style="color: var(--text);">「表單外部物件」 (Form
-                                        XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
-                                <li><strong style="color: var(--text);">「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
-                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。</li>
-                                <li><strong style="color: var(--text);">「註解」 (Annotation)</strong>：PDF
-                                    的互動註解、圖示或蓋章（如浮水印標記層）。</li>
-                                <li><strong style="color: var(--text);">「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
-                                    值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。</li>
-                                <li><strong style="color: var(--text);">「選擇性內容群組」 (OCG)</strong>：即 PDF
-                                    的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
+                            <ul class="feature-sub-list">
+                                <li><strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
+                                <li><strong>「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
+                                <li><strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
+                                </li>
+                                <li><strong>「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如浮水印標記層）。</li>
+                                <li><strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha 值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
+                                </li>
+                                <li><strong>「選擇性內容群組」 (OCG)</strong>：即 PDF 的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
                             </ul>
                         </li>
                         <li><strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。</li>
@@ -1172,25 +1252,22 @@
 
             <div class="modal-list-container extended-list">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">1. 資源鍵名與圖層名稱關鍵字</label>
-                    <textarea id="keyKeywordsInput" rows="1"
-                        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: none; overflow-y: hidden; box-sizing: border-box; min-height: 40px;"
+                    <label class="keywords-field-label">1. 資源鍵名與圖層名稱關鍵字</label>
+                    <textarea id="keyKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: watermark, confidential..."></textarea>
-                    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px; line-height: 1.4;">用於比對 PDF
-                        底層資源鍵名與圖層名稱，建議輸入英文或簡寫。<br><span style="color: var(--primary);">適用策略：</span>「表單外部物件」 (Form
-                        XObject)、「影像外部物件」
-                        (Image XObject)、「延伸圖形狀態」 (ExtGState) 與 「選擇性內容群組」 (OCG)。</p>
+                    <p class="keywords-hint">用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。<br>
+                        <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」
+                        (ExtGState) 與「選擇性內容群組」 (OCG)。
+                    </p>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">2. 「頁面直接內容」關鍵字</label>
-                    <textarea id="contentKeywordsInput" rows="1"
-                        style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: none; overflow-y: hidden; box-sizing: border-box; min-height: 40px;"
+                    <label class="keywords-field-label">2. 「頁面直接內容」關鍵字</label>
+                    <textarea id="contentKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: 機密, 內部, 草稿..."></textarea>
-                    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px; line-height: 1.4;">
+                    <p class="keywords-hint">
                         用於比對內容串流（Content Stream）中實際顯示的文字。<br>
-                        <span style="color: var(--primary);">適用策略：</span>「頁面直接內容」 (Direct Content)。<br>
-                        <span style="color: var(--danger); font-weight: 600;">限制：</span>若 PDF 採用自訂字型編碼
-                        (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
+                        <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br>
+                        <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼 (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
                     </p>
                 </div>
             </div>
@@ -1589,7 +1666,7 @@
                 if (confirm("確定要回復為預設關鍵字嗎？這將會覆寫您的自訂設定。")) {
                     saveGlobalKeywords([...DEFAULT_KEY_KEYWORDS], [...DEFAULT_CONTENT_KEYWORDS]);
                     modal.classList.remove("active");
-                    if (typeof appendLog === 'function') appendLog("已回復預設關鍵字。", "success");
+                    addStatusMessage("已回復預設關鍵字。", "success");
                 }
             });
 
@@ -1598,7 +1675,7 @@
                 const contentsRaw = contentInput.value.split(",").map(s => s.trim()).filter(s => s);
                 saveGlobalKeywords(keysRaw, contentsRaw);
                 modal.classList.remove("active");
-                if (typeof appendLog === 'function') appendLog("已儲存自訂關鍵字設定。", "success");
+                addStatusMessage("已儲存自訂關鍵字設定。", "success");
 
                 if (typeof selectedFile !== "undefined" && selectedFile) {
                     addStatusMessage("🔄 關鍵字已變更，正在以新關鍵字重新掃描 PDF...", "info");
@@ -1725,7 +1802,6 @@
         }
 
 
-
         // ==========================================
         // [State Management] 全域狀態與記憶體暫存
         // ==========================================
@@ -1777,7 +1853,6 @@
                 statusEl.replaceChildren();
             }
         }
-
 
 
         /**
@@ -1843,7 +1918,6 @@
                 throw err;
             }
         }
-
 
 
         /**
@@ -2011,18 +2085,10 @@
                     });
                     this.setDestroyList(destroyList);
 
-                    // 自動勾選/取消勾選主策略 checkbox 連動
+                    // 自動連動主策略 checkbox：有選項就勾選，否則取消
                     const mainCheckbox = document.getElementById(this.mainCheckboxId);
                     if (mainCheckbox) {
-                        if (destroyList.length > 0) {
-                            if (!mainCheckbox.checked) {
-                                mainCheckbox.checked = true;
-                            }
-                        } else {
-                            if (mainCheckbox.checked) {
-                                mainCheckbox.checked = false;
-                            }
-                        }
+                        mainCheckbox.checked = destroyList.length > 0;
                     }
 
                     this.modal.classList.remove("active");
@@ -2216,9 +2282,8 @@
                 const labelText = meta ? meta.label : `/${entry.subtype}`;
                 const textColor = meta ? meta.color : "inherit";
                 if (textColor !== "inherit") labelEl.style.color = textColor;
-                const contentDisplay = "";
                 const pageLabel = ` (第 ${entry.page} 頁)`;
-                labelEl.appendChild(document.createTextNode(`[${labelText}]${contentDisplay}${pageLabel}`));
+                labelEl.appendChild(document.createTextNode(`[${labelText}]${pageLabel}`));
             },
             applyMsgTemplate: (len) => `已成功套用「註解」清理設定！共選定清理 ${len} 個「註解」實例。`,
             resetMsg: "已將當前檔案中的「註解」清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。"
@@ -2684,16 +2749,17 @@
 
         async function generateOCGPreviewUrl(ocgRefStr) {
             const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-            const catalog = srcDoc.context.lookup(srcDoc.catalog);
-            const ocProperties = srcDoc.context.lookup(catalog.get(PDFLib.PDFName.of("OCProperties")));
+            // srcDoc.catalog 直接回傳 PDFDict，不需再 context.lookup()
+            const catalog = srcDoc.catalog;
+            const ocProperties = srcDoc.context.lookup(catalog.get(PDFName.of("OCProperties")));
 
-            if (ocProperties instanceof PDFLib.PDFDict) {
-                const dDict = srcDoc.context.lookup(ocProperties.get(PDFLib.PDFName.of("D")));
-                if (dDict instanceof PDFLib.PDFDict) {
+            if (ocProperties instanceof PDFDict) {
+                const dDict = srcDoc.context.lookup(ocProperties.get(PDFName.of("D")));
+                if (dDict instanceof PDFDict) {
                     // 尋找目標 OCG 的 Reference
-                    const ocgsArray = srcDoc.context.lookup(ocProperties.get(PDFLib.PDFName.of("OCGs")));
+                    const ocgsArray = srcDoc.context.lookup(ocProperties.get(PDFName.of("OCGs")));
                     let targetRef = null;
-                    if (ocgsArray instanceof PDFLib.PDFArray) {
+                    if (ocgsArray instanceof PDFArray) {
                         for (let i = 0; i < ocgsArray.size(); i++) {
                             const ref = ocgsArray.get(i);
                             if (ref.toString() === ocgRefStr) {
@@ -2705,19 +2771,19 @@
 
                     if (targetRef) {
                         // 加入 OFF 陣列
-                        const offArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("OFF")));
+                        const offArray = srcDoc.context.lookup(dDict.get(PDFName.of("OFF")));
                         const newOffArray = srcDoc.context.obj([]);
-                        if (offArray instanceof PDFLib.PDFArray) {
+                        if (offArray instanceof PDFArray) {
                             for (let i = 0; i < offArray.size(); i++) {
                                 newOffArray.push(offArray.get(i));
                             }
                         }
                         newOffArray.push(targetRef);
-                        dDict.set(PDFLib.PDFName.of("OFF"), newOffArray);
+                        dDict.set(PDFName.of("OFF"), newOffArray);
 
                         // 從 ON 陣列中移除
-                        const onArray = srcDoc.context.lookup(dDict.get(PDFLib.PDFName.of("ON")));
-                        if (onArray instanceof PDFLib.PDFArray) {
+                        const onArray = srcDoc.context.lookup(dDict.get(PDFName.of("ON")));
+                        if (onArray instanceof PDFArray) {
                             const newOnArray = srcDoc.context.obj([]);
                             for (let i = 0; i < onArray.size(); i++) {
                                 const ref = onArray.get(i);
@@ -2725,7 +2791,7 @@
                                     newOnArray.push(ref);
                                 }
                             }
-                            dDict.set(PDFLib.PDFName.of("ON"), newOnArray);
+                            dDict.set(PDFName.of("ON"), newOnArray);
                         }
                     }
                 }
@@ -2748,11 +2814,11 @@
                 const pageNode = page.node;
 
                 // 使用者要求：不展示原本頁面（清空背景），僅以紅框表示相對位置
-                pageNode.delete(PDFLib.PDFName.of("Contents"));
+                pageNode.delete(PDFName.of("Contents"));
 
-                const annots = pageNode.lookup(PDFLib.PDFName.of("Annots"));
+                const annots = pageNode.lookup(PDFName.of("Annots"));
                 let targetRect = null;
-                if (annots instanceof PDFLib.PDFArray) {
+                if (annots instanceof PDFArray) {
                     const newAnnots = previewDoc.context.obj([]);
                     for (let idx = 0; idx < annots.size(); idx++) {
                         const ref = annots.get(idx);
@@ -2760,9 +2826,9 @@
                             newAnnots.push(ref);
                             // 取得這個註解的 Rect 以便後續高亮標示
                             const annotDict = previewDoc.context.lookup(ref);
-                            if (annotDict instanceof PDFLib.PDFDict) {
-                                const rect = annotDict.lookup(PDFLib.PDFName.of("Rect"));
-                                if (rect instanceof PDFLib.PDFArray && rect.size() === 4) {
+                            if (annotDict instanceof PDFDict) {
+                                const rect = annotDict.lookup(PDFName.of("Rect"));
+                                if (rect instanceof PDFArray && rect.size() === 4) {
                                     targetRect = [
                                         rect.get(0).value(),
                                         rect.get(1).value(),
@@ -2774,9 +2840,9 @@
                         }
                     }
                     if (newAnnots.size() > 0) {
-                        pageNode.set(PDFLib.PDFName.of("Annots"), newAnnots);
+                        pageNode.set(PDFName.of("Annots"), newAnnots);
                     } else {
-                        pageNode.delete(PDFLib.PDFName.of("Annots"));
+                        pageNode.delete(PDFName.of("Annots"));
                     }
                 }
 
@@ -2825,9 +2891,9 @@
                 resources.delete(PDFName.of("XObject"));
             }
 
-            const contentsKey = PDFLib.PDFName.of("Contents");
+            const contentsKey = PDFName.of("Contents");
             const contents = previewDoc.context.lookup(page.node.get(contentsKey));
-            if (contents instanceof PDFLib.PDFArray) {
+            if (contents instanceof PDFArray) {
                 const newContents = previewDoc.context.obj([]);
                 for (let idx = 0; idx < contents.size(); idx++) {
                     const ref = contents.get(idx);
@@ -2979,6 +3045,9 @@
             if (!needsPassword || decryptedSuccessfully) {
                 try {
                     const scanDoc = await PDFDocument.load(previewBytes, { updateMetadata: false });
+                    // 重置全部 6 個偵測 Map，確保與 resetAllState 行為一致
+                    detectedFormXObjects.clear();
+                    detectedDirectContents.clear();
                     detectedAnnotations.clear();
                     detectedExtGStates.clear();
                     detectedOCGs.clear();
@@ -3004,7 +3073,6 @@
                                                 const name = nameObject.decodeText();
                                                 const entry = {
                                                     name: name,
-
                                                     ref: ocgRef
                                                 };
                                                 detectedOCGs.set(ocgRefStr, entry);
@@ -3140,7 +3208,6 @@
                                 if (extGStateNode) {
                                     const extGState = scanDoc.context.lookup(extGStateNode);
                                     if (extGState instanceof PDFDict) {
-                                        hasExtGState = true;
                                         for (const key of extGState.keys()) {
                                             const keyName = key.value();
                                             const gsObj = scanDoc.context.lookup(extGState.get(key));
@@ -3175,9 +3242,8 @@
                                                 CAVal: CAVal
                                             });
 
-                                            // 預設勾選：名稱疑似浮水印，或透明度低於 0.5 
-                                            let isSuspect = isSuspectKeyName(keyName) || caVal < 0.5 || CAVal < 0.5;
-                                            if (isSuspect) {
+                                            // 預設勾選：使用統一的 ExtGState 判定函數
+                                            if (isSuspectExtGState(detectedExtGStates.get(uniqueKey))) {
                                                 if (!extGStatesToDestroy.includes(uniqueKey)) {
                                                     extGStatesToDestroy.push(uniqueKey);
                                                 }
@@ -3237,7 +3303,7 @@
                             });
                         }
                     }
-                    console.log("背景掃描完成，偵測到註解數量：", detectedAnnotations.size, "，頁面直接內容數量：", detectedDirectContents.size);
+                    console.log("[Scanner] 背景掃描完成 — 註解:", detectedAnnotations.size, "，直接內容:", detectedDirectContents.size, "，FormXObj:", detectedFormXObjects.size, "，Image:", detectedImages.size, "，ExtGState:", detectedExtGStates.size, "，OCG:", detectedOCGs.size);
                 } catch (scanErr) {
                     console.error("背景掃描類型失敗", scanErr);
                 }
@@ -3264,8 +3330,6 @@
                 processButton.classList.remove("hidden");
             }
         }
-
-
 
 
         // ==========================================
@@ -3572,7 +3636,8 @@
                 const xObjRef = xObjects.get(key);
                 const refStr = xObjRef.toString();
                 const xObject = pdfDoc.context.lookup(xObjRef);
-                const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObjRef).dict.get(PDFName.of("Subtype")) : null;
+                // 直接從已查詢好的 xObject 取 Subtype，不重複呼叫 context.lookup
+                const subtype = xObject instanceof PDFRawStream ? xObject.dict.get(PDFName.of("Subtype")) : null;
 
                 if (subtype instanceof PDFName && subtype.toString() === "/Form") {
                     // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
