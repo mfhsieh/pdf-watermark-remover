@@ -1,5 +1,5 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 在瀏覽器端直接處理 PDF 檔案，**檔案不會上傳至伺服器**，可保護您的文件隱私。
@@ -14,7 +14,7 @@
 
 ## 💡 主要功能
 
-### 1. 全域關鍵字設定與中文雙編碼匹配 (v2.0.0)
+### 1. 全域關鍵字設定與中文雙編碼匹配
 支援自訂關鍵字比對。為了解決中文浮水印的編碼問題，系統會自動產生對應的位元組特徵碼：
 - **雙編碼位元組匹配**：非 ASCII 字元會自動編譯為 **UTF-16BE** 位元組特徵碼；若是中文字元（CJK 範圍），則額外產生 **Big5** 位元組特徵碼。
 - **相容性**：可提高對台灣舊式企業 ERP、報表系統產出文件的文字型浮水印的比對命中率。
@@ -38,7 +38,7 @@
 - **自動解除編輯限制**：無開啟密碼但限制編輯、複製、列印的 PDF，系統會自動在背景解除限制。
 - **密碼驗證與跨檔案沿用**：若文件設有開啟密碼，會彈窗詢問。驗證成功後的密碼暫存於記憶體（不落地儲存），接續處理密碼相同的檔案時可自動套用。
 
-### 5. 效能優化 (v2.0.0)
+### 5. 效能優化
 - **預覽記憶體釋放**：關閉預覽彈窗時立即執行 `URL.revokeObjectURL()`，避免頻繁預覽大型檔案造成記憶體積壓。
 - **DOM 節點快取**：集中快取主要 DOM 節點，減少重複遍歷的效能耗損。
 
@@ -104,6 +104,8 @@
 
 ## 📦 Release Notes
 
+- **v2.1.0 (2026-05-28)** 
+  * 微調「表單外部物件」判斷及 UI
 - **v2.0.0 (2026-05-27)**
   * **雙編碼匹配**：非 ASCII 字元與中文自動產生 **UTF-16BE + Big5** 雙特徵碼，提高對舊式文件的命中率。
   * **預覽記憶體釋放**：關閉預覽時立即執行 `URL.revokeObjectURL()`，避免記憶體積壓。
