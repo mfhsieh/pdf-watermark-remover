@@ -1396,6 +1396,52 @@
             return result;
         }
 
+        /**
+         * 將內容文字流中可能含有的 PDF 十六進位字串 <...> 萃取並還原為 Latin1 字串
+         * @param {string} text - 原始內容文字流
+         * @returns {string} 包含已還原之十六進位內容的完整文字字串
+         */
+        function decodeHexStringsInText(text) {
+            if (!text) return "";
+            let expandedText = text;
+            const hexRegex = /<([0-9a-fA-F\s]+)>/g;
+            let match;
+            while ((match = hexRegex.exec(text)) !== null) {
+                const hexClean = match[1].replace(/\s/g, "");
+                if (hexClean.length === 0) continue;
+                let paddedHex = hexClean;
+                if (paddedHex.length % 2 !== 0) {
+                    paddedHex += "0";
+                }
+                try {
+                    let decodedStr = "";
+                    for (let i = 0; i < paddedHex.length; i += 2) {
+                        const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
+                        decodedStr += String.fromCharCode(byteVal);
+                    }
+                    expandedText += " " + decodedStr;
+                } catch (e) {}
+            }
+            return expandedText;
+        }
+
+        /**
+         * 安全地獲取並解壓縮 PDFRawStream 的二進位內容
+         * @param {PDFRawStream} stream - PDF 原始二進位串流
+         * @returns {Uint8Array} 解密解壓後的二進位數據
+         */
+        function getDecodedStreamContents(stream) {
+            if (!(stream instanceof PDFRawStream)) return new Uint8Array();
+            try {
+                const decoded = PDFLib.decodePDFRawStream(stream);
+                decoded.reset();
+                return decoded.getBytes();
+            } catch (err) {
+                console.error("解碼二進位流失敗，回退至 raw 數據", err);
+                return stream.getContents();
+            }
+        }
+
         // === 動態編譯並整合產生最終的高精度比對字串庫 ===
         let FINAL_CONTENT_KEYWORDS = [];
 
@@ -1504,6 +1550,11 @@
                 saveGlobalKeywords(keysRaw, contentsRaw);
                 modal.classList.remove("active");
                 if (typeof appendLog === 'function') appendLog("已儲存自訂關鍵字設定。", "success");
+
+                if (typeof selectedFile !== "undefined" && selectedFile) {
+                    addStatusMessage("🔄 關鍵字已變更，正在以新關鍵字重新掃描 PDF...", "info");
+                    showOriginalPreview(selectedFile);
+                }
             });
         });
 
@@ -1535,14 +1586,13 @@
          */
         function isSuspectContentText(text) {
             if (!text) return false;
-            const lower = text.toLowerCase();
+            const expandedText = decodeHexStringsInText(text);
+            const lower = expandedText.toLowerCase();
             return FINAL_CONTENT_KEYWORDS.some(kw => {
-                // 若關鍵字為純 ASCII（toLowerCase 不會改變它），用小寫比對即可
                 if (kw === kw.toLowerCase()) {
                     return lower.includes(kw);
                 }
-                // 否則為二進位特徵碼（Big5 / UTF-16BE），必須對原始 text 比對以避免位元組值被破壞
-                return text.includes(kw);
+                return expandedText.includes(kw);
             });
         }
 
@@ -1551,9 +1601,11 @@
          * @param {Object} entry - 表單外部物件偵測 Entry
          * @returns {boolean} 是否為疑似浮水印
          */
-        function isSuspectFormXObject(entry) {
+        function isSuspectFormXObject(entry, rawStr = "") {
             if (!entry) return false;
-            return isSuspectKeyName(entry.keyName);
+            if (isSuspectKeyName(entry.keyName)) return true;
+            if (rawStr && isSuspectContentText(rawStr)) return true;
+            return false;
         }
 
         /**
@@ -2072,12 +2124,12 @@
             getDetectedMap: () => detectedFormXObjects,
             getDestroyList: () => formXObjectsToDestroy,
             setDestroyList: (list) => { formXObjectsToDestroy = list; },
-            getSuspectState: (key, entry) => isSuspectFormXObject(entry),
+            getSuspectState: (key, entry) => isSuspectFormXObject(entry, entry.rawStr),
             getSortCompare: () => 0, // 無特定排序需求
             renderLabel: (labelEl, key, entry) => {
                 const pageLabel = ` (第 ${entry.pages.join(", ")} 頁)`;
                 const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
-                labelEl.appendChild(document.createTextNode(`${displayName}${pageLabel}`));
+                labelEl.appendChild(document.createTextNode(`${displayName}${pageLabel} [實體: ${key}]`));
             },
             applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個「表單外部物件」。`,
             resetMsg: "已將當前檔案中的「表單外部物件」清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。"
@@ -2973,20 +3025,26 @@
                                                 if (subtype.toString() === "/Form") {
                                                     if (xObj instanceof PDFRawStream) {
                                                         try {
-                                                            const data = xObj.getContents();
+                                                            const data = getDecodedStreamContents(xObj);
                                                             const rawStr = decodeBinaryToText(data);
-                                                            if (!detectedFormXObjects.has(rawStr)) {
+                                                            const xObjRef = xObjects.get(key);
+                                                            const refStr = xObjRef.toString();
+                                                            if (!detectedFormXObjects.has(refStr)) {
                                                                 const keyName = key.value();
-                                                                const entry = { keyName: keyName, pages: [i + 1] };
-                                                                detectedFormXObjects.set(rawStr, entry);
-                                                                if (isSuspectFormXObject(entry)) {
-                                                                    // 防止同一份 raw stream 出現在多頁時重複加入
-                                                                    if (!formXObjectsToDestroy.includes(rawStr)) {
-                                                                        formXObjectsToDestroy.push(rawStr);
+                                                                const entry = { 
+                                                                    keyName: keyName, 
+                                                                    pages: [i + 1],
+                                                                    rawStr: rawStr,
+                                                                    ref: xObjRef
+                                                                };
+                                                                detectedFormXObjects.set(refStr, entry);
+                                                                if (isSuspectFormXObject(entry, rawStr)) {
+                                                                    if (!formXObjectsToDestroy.includes(refStr)) {
+                                                                        formXObjectsToDestroy.push(refStr);
                                                                     }
                                                                 }
                                                             } else {
-                                                                const entry = detectedFormXObjects.get(rawStr);
+                                                                const entry = detectedFormXObjects.get(refStr);
                                                                 if (entry && !entry.pages.includes(i + 1)) {
                                                                     entry.pages.push(i + 1);
                                                                 }
@@ -3106,7 +3164,7 @@
                                     if (streamRef) {
                                         const refStr = streamRef.toString();
                                         try {
-                                            const data = stream.getContents();
+                                            const data = getDecodedStreamContents(stream);
                                             const rawStr = decodeBinaryToText(data);
 
                                             detectedDirectContents.set(refStr, {
@@ -3462,8 +3520,10 @@
 
             let count = 0;
             for (const key of xObjects.keys()) {
-                const xObject = pdfDoc.context.lookup(xObjects.get(key));
-                const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
+                const xObjRef = xObjects.get(key);
+                const refStr = xObjRef.toString();
+                const xObject = pdfDoc.context.lookup(xObjRef);
+                const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObjRef).dict.get(PDFName.of("Subtype")) : null;
 
                 if (subtype instanceof PDFName && subtype.toString() === "/Form") {
                     // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
@@ -3472,16 +3532,8 @@
                     }
 
                     let shouldRemove = false;
-                    if (xObject instanceof PDFRawStream) {
-                        try {
-                            const data = xObject.getContents();
-                            const rawStr = decodeBinaryToText(data);
-                            if (formXObjectsToDestroy.includes(rawStr)) {
-                                shouldRemove = true;
-                            }
-                        } catch (err) {
-                            console.error("Form XObject 解碼失敗", err);
-                        }
+                    if (formXObjectsToDestroy.includes(refStr)) {
+                        shouldRemove = true;
                     }
 
                     if (shouldRemove) {
