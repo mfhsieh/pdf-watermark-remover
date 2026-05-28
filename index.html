@@ -3559,6 +3559,64 @@
             return pdfDoc.context.register(stream);
         }
 
+        function cleanContentStreams(pdfDoc, page, deletedKeys) {
+            const contentsKey = PDFName.of("Contents");
+            const contentsRef = page.node.get(contentsKey);
+            if (!contentsRef) return;
+
+            const processStream = (streamRef, idxOrKey, contentsArray) => {
+                const stream = pdfDoc.context.lookup(streamRef);
+                if (stream instanceof PDFRawStream) {
+                    try {
+                        const decoded = PDFLib.decodePDFRawStream(stream);
+                        decoded.reset();
+                        const bytes = decoded.getBytes();
+                        let text = "";
+                        const chunkSize = 16384;
+                        for (let i = 0; i < bytes.length; i += chunkSize) {
+                            text += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+                        }
+
+                        let modified = false;
+                        for (const key of deletedKeys) {
+                            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+                            const regex = new RegExp('/' + cleanKey + '\\s+Do\\b', 'g');
+                            const newText = text.replace(regex, '');
+                            if (newText !== text) {
+                                text = newText;
+                                modified = true;
+                            }
+                        }
+                        if (modified) {
+                            const arr = new Uint8Array(text.length);
+                            for (let i = 0; i < text.length; i++) {
+                                arr[i] = text.charCodeAt(i) & 0xff;
+                            }
+                            const emptyDict = pdfDoc.context.obj({}); 
+                            const newStream = pdfDoc.context.stream(arr, emptyDict);
+                            const newRef = pdfDoc.context.register(newStream);
+                            if (contentsArray) {
+                                contentsArray.set(idxOrKey, newRef);
+                            } else {
+                                page.node.set(contentsKey, newRef);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to clean stream', e);
+                    }
+                }
+            };
+
+            const contentsObj = pdfDoc.context.lookup(contentsRef);
+            if (contentsObj instanceof PDFArray) {
+                for (let idx = 0; idx < contentsObj.size(); idx += 1) {
+                    processStream(contentsObj.get(idx), idx, contentsObj);
+                }
+            } else {
+                processStream(contentsRef, null, null);
+            }
+        }
+
         /**
          * 核心重構清除引擎：遍歷 PDF 物件樹並執行浮水印置換
          * 
@@ -3576,6 +3634,7 @@
             // 循序遍歷處理每一頁，確保修改的隔離性
             for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
                 const page = pdfDoc.getPage(pageIndex);
+                let allDeletedXObjectKeys = [];
 
                 // 複製 Contents 陣列以進行單頁隔離，避免多頁共享時的修改互相干擾
                 const contentsKey = PDFName.of("Contents");
@@ -3598,7 +3657,9 @@
 
                 // 策略一：清除 Form XObject 浮水印
                 if (options.removeFormXObject) {
-                    modifiedObjects += removeFormXObjects(pdfDoc, resources);
+                    const res = removeFormXObjects(pdfDoc, resources);
+                    modifiedObjects += res.count;
+                    if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
                 }
 
                 // 策略二：清除註解 (Annotation)
@@ -3613,12 +3674,19 @@
 
                 // 策略四：清除影像外部物件 (Image XObject)
                 if (options.removeImageXObject) {
-                    modifiedObjects += removeImageXObjects(pdfDoc, resources, pageIndex);
+                    const res = removeImageXObjects(pdfDoc, resources, pageIndex);
+                    modifiedObjects += res.count;
+                    if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
                 }
 
                 // 策略五：清除延伸圖形狀態 (ExtGState)
                 if (options.removeExtGState) {
                     modifiedObjects += removeExtGState(pdfDoc, resources, pageIndex);
+                }
+
+                // 清理 content stream 中對已刪除 XObject 的參考，防止 Acrobat Reader 報錯
+                if (allDeletedXObjectKeys.length > 0) {
+                    cleanContentStreams(pdfDoc, page, allDeletedXObjectKeys);
                 }
             }
 
@@ -3642,9 +3710,10 @@
          */
         function removeFormXObjects(pdfDoc, resources) {
             const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
-            if (!(xObjects instanceof PDFDict)) return 0;
+            if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
 
             let count = 0;
+            const deletedKeys = [];
             for (const key of xObjects.keys()) {
                 const xObjRef = xObjects.get(key);
                 const refStr = xObjRef.toString();
@@ -3664,19 +3733,14 @@
                     }
 
                     if (shouldRemove) {
-                        // 替換為空 Form，但必須保留 BBox 等定位參數以防渲染引擎出錯
-                        const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Form", [
-                            "BBox",
-                            "Matrix",
-                            "Group",
-                            "Resources",
-                        ]);
-                        xObjects.set(key, blankedStream);
+                        // 使用者要求直接清空資源鍵值 (Delete the key from XObject dictionary)
+                        xObjects.delete(key);
+                        deletedKeys.push(key.value());
                         count += 1;
                     }
                 }
             }
-            return count;
+            return { count, deletedKeys };
         }
 
         /**
@@ -3876,9 +3940,10 @@
          */
         function removeImageXObjects(pdfDoc, resources, pageIndex) {
             const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
-            if (!(xObjects instanceof PDFDict)) return 0;
+            if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
 
             let count = 0;
+            const deletedKeys = [];
             for (const key of xObjects.keys()) {
                 const xObject = pdfDoc.context.lookup(xObjects.get(key));
                 const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of("Subtype"))) : null;
@@ -3888,26 +3953,13 @@
                     const uniqueKey = `${pageIndex}:${name}`;
                     // 比對被選定要清除的影像
                     if (imagesToDestroy.includes(uniqueKey)) {
-                        // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
-                        if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of("IsWatermarkRemoved"))) {
-                            continue;
-                        }
-
-                        // 替換為空 Image，保留寬高尺寸與色彩空間等硬性參數
-                        const blankedStream = createBlankXObjectStream(pdfDoc, xObject, "Image", [
-                            "Width",
-                            "Height",
-                            "ColorSpace",
-                            "BitsPerComponent",
-                            "Decode",
-                            "Intent",
-                        ]);
-                        xObjects.set(key, blankedStream);
+                        xObjects.delete(key);
+                        deletedKeys.push(key.value());
                         count += 1;
                     }
                 }
             }
-            return count;
+            return { count, deletedKeys };
         }
     </script>
 </body>
