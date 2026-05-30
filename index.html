@@ -4,15 +4,20 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。" />
+    <meta name="description" content="PDF 浮水印清除工具，純前端執行，無伺服器上傳，保護您的隱私。" />
+    <meta name="keywords" content="PDF, 浮水印, watermark, 清除, 純前端, 工具, local processing" />
+    <meta name="author" content="mfhsieh at github" />
+    <link rel="author" href="https://github.com/mfhsieh/pdf-watermark-remover/" />
+    <meta name="copyright" content="Copyright © mfhsieh at github. Licensed under CC BY-NC-SA 4.0." />
+    <link rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" />
+    <meta name="theme-color" content="#2f6beb" />
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' blob: data:; frame-src 'self' blob:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
     <title>PDF 浮水印清除工具</title>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
         crossorigin="anonymous"></script>
-    <script>
-        window.TextEncoder = undefined;
-        window.TextDecoder = undefined;
-    </script>
+    <script src="js/polyfill-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding-indexes.js"
         integrity="sha384-35I7P//wj0Kh7Kr25/CARCixpda3YoU/Jwg7zyw2KDbAaq0F0HbJjTfe8ft35k8S"
         crossorigin="anonymous"></script>
@@ -31,7 +36,7 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.1</span></h1>
+            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.2</span></h1>
             <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
         </header>
 

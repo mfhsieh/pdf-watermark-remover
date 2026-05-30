@@ -1,4 +1,13 @@
-/* 密碼輸入彈窗 Modal 樣式 (磨砂玻璃科技感) */
+/**
+ * ==========================================
+ * [Modals Styles] 彈出視窗與對話框樣式
+ * ==========================================
+ * 此檔案統整了所有疊加在主畫面上方的彈出視窗（Modals）樣式。
+ * 包含背景遮罩 (Overlay)、設定選項列表 (Settings List)、
+ * 密碼輸入對話框、以及即時預覽 (Preview) 的磨砂玻璃視窗等。
+ */
+
+/* 彈窗遮罩與 Modal 樣式 (磨砂玻璃科技感) */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -171,6 +180,14 @@
     font-size: 1.3rem;
     color: var(--text);
     line-height: 1.4;
+}
+
+.preview-effect-badge {
+    color: #d32f2f;
+    background-color: #ffebee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 0 4px;
 }
 
 .preview-modal-close-btn {

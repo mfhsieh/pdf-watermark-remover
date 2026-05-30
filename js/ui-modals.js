@@ -1,5 +1,5 @@
 // ==========================================
-// 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
+// [UI Modals] 浮水印清除策略設定彈出視窗
 // ==========================================
 /**
  * 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
@@ -621,7 +621,7 @@ async function openObjectPreview(strategyType, key, entry) {
             objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
             previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
         } else if (strategyType === 'ocgItem') {
-            objectPreviewTitle.innerHTML = `🔍 圖層<strong style="color: #d32f2f; background-color: #ffebee; padding: 2px 6px; border-radius: 4px; margin: 0 4px;">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
+            objectPreviewTitle.innerHTML = `🔍 圖層<strong class="preview-effect-badge">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
             previewUrl = await generateOCGPreviewUrl(key);
         }
 
