@@ -411,12 +411,11 @@ header p {
     margin-bottom: 8px;
 }
 
-/* 免責聲明上側警告橫線設計 */
-.disclaimer-column {
+/* 區塊分隔線基礎設計 */
+.divider-column {
     border-top: 3px solid #f1c40f;
     padding-top: 20px;
 }
-
 
 @media (max-width: 640px) {
     .container {
