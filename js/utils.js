@@ -54,6 +54,7 @@ function isSuspectContentText(text) {
  */
 function isSuspectFormXObject(entry, rawStr = '') {
     if (!entry) return false;
+    if (entry.isHeuristic) return true;
     if (isSuspectKeyName(entry.keyName)) return true;
     if (rawStr && isSuspectContentText(rawStr)) return true;
     return false;
@@ -86,6 +87,7 @@ function isSuspectDirectContent(entry) {
  */
 function isSuspectImageXObject(entry) {
     if (!entry) return false;
+    if (entry.isHeuristic) return true;
     return isSuspectKeyName(entry.keyName);
 }
 
