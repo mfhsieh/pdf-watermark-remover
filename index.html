@@ -1,465 +1,346 @@
 <!doctype html>
 <html lang="zh-Hant">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。" />
-        <title>PDF 浮水印清除工具</title>
-        <script
-            src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
-            integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
-            crossorigin="anonymous"
-        ></script>
-        <script>
-            window.TextEncoder = undefined;
-            window.TextDecoder = undefined;
-        </script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding-indexes.js"
-            integrity="sha384-35I7P//wj0Kh7Kr25/CARCixpda3YoU/Jwg7zyw2KDbAaq0F0HbJjTfe8ft35k8S"
-            crossorigin="anonymous"
-        ></script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"
-            integrity="sha384-BTzPyRUxY7isgCNE5C8X79LqCUgMGkEvC8q+Jh3LvNIFCdDrLI1pD90gDySSEAOc"
-            crossorigin="anonymous"
-        ></script>
 
-        <link rel="stylesheet" href="css/base.css" />
-        <link rel="stylesheet" href="css/layout.css" />
-        <link rel="stylesheet" href="css/components.css" />
-        <link rel="stylesheet" href="css/modals.css" />
-    </head>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。" />
+    <title>PDF 浮水印清除工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
+        integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
+        crossorigin="anonymous"></script>
+    <script>
+        window.TextEncoder = undefined;
+        window.TextDecoder = undefined;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding-indexes.js"
+        integrity="sha384-35I7P//wj0Kh7Kr25/CARCixpda3YoU/Jwg7zyw2KDbAaq0F0HbJjTfe8ft35k8S"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"
+        integrity="sha384-BTzPyRUxY7isgCNE5C8X79LqCUgMGkEvC8q+Jh3LvNIFCdDrLI1pD90gDySSEAOc"
+        crossorigin="anonymous"></script>
 
-    <body>
-        <!-- 主容器，限制最大寬度並集中排版 -->
-        <div class="container">
-            <!-- 頁面頭部標題區 -->
-            <header>
-                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.1</span></h1>
-                <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
-            </header>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/modals.css" />
+</head>
 
-            <!-- 主互動控制卡片 -->
-            <section class="card">
-                <!-- 檔案拖曳與上傳互動區域 -->
-                <div class="file-area" id="fileArea">
-                    <!-- 隱藏的真實 file input，透過拖曳或點擊觸發 -->
-                    <input type="file" id="fileInput" accept="application/pdf" />
-                    <div class="file-area-inner">
-                        <strong>點擊或拖曳 PDF 檔案到此處</strong>
-                        <span>僅支援 PDF，最大建議 50MB</span>
-                    </div>
+<body>
+    <!-- 主容器，限制最大寬度並集中排版 -->
+    <div class="container">
+        <!-- 頁面頭部標題區 -->
+        <header>
+            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.1</span></h1>
+            <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
+        </header>
+
+        <!-- 主互動控制卡片 -->
+        <section class="card">
+            <!-- 檔案拖曳與上傳互動區域 -->
+            <div class="file-area" id="fileArea">
+                <!-- 隱藏的真實 file input，透過拖曳或點擊觸發 -->
+                <input type="file" id="fileInput" accept="application/pdf" />
+                <div class="file-area-inner">
+                    <strong>點擊或拖曳 PDF 檔案到此處</strong>
+                    <span>僅支援 PDF，最大建議 50MB</span>
+                </div>
+            </div>
+
+            <!-- 浮水印清除策略選項 -->
+            <div class="options hidden" id="optionsContainer">
+                <div class="options-heading-row">
+                    <h2>選擇清除策略</h2>
+                    <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域關鍵字設定" aria-label="全域關鍵字設定">
+                        📝
+                    </button>
+                </div>
+                <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
+                <div class="option-row" id="optionRowFormXObject">
+                    <label><input type="checkbox" id="removeFormXObject" /> 清除「表單外部物件」 (Form XObject)</label>
+                    <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的「表單外部物件」"
+                        aria-label="選擇欲清除的「表單外部物件」">
+                        ⚙
+                    </button>
+                </div>
+                <!-- Annotations：各種註解（印章、附註等） -->
+                <div class="option-row" id="optionRowAnnotations">
+                    <label><input type="checkbox" id="removeAnnotations" /> 清除「註解」 (Annotation)</label>
+                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定「註解」清除選項" aria-label="設定「註解」清除選項">
+                        ⚙
+                    </button>
+                </div>
+                <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
+                <div class="option-row" id="optionRowDirectContent">
+                    <label><input type="checkbox" id="removeDirectContent" /> 清除「頁面直接內容」 (Direct
+                        Content)</label>
+                    <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定「頁面直接內容」清除選項"
+                        aria-label="設定「頁面直接內容」清除選項">
+                        ⚙
+                    </button>
+                </div>
+                <!-- Image XObject：影像外部物件 -->
+                <div class="option-row" id="optionRowImageXObject">
+                    <label><input type="checkbox" id="removeImageXObject" /> 清除「影像外部物件」 (Image
+                        XObject)</label>
+                    <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定「影像外部物件」清除選項"
+                        aria-label="設定「影像外部物件」清除選項">
+                        ⚙
+                    </button>
+                </div>
+                <!-- ExtGState：延伸圖形狀態 -->
+                <div class="option-row" id="optionRowExtGState">
+                    <label><input type="checkbox" id="removeExtGState" /> 清除「延伸圖形狀態」 (ExtGState)</label>
+                    <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定「延伸圖形狀態」清除選項"
+                        aria-label="設定「延伸圖形狀態」清除選項">
+                        ⚙
+                    </button>
+                </div>
+                <!-- OCG / Optional Content Group：選擇性內容群組 -->
+                <div class="option-row" id="optionRowOCG">
+                    <label><input type="checkbox" id="removeOCG" /> 清除「選擇性內容群組」 (OCG)</label>
+                    <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定「選擇性內容群組」清除選項"
+                        aria-label="設定「選擇性內容群組」清除選項">
+                        ⚙
+                    </button>
+                </div>
+            </div>
+
+            <!-- 執行動作按鈕 -->
+            <button id="processButton" class="button hidden">開始清除浮水印</button>
+
+            <!-- 狀態提示語與進度回饋 -->
+            <div id="status" class="status">
+                <div class="status-line info">請選擇 PDF 檔案後開始處理。</div>
+            </div>
+
+            <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
+            <div id="downloadArea" class="download-area hidden">
+                <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
+            </div>
+
+            <!-- Before & After 對照預覽區（預設隱藏） -->
+            <div id="previewContainer" class="preview-container hidden">
+                <!-- 原始 PDF 預覽窗格 -->
+                <div class="preview-box">
+                    <h3>原始 PDF 預覽</h3>
+                    <iframe id="originalPreview" class="preview-iframe"></iframe>
+                </div>
+                <!-- 處理後 PDF 預覽窗格（預設隱藏，待處理完畢後與下載按鈕一同顯現） -->
+                <div class="preview-box hidden" id="processedPreviewBox">
+                    <h3>處理後 PDF 預覽</h3>
+                    <iframe id="processedPreview" class="preview-iframe"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- 教學說明與法律安全宣告區（多欄排版） -->
+        <section class="info-card">
+            <div class="info-grid">
+                <!-- 欄位一：快速指南 -->
+                <div class="info-column">
+                    <h2>📖 快速使用指南</h2>
+                    <ol>
+                        <li><strong>上傳檔案</strong>：拖曳 PDF 至上方虛線框，系統即在背景極速掃描。</li>
+                        <li><strong>關鍵字設定 (可選)</strong>：遇到特殊浮水印時，點擊「📝」手動新增自訂特徵。</li>
+                        <li>
+                            <strong>確認勾選</strong>：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙️」進行細部調整。
+                        </li>
+                        <li>
+                            <strong>單一預覽</strong>：有疑慮時，點擊「👁️ 預覽」查看紅框標示位置，確保不誤刪正文。
+                        </li>
+                        <li><strong>清除下載</strong>：點擊清除後，雙欄對照確認效果無誤，即可下載乾淨檔案。</li>
+                    </ol>
                 </div>
 
-                <!-- 浮水印清除策略選項 -->
-                <div class="options hidden" id="optionsContainer">
-                    <div class="options-heading-row">
-                        <h2>選擇清除策略</h2>
-                        <button
-                            id="openGlobalKeywordsModalBtn"
-                            class="icon-btn"
-                            title="全域關鍵字設定"
-                            aria-label="全域關鍵字設定"
-                        >
-                            📝
-                        </button>
-                    </div>
-                    <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
-                    <div class="option-row" id="optionRowFormXObject">
-                        <label
-                            ><input type="checkbox" id="removeFormXObject" /> 清除「表單外部物件」 (Form XObject)</label
-                        >
-                        <button
-                            id="openFormXObjectKeywordsModalBtn"
-                            class="icon-btn"
-                            title="選擇欲清除的「表單外部物件」"
-                            aria-label="選擇欲清除的「表單外部物件」"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-                    <!-- Annotations：各種註解（印章、附註等） -->
-                    <div class="option-row" id="optionRowAnnotations">
-                        <label><input type="checkbox" id="removeAnnotations" /> 清除「註解」 (Annotation)</label>
-                        <button
-                            id="openAnnotsSettingsModalBtn"
-                            class="icon-btn"
-                            title="設定「註解」清除選項"
-                            aria-label="設定「註解」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-                    <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
-                    <div class="option-row" id="optionRowDirectContent">
-                        <label
-                            ><input type="checkbox" id="removeDirectContent" /> 清除「頁面直接內容」 (Direct
-                            Content)</label
-                        >
-                        <button
-                            id="openTriggerWordsModalBtn"
-                            class="icon-btn"
-                            title="設定「頁面直接內容」清除選項"
-                            aria-label="設定「頁面直接內容」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-                    <!-- Image XObject：影像外部物件 -->
-                    <div class="option-row" id="optionRowImageXObject">
-                        <label
-                            ><input type="checkbox" id="removeImageXObject" /> 清除「影像外部物件」 (Image
-                            XObject)</label
-                        >
-                        <button
-                            id="openImageKeywordsModalBtn"
-                            class="icon-btn"
-                            title="設定「影像外部物件」清除選項"
-                            aria-label="設定「影像外部物件」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-                    <!-- ExtGState：延伸圖形狀態 -->
-                    <div class="option-row" id="optionRowExtGState">
-                        <label><input type="checkbox" id="removeExtGState" /> 清除「延伸圖形狀態」 (ExtGState)</label>
-                        <button
-                            id="openExtGStateKeywordsModalBtn"
-                            class="icon-btn"
-                            title="設定「延伸圖形狀態」清除選項"
-                            aria-label="設定「延伸圖形狀態」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-                    <!-- OCG / Optional Content Group：選擇性內容群組 -->
-                    <div class="option-row" id="optionRowOCG">
-                        <label><input type="checkbox" id="removeOCG" /> 清除「選擇性內容群組」 (OCG)</label>
-                        <button
-                            id="openOCGKeywordsModalBtn"
-                            class="icon-btn"
-                            title="設定「選擇性內容群組」清除選項"
-                            aria-label="設定「選擇性內容群組」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
+                <!-- 欄位二：功能說明 -->
+                <div class="info-column divider-column">
+                    <h2>💡 功能說明</h2>
+                    <p>
+                        此工具在瀏覽器端直接處理 PDF
+                        檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。
+                    </p>
+                    <ul>
+                        <li>
+                            <strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF
+                            底層結構進行清除：
+                            <ul class="feature-sub-list">
+                                <li>
+                                    <strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
+                                </li>
+                                <li>
+                                    <strong>「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
+                                </li>
+                                <li>
+                                    <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
+                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
+                                </li>
+                                <li>
+                                    <strong>「註解」 (Annotation)</strong>：PDF
+                                    的互動註解、圖示或蓋章（如浮水印標記層）。
+                                </li>
+                                <li>
+                                    <strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
+                                    值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
+                                </li>
+                                <li>
+                                    <strong>「選擇性內容群組」 (OCG)</strong>：即 PDF
+                                    的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。
+                        </li>
+                        <li>
+                            <strong>權限解鎖與密碼沿用</strong>：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- 執行動作按鈕 -->
-                <button id="processButton" class="button hidden">開始清除浮水印</button>
-
-                <!-- 狀態提示語與進度回饋 -->
-                <div id="status" class="status">
-                    <div class="status-line info">請選擇 PDF 檔案後開始處理。</div>
+                <!-- 欄位三：免責聲明與備份安全指引 -->
+                <div class="info-column divider-column">
+                    <h2>⚠️ 免責聲明</h2>
+                    <p>開始使用前，請詳閱以下說明：</p>
+                    <ol>
+                        <li>
+                            <strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF
+                            原始碼結構，請務必保留原始檔案備份以防萬一。
+                        </li>
+                        <li>
+                            <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集
+                            (Subset)、自訂編碼 (CMap)
+                            或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。
+                        </li>
+                        <li>
+                            <strong>本地處理與法律責任</strong>：本工具採
+                            本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。
+                        </li>
+                    </ol>
                 </div>
+            </div>
+        </section>
 
-                <!-- 檔案下載區域（預設隱藏，處理完成後顯示） -->
-                <div id="downloadArea" class="download-area hidden">
-                    <a id="downloadLink" class="button button-primary" href="#">下載處理後 PDF</a>
-                </div>
+        <!-- 頁尾宣告與版權資訊 -->
+        <footer class="footer">
+            <div class="footer-content">
+                <!-- 導向 GitHub 開源倉庫連結 -->
+                <a href="https://github.com/mfhsieh/pdf-watermark-remover/" target="_blank" rel="noopener noreferrer"
+                    class="github-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    mfhsieh at github
+                </a>
 
-                <!-- Before & After 對照預覽區（預設隱藏） -->
-                <div id="previewContainer" class="preview-container hidden">
-                    <!-- 原始 PDF 預覽窗格 -->
-                    <div class="preview-box">
-                        <h3>原始 PDF 預覽</h3>
-                        <iframe id="originalPreview" class="preview-iframe"></iframe>
-                    </div>
-                    <!-- 處理後 PDF 預覽窗格（預設隱藏，待處理完畢後與下載按鈕一同顯現） -->
-                    <div class="preview-box hidden" id="processedPreviewBox">
-                        <h3>處理後 PDF 預覽</h3>
-                        <iframe id="processedPreview" class="preview-iframe"></iframe>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 教學說明與法律安全宣告區（多欄排版） -->
-            <section class="info-card">
-                <div class="info-grid">
-                    <!-- 欄位一：快速指南 -->
-                    <div class="info-column">
-                        <h2>📖 快速使用指南</h2>
-                        <ol>
-                            <li><strong>上傳檔案</strong>：拖曳 PDF 至上方虛線框，系統即在背景極速掃描。</li>
-                            <li><strong>關鍵字設定 (可選)</strong>：遇到特殊浮水印時，點擊「📝」手動新增自訂特徵。</li>
-                            <li>
-                                <strong>確認勾選</strong
-                                >：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙️」進行細部調整。
-                            </li>
-                            <li>
-                                <strong>單一預覽</strong>：有疑慮時，點擊「👁️ 預覽」查看紅框標示位置，確保不誤刪正文。
-                            </li>
-                            <li><strong>清除下載</strong>：點擊清除後，雙欄對照確認效果無誤，即可下載乾淨檔案。</li>
-                        </ol>
-                    </div>
-
-                    <!-- 欄位二：功能說明 -->
-                    <div class="info-column divider-column">
-                        <h2>💡 功能說明</h2>
-                        <p>
-                            此工具在瀏覽器端直接處理 PDF
-                            檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。
-                        </p>
-                        <ul>
-                            <li>
-                                <strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF
-                                底層結構進行清除：
-                                <ul class="feature-sub-list">
-                                    <li>
-                                        <strong>「頁面直接內容」 (Direct Content)</strong
-                                        >：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
-                                    </li>
-                                    <li>
-                                        <strong>「表單外部物件」 (Form XObject)</strong
-                                        >：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
-                                    </li>
-                                    <li>
-                                        <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
-                                        JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
-                                    </li>
-                                    <li>
-                                        <strong>「註解」 (Annotation)</strong>：PDF
-                                        的互動註解、圖示或蓋章（如浮水印標記層）。
-                                    </li>
-                                    <li>
-                                        <strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
-                                        值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
-                                    </li>
-                                    <li>
-                                        <strong>「選擇性內容群組」 (OCG)</strong>：即 PDF
-                                        的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。
-                                    </li>
-                                </ul>
-                            </li>
-                            <li>
-                                <strong>預覽功能</strong
-                                >：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。
-                            </li>
-                            <li>
-                                <strong>權限解鎖與密碼沿用</strong
-                                >：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- 欄位三：免責聲明與備份安全指引 -->
-                    <div class="info-column divider-column">
-                        <h2>⚠️ 免責聲明</h2>
-                        <p>開始使用前，請詳閱以下說明：</p>
-                        <ol>
-                            <li>
-                                <strong>重要文件請務必備份</strong
-                                >：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF
-                                原始碼結構，請務必保留原始檔案備份以防萬一。
-                            </li>
-                            <li>
-                                <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集
-                                (Subset)、自訂編碼 (CMap)
-                                或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。
-                            </li>
-                            <li>
-                                <strong>本地處理與法律責任</strong>：本工具採
-                                本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。
-                            </li>
-                        </ol>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 頁尾宣告與版權資訊 -->
-            <footer class="footer">
-                <div class="footer-content">
-                    <!-- 導向 GitHub 開源倉庫連結 -->
-                    <a
-                        href="https://github.com/mfhsieh/pdf-watermark-remover/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="github-link"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="github-icon"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
+                <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
+                <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant" target="_blank"
+                    rel="noopener noreferrer" class="cc-badge">
+                    <div class="cc-icons">
+                        <!-- CC (Creative Commons) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
                             <path
-                                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                            />
+                                d="M14.972 0c4.196 0 7.769 1.465 10.715 4.393A14.426 14.426 0 0128.9 9.228C29.633 11.04 30 12.964 30 15c0 2.054-.363 3.978-1.085 5.772a13.77 13.77 0 01-3.2 4.754 15.417 15.417 0 01-4.983 3.322A14.932 14.932 0 0114.973 30c-1.982 0-3.88-.38-5.692-1.14a15.087 15.087 0 01-4.875-3.293c-1.437-1.437-2.531-3.058-3.281-4.862A14.71 14.71 0 010 15c0-1.982.38-3.888 1.138-5.719a15.062 15.062 0 013.308-4.915C7.303 1.456 10.812 0 14.972 0zm.055 2.706c-3.429 0-6.313 1.196-8.652 3.589a12.896 12.896 0 00-2.72 4.031 11.814 11.814 0 00-.95 4.675c0 1.607.316 3.156.95 4.646a12.428 12.428 0 002.72 3.992 12.362 12.362 0 003.99 2.679c1.483.616 3.037.924 4.662.924 1.607 0 3.164-.312 4.675-.937a12.954 12.954 0 004.084-2.705c2.339-2.286 3.508-5.152 3.508-8.6 0-1.66-.304-3.231-.91-4.713a11.994 11.994 0 00-2.651-3.965c-2.412-2.41-5.314-3.616-8.706-3.616zm-.188 9.803l-2.01 1.045c-.215-.445-.477-.758-.79-.937-.312-.178-.602-.268-.87-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.509 1.928.34.482.84.724 1.5.724.876 0 1.492-.43 1.85-1.286l1.847.937a4.407 4.407 0 01-1.634 1.728c-.696.42-1.464.63-2.303.63-1.34 0-2.42-.41-3.242-1.233-.821-.82-1.232-1.964-1.232-3.428 0-1.428.416-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.858 0 3.188.723 3.992 2.17zm8.652 0l-1.983 1.045c-.214-.445-.478-.758-.79-.937-.313-.178-.613-.268-.897-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.51 1.928.338.482.838.724 1.5.724.874 0 1.49-.43 1.847-1.286l1.875.937a4.606 4.606 0 01-1.66 1.728c-.696.42-1.455.63-2.277.63-1.357 0-2.441-.41-3.253-1.233-.814-.82-1.22-1.964-1.22-3.428 0-1.428.415-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.857 0 3.18.723 3.965 2.17z" />
                         </svg>
-                        mfhsieh at github
-                    </a>
+                        <!-- BY (姓名標示) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
+                            <path
+                                d="M14.973 0c4.213 0 7.768 1.446 10.66 4.34C28.544 7.25 30 10.803 30 15c0 4.215-1.43 7.723-4.287 10.526C22.678 28.51 19.098 30 14.973 30c-4.054 0-7.571-1.474-10.553-4.42C1.474 22.633 0 19.107 0 15S1.474 7.34 4.42 4.34C7.313 1.446 10.83 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.196-8.652 3.589-2.447 2.5-3.67 5.402-3.67 8.706 0 3.321 1.214 6.196 3.642 8.624 2.429 2.429 5.322 3.642 8.679 3.642 3.339 0 6.25-1.222 8.732-3.67 2.358-2.267 3.536-5.133 3.536-8.598 0-3.41-1.197-6.311-3.589-8.705-2.392-2.392-5.285-3.588-8.678-3.588zm4.018 8.57v6.134H17.33v7.286h-4.66V17.41h-1.714v-6.134a.93.93 0 01.28-.683.933.933 0 01.684-.281h6.161c.25 0 .474.093.67.28a.912.912 0 01.294.684zM12.91 7.42c0-1.41.696-2.116 2.09-2.116s2.09.705 2.09 2.116c0 1.393-.697 2.09-2.09 2.09-1.393 0-2.09-.697-2.09-2.09z" />
+                        </svg>
+                        <!-- NC (非商業性) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
+                            <path
+                                d="M14.973 0c4.214 0 7.768 1.446 10.66 4.339C28.544 7.232 30 10.786 30 15c0 4.215-1.429 7.723-4.287 10.527C22.678 28.51 19.097 30 14.973 30c-4.072 0-7.59-1.482-10.553-4.446C1.474 22.607 0 19.09 0 15c0-4.107 1.474-7.66 4.42-10.66C7.313 1.446 10.83 0 14.973 0zM3.375 10.956c-.446 1.232-.67 2.58-.67 4.045 0 3.321 1.214 6.196 3.642 8.624 2.447 2.412 5.34 3.617 8.679 3.617 3.375 0 6.285-1.223 8.733-3.67.875-.839 1.561-1.714 2.061-2.626l-5.651-2.518a3.866 3.866 0 01-1.433 2.317c-.76.598-1.657.943-2.693 1.031v2.304h-1.74v-2.304c-1.661-.017-3.18-.615-4.554-1.794l2.063-2.089c.981.91 2.098 1.366 3.348 1.366.517 0 .96-.116 1.326-.349.366-.231.55-.615.55-1.151 0-.376-.135-.68-.402-.911l-1.447-.617-1.767-.804-2.384-1.044-7.661-3.427zm11.652-8.278c-3.41 0-6.295 1.206-8.652 3.616-.59.59-1.143 1.26-1.66 2.01l5.732 2.571a3.513 3.513 0 011.42-1.888c.695-.473 1.508-.737 2.437-.79V5.893h1.741v2.304c1.376.071 2.625.535 3.75 1.392L17.84 11.6c-.84-.59-1.697-.884-2.572-.884-.464 0-.88.09-1.245.267-.366.179-.55.483-.55.911 0 .125.045.25.134.375l1.902.858 1.313.59 2.41 1.07 7.687 3.429c.25-1.054.375-2.125.375-3.214 0-3.447-1.196-6.349-3.588-8.707-2.375-2.41-5.27-3.616-8.68-3.616z" />
+                        </svg>
+                        <!-- SA (相同方式分享) 圖標 -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="cc-icon" viewBox="0 0 30 30" fill="currentColor">
+                            <path
+                                d="M14.973 0c4.196 0 7.75 1.455 10.66 4.366C28.544 7.26 30 10.804 30 15c0 4.197-1.43 7.714-4.287 10.553C22.696 28.51 19.115 30 14.973 30c-4.054 0-7.571-1.473-10.553-4.42C1.474 22.634 0 19.108 0 15c0-4.088 1.474-7.633 4.42-10.633C7.33 1.455 10.848 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.205-8.652 3.616-2.447 2.483-3.67 5.375-3.67 8.678 0 3.34 1.214 6.214 3.642 8.625 2.429 2.43 5.322 3.643 8.679 3.643 3.339 0 6.25-1.223 8.732-3.67 2.358-2.285 3.536-5.151 3.536-8.598 0-3.428-1.197-6.321-3.589-8.678-2.375-2.412-5.268-3.616-8.678-3.616zM8.33 12.884c.286-1.84 1.026-3.264 2.223-4.273 1.196-1.008 2.651-1.513 4.366-1.513 2.356 0 4.232.76 5.625 2.277 1.393 1.517 2.09 3.464 2.09 5.839 0 2.304-.724 4.219-2.17 5.745-1.447 1.526-3.321 2.29-5.626 2.29-1.696 0-3.16-.508-4.392-1.527-1.233-1.018-1.973-2.464-2.224-4.339H12c.09 1.822 1.187 2.733 3.295 2.733 1.053 0 1.902-.456 2.544-1.366.644-.91.965-2.126.965-3.643 0-1.59-.294-2.799-.883-3.63-.59-.83-1.437-1.245-2.545-1.245-2.001 0-3.126.884-3.375 2.651h1.098l-2.973 2.973-2.973-2.973H8.33z" />
+                        </svg>
+                    </div>
+                    <span class="cc-text">CC BY-NC-SA 4.0</span>
+                </a>
+            </div>
+        </footer>
+    </div>
 
-                    <!-- 創用 CC BY-NC-SA 4.0 圓角氣泡徽章與官方 SVG 系列圖標 -->
-                    <a
-                        href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="cc-badge"
-                    >
-                        <div class="cc-icons">
-                            <!-- CC (Creative Commons) 圖標 -->
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="cc-icon"
-                                viewBox="0 0 30 30"
-                                fill="currentColor"
-                            >
-                                <path
-                                    d="M14.972 0c4.196 0 7.769 1.465 10.715 4.393A14.426 14.426 0 0128.9 9.228C29.633 11.04 30 12.964 30 15c0 2.054-.363 3.978-1.085 5.772a13.77 13.77 0 01-3.2 4.754 15.417 15.417 0 01-4.983 3.322A14.932 14.932 0 0114.973 30c-1.982 0-3.88-.38-5.692-1.14a15.087 15.087 0 01-4.875-3.293c-1.437-1.437-2.531-3.058-3.281-4.862A14.71 14.71 0 010 15c0-1.982.38-3.888 1.138-5.719a15.062 15.062 0 013.308-4.915C7.303 1.456 10.812 0 14.972 0zm.055 2.706c-3.429 0-6.313 1.196-8.652 3.589a12.896 12.896 0 00-2.72 4.031 11.814 11.814 0 00-.95 4.675c0 1.607.316 3.156.95 4.646a12.428 12.428 0 002.72 3.992 12.362 12.362 0 003.99 2.679c1.483.616 3.037.924 4.662.924 1.607 0 3.164-.312 4.675-.937a12.954 12.954 0 004.084-2.705c2.339-2.286 3.508-5.152 3.508-8.6 0-1.66-.304-3.231-.91-4.713a11.994 11.994 0 00-2.651-3.965c-2.412-2.41-5.314-3.616-8.706-3.616zm-.188 9.803l-2.01 1.045c-.215-.445-.477-.758-.79-.937-.312-.178-.602-.268-.87-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.509 1.928.34.482.84.724 1.5.724.876 0 1.492-.43 1.85-1.286l1.847.937a4.407 4.407 0 01-1.634 1.728c-.696.42-1.464.63-2.303.63-1.34 0-2.42-.41-3.242-1.233-.821-.82-1.232-1.964-1.232-3.428 0-1.428.416-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.858 0 3.188.723 3.992 2.17zm8.652 0l-1.983 1.045c-.214-.445-.478-.758-.79-.937-.313-.178-.613-.268-.897-.268-1.34 0-2.01.884-2.01 2.652 0 .803.17 1.446.51 1.928.338.482.838.724 1.5.724.874 0 1.49-.43 1.847-1.286l1.875.937a4.606 4.606 0 01-1.66 1.728c-.696.42-1.455.63-2.277.63-1.357 0-2.441-.41-3.253-1.233-.814-.82-1.22-1.964-1.22-3.428 0-1.428.415-2.562 1.246-3.401.83-.84 1.879-1.26 3.147-1.26 1.857 0 3.18.723 3.965 2.17z"
-                                />
-                            </svg>
-                            <!-- BY (姓名標示) 圖標 -->
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="cc-icon"
-                                viewBox="0 0 30 30"
-                                fill="currentColor"
-                            >
-                                <path
-                                    d="M14.973 0c4.213 0 7.768 1.446 10.66 4.34C28.544 7.25 30 10.803 30 15c0 4.215-1.43 7.723-4.287 10.526C22.678 28.51 19.098 30 14.973 30c-4.054 0-7.571-1.474-10.553-4.42C1.474 22.633 0 19.107 0 15S1.474 7.34 4.42 4.34C7.313 1.446 10.83 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.196-8.652 3.589-2.447 2.5-3.67 5.402-3.67 8.706 0 3.321 1.214 6.196 3.642 8.624 2.429 2.429 5.322 3.642 8.679 3.642 3.339 0 6.25-1.222 8.732-3.67 2.358-2.267 3.536-5.133 3.536-8.598 0-3.41-1.197-6.311-3.589-8.705-2.392-2.392-5.285-3.588-8.678-3.588zm4.018 8.57v6.134H17.33v7.286h-4.66V17.41h-1.714v-6.134a.93.93 0 01.28-.683.933.933 0 01.684-.281h6.161c.25 0 .474.093.67.28a.912.912 0 01.294.684zM12.91 7.42c0-1.41.696-2.116 2.09-2.116s2.09.705 2.09 2.116c0 1.393-.697 2.09-2.09 2.09-1.393 0-2.09-.697-2.09-2.09z"
-                                />
-                            </svg>
-                            <!-- NC (非商業性) 圖標 -->
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="cc-icon"
-                                viewBox="0 0 30 30"
-                                fill="currentColor"
-                            >
-                                <path
-                                    d="M14.973 0c4.214 0 7.768 1.446 10.66 4.339C28.544 7.232 30 10.786 30 15c0 4.215-1.429 7.723-4.287 10.527C22.678 28.51 19.097 30 14.973 30c-4.072 0-7.59-1.482-10.553-4.446C1.474 22.607 0 19.09 0 15c0-4.107 1.474-7.66 4.42-10.66C7.313 1.446 10.83 0 14.973 0zM3.375 10.956c-.446 1.232-.67 2.58-.67 4.045 0 3.321 1.214 6.196 3.642 8.624 2.447 2.412 5.34 3.617 8.679 3.617 3.375 0 6.285-1.223 8.733-3.67.875-.839 1.561-1.714 2.061-2.626l-5.651-2.518a3.866 3.866 0 01-1.433 2.317c-.76.598-1.657.943-2.693 1.031v2.304h-1.74v-2.304c-1.661-.017-3.18-.615-4.554-1.794l2.063-2.089c.981.91 2.098 1.366 3.348 1.366.517 0 .96-.116 1.326-.349.366-.231.55-.615.55-1.151 0-.376-.135-.68-.402-.911l-1.447-.617-1.767-.804-2.384-1.044-7.661-3.427zm11.652-8.278c-3.41 0-6.295 1.206-8.652 3.616-.59.59-1.143 1.26-1.66 2.01l5.732 2.571a3.513 3.513 0 011.42-1.888c.695-.473 1.508-.737 2.437-.79V5.893h1.741v2.304c1.376.071 2.625.535 3.75 1.392L17.84 11.6c-.84-.59-1.697-.884-2.572-.884-.464 0-.88.09-1.245.267-.366.179-.55.483-.55.911 0 .125.045.25.134.375l1.902.858 1.313.59 2.41 1.07 7.687 3.429c.25-1.054.375-2.125.375-3.214 0-3.447-1.196-6.349-3.588-8.707-2.375-2.41-5.27-3.616-8.68-3.616z"
-                                />
-                            </svg>
-                            <!-- SA (相同方式分享) 圖標 -->
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="cc-icon"
-                                viewBox="0 0 30 30"
-                                fill="currentColor"
-                            >
-                                <path
-                                    d="M14.973 0c4.196 0 7.75 1.455 10.66 4.366C28.544 7.26 30 10.804 30 15c0 4.197-1.43 7.714-4.287 10.553C22.696 28.51 19.115 30 14.973 30c-4.054 0-7.571-1.473-10.553-4.42C1.474 22.634 0 19.108 0 15c0-4.088 1.474-7.633 4.42-10.633C7.33 1.455 10.848 0 14.973 0zm.054 2.706c-3.41 0-6.295 1.205-8.652 3.616-2.447 2.483-3.67 5.375-3.67 8.678 0 3.34 1.214 6.214 3.642 8.625 2.429 2.43 5.322 3.643 8.679 3.643 3.339 0 6.25-1.223 8.732-3.67 2.358-2.285 3.536-5.151 3.536-8.598 0-3.428-1.197-6.321-3.589-8.678-2.375-2.412-5.268-3.616-8.678-3.616zM8.33 12.884c.286-1.84 1.026-3.264 2.223-4.273 1.196-1.008 2.651-1.513 4.366-1.513 2.356 0 4.232.76 5.625 2.277 1.393 1.517 2.09 3.464 2.09 5.839 0 2.304-.724 4.219-2.17 5.745-1.447 1.526-3.321 2.29-5.626 2.29-1.696 0-3.16-.508-4.392-1.527-1.233-1.018-1.973-2.464-2.224-4.339H12c.09 1.822 1.187 2.733 3.295 2.733 1.053 0 1.902-.456 2.544-1.366.644-.91.965-2.126.965-3.643 0-1.59-.294-2.799-.883-3.63-.59-.83-1.437-1.245-2.545-1.245-2.001 0-3.126.884-3.375 2.651h1.098l-2.973 2.973-2.973-2.973H8.33z"
-                                />
-                            </svg>
-                        </div>
-                        <span class="cc-text">CC BY-NC-SA 4.0</span>
-                    </a>
+    <!-- 全域關鍵字設定 Modal -->
+    <div id="globalKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="globalKeywordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 全域設定</h3>
+            <p id="globalKeywordsModalDesc" class="modal-desc">
+                設定會自動儲存在瀏覽器中。多個關鍵字請以「逗號」分隔：
+            </p>
+
+            <div class="modal-list-container extended-list">
+                <div style="position: relative">
+                    <div style="
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                margin-bottom: 8px;
+                            ">
+                        <label class="keywords-field-label" style="margin-bottom: 0">1. 資源鍵名與圖層名稱關鍵字</label>
+                        <button id="resetKeyKeywordsBtn" class="modal-select-btn deselect-all"
+                            title="回復資源鍵名與圖層名稱關鍵字的預設值">
+                            ↺ 回復預設
+                        </button>
+                    </div>
+                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                        用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。
+                    </p>
+                    <textarea id="keyKeywordsInput" class="keywords-textarea" rows="1"
+                        placeholder="例如: watermark, confidential..."></textarea>
+                    <p class="keywords-hint">
+                        <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form
+                        XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」 (ExtGState)
+                        與「選擇性內容群組」 (OCG)。
+                    </p>
                 </div>
-            </footer>
-        </div>
-
-        <!-- 全域關鍵字設定 Modal -->
-        <div
-            id="globalKeywordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="globalKeywordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 全域設定</h3>
-                <p id="globalKeywordsModalDesc" class="modal-desc">
-                    設定會自動儲存在瀏覽器中。多個關鍵字請以「逗號」分隔：
-                </p>
-
-                <div class="modal-list-container extended-list">
-                    <div style="position: relative">
-                        <div
-                            style="
+                <div style="position: relative">
+                    <div style="
                                 display: flex;
                                 justify-content: space-between;
                                 align-items: center;
                                 margin-bottom: 8px;
-                            "
-                        >
-                            <label class="keywords-field-label" style="margin-bottom: 0"
-                                >1. 資源鍵名與圖層名稱關鍵字</label
-                            >
-                            <button
-                                id="resetKeyKeywordsBtn"
-                                class="modal-select-btn deselect-all"
-                                title="回復資源鍵名與圖層名稱關鍵字的預設值"
-                            >
-                                ↺ 回復預設
-                            </button>
-                        </div>
-                        <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
-                            用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。
-                        </p>
-                        <textarea
-                            id="keyKeywordsInput"
-                            class="keywords-textarea"
-                            rows="1"
-                            placeholder="例如: watermark, confidential..."
-                        ></textarea>
-                        <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form
-                            XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」 (ExtGState)
-                            與「選擇性內容群組」 (OCG)。
-                        </p>
+                            ">
+                        <label class="keywords-field-label" style="margin-bottom: 0">2. 「頁面直接內容」關鍵字</label>
+                        <button id="resetContentKeywordsBtn" class="modal-select-btn deselect-all"
+                            title="回復頁面直接內容關鍵字的預設值">
+                            ↺ 回復預設
+                        </button>
                     </div>
-                    <div style="position: relative">
-                        <div
-                            style="
+                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                        用於比對內容串流（Content Stream）中實際顯示的文字。
+                    </p>
+                    <textarea id="contentKeywordsInput" class="keywords-textarea" rows="1"
+                        placeholder="例如: 機密, 內部, 草稿..."></textarea>
+                    <p class="keywords-hint">
+                        <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br />
+                        <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼
+                        (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
+                    </p>
+                </div>
+                <div style="position: relative">
+                    <div style="
                                 display: flex;
                                 justify-content: space-between;
                                 align-items: center;
                                 margin-bottom: 8px;
-                            "
-                        >
-                            <label class="keywords-field-label" style="margin-bottom: 0"
-                                >2. 「頁面直接內容」關鍵字</label
-                            >
-                            <button
-                                id="resetContentKeywordsBtn"
-                                class="modal-select-btn deselect-all"
-                                title="回復頁面直接內容關鍵字的預設值"
-                            >
-                                ↺ 回復預設
-                            </button>
-                        </div>
-                        <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
-                            用於比對內容串流（Content Stream）中實際顯示的文字。
-                        </p>
-                        <textarea
-                            id="contentKeywordsInput"
-                            class="keywords-textarea"
-                            rows="1"
-                            placeholder="例如: 機密, 內部, 草稿..."
-                        ></textarea>
-                        <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br />
-                            <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼
-                            (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
-                        </p>
+                            ">
+                        <label class="keywords-field-label" style="margin-bottom: 0">3. 高透明度特徵門檻</label>
+                        <button id="resetTransparencyBtn" class="modal-select-btn deselect-all" title="回復高透明度特徵門檻的預設值">
+                            ↺ 回復預設
+                        </button>
                     </div>
-                    <div style="position: relative">
-                        <div
-                            style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            "
-                        >
-                            <label class="keywords-field-label" style="margin-bottom: 0">3. 高透明度特徵門檻</label>
-                            <button
-                                id="resetTransparencyBtn"
-                                class="modal-select-btn deselect-all"
-                                title="回復高透明度特徵門檻的預設值"
-                            >
-                                ↺ 回復預設
-                            </button>
-                        </div>
-                        <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
-                            設定透明度的判定門檻。當圖形狀態的透明度 (Alpha)
-                            <strong>低於</strong>此數值時（即更透明），將會被自動預選為疑似浮水印。
-                        </p>
+                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                        設定透明度的判定門檻。當圖形狀態的透明度 (Alpha)
+                        <strong>低於或等於</strong>此數值時（即更透明），將會被自動預選為疑似浮水印。
+                    </p>
 
-                        <div
-                            style="
+                    <div style="
                                 display: flex;
                                 align-items: center;
                                 flex-wrap: wrap;
@@ -469,306 +350,285 @@
                                 padding: 12px 10px;
                                 border-radius: 8px;
                                 border: 1px solid var(--border);
-                            "
-                        >
-                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap"
-                                >透明</span
-                            >
-                            <input
-                                type="range"
-                                id="transparencyThresholdSlider"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                style="flex: 1; min-width: 60px; cursor: pointer; accent-color: var(--primary)"
-                            />
-                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap"
-                                >不透明</span
-                            >
-                            <div style="display: flex; align-items: center; margin-left: auto">
-                                <input
-                                    type="number"
-                                    id="transparencyThresholdInput"
-                                    class="keywords-textarea"
-                                    min="0"
-                                    max="1"
-                                    step="0.01"
-                                    placeholder="例如: 0.5"
-                                    style="width: 75px; padding: 6px; text-align: center; min-height: auto"
-                                />
-                            </div>
+                            ">
+                        <span
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">透明</span>
+                        <input type="range" id="transparencyThresholdSlider" min="0" max="1" step="0.01"
+                            style="flex: 1; min-width: 60px; cursor: pointer; accent-color: var(--primary)" />
+                        <span
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">不透明</span>
+                        <div style="display: flex; align-items: center; margin-left: auto">
+                            <input type="number" id="transparencyThresholdInput" class="keywords-textarea" min="0"
+                                max="1" step="0.01" placeholder="例如: 0.5"
+                                style="width: 75px; padding: 6px; text-align: center; min-height: auto" />
                         </div>
-
-                        <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「延伸圖形狀態」 (ExtGState)。
-                        </p>
                     </div>
+
+                    <p class="keywords-hint">
+                        <span class="hint-primary">適用策略：</span>「延伸圖形狀態」 (ExtGState)。
+                    </p>
                 </div>
 
-                <div class="modal-actions bar">
-                    <div></div>
-                    <div class="right-group">
-                        <button id="closeGlobalKeywordsModalBtn" class="button">取消</button>
-                        <button id="saveGlobalKeywordsBtn" class="button button-primary">套用</button>
+                <div style="position: relative">
+                    <div style="
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                margin-bottom: 8px;
+                            ">
+                        <label class="keywords-field-label" style="margin-bottom: 0">4. 高頻率特徵門檻</label>
+                        <button id="resetHeuristicBtn" class="modal-select-btn deselect-all" title="回復特徵門檻的預設值">
+                            ↺ 回復預設
+                        </button>
                     </div>
+                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                        設定自動預選重複物件的觸發門檻。當影像或圖形的出現頻率<strong>大於或等於</strong>此比例時，會被標記為高度可疑的浮水印。
+                    </p>
+
+                    <div style="
+                                display: flex;
+                                align-items: center;
+                                flex-wrap: wrap;
+                                gap: 8px;
+                                margin-bottom: 10px;
+                                background: rgba(47, 107, 235, 0.04);
+                                padding: 12px 10px;
+                                border-radius: 8px;
+                                border: 1px solid var(--border);
+                            ">
+                        <span
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">0%</span>
+                        <input type="range" id="heuristicThresholdSlider" min="0" max="1" step="0.01"
+                            style="flex: 1; min-width: 60px; cursor: pointer; accent-color: var(--primary)" />
+                        <span
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">100%</span>
+                        <div style="display: flex; align-items: center; margin-left: auto">
+                            <input type="number" id="heuristicThresholdInput" class="keywords-textarea" min="0" max="1"
+                                step="0.01" placeholder="例如: 0.8"
+                                style="width: 75px; padding: 6px; text-align: center; min-height: auto" />
+                        </div>
+                    </div>
+
+                    <p class="keywords-hint">
+                        <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form XObject)
+                        與「影像外部物件」 (Image XObject)。
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-actions bar">
+                <div></div>
+                <div class="right-group">
+                    <button id="closeGlobalKeywordsModalBtn" class="button">取消</button>
+                    <button id="saveGlobalKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 密碼輸入彈窗 Modal -->
-        <div
-            id="passwordModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="passwordModalTitle"
-        >
-            <div class="modal-card">
-                <h3>🔒 此 PDF 檔案已受密碼保護</h3>
-                <p>請輸入文件密碼以進行解密與浮水印清除：</p>
-                <input type="password" id="pdfPasswordInput" placeholder="請輸入 PDF 密碼" />
-                <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
-                <div class="modal-actions">
-                    <button id="modalCancelButton" class="button">取消</button>
-                    <button id="modalSubmitButton" class="button button-primary">確認</button>
+    <!-- 密碼輸入彈窗 Modal -->
+    <div id="passwordModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+        <div class="modal-card">
+            <h3>🔒 此 PDF 檔案已受密碼保護</h3>
+            <p>請輸入文件密碼以進行解密與浮水印清除：</p>
+            <input type="password" id="pdfPasswordInput" placeholder="請輸入 PDF 密碼" />
+            <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
+            <div class="modal-actions">
+                <button id="modalCancelButton" class="button">取消</button>
+                <button id="modalSubmitButton" class="button button-primary">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁面直接內容 (Direct Content) 設定 Modal -->
+    <div id="triggerWordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="triggerWordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「頁面直接內容」清理選項</h3>
+            <p id="triggerWordsModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：<br />
+                <small style="color: var(--muted); display: block; margin-top: 6px;">💡 註：預覽以隔離其它內容方式呈現。</small>
+            </p>
+
+            <div id="directContentListContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
+
+            <div class="modal-actions bar">
+                <button id="resetTriggerWordsBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeTriggerWordsModalBtn" class="button">取消</button>
+                    <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 頁面直接內容 (Direct Content) 設定 Modal -->
-        <div
-            id="triggerWordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="triggerWordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「頁面直接內容」清理選項</h3>
-                <p id="triggerWordsModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 表單外部物件 (Form XObject) 設定 Modal -->
+    <div id="formXObjectKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="formXObjectKeywordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「表單外部物件」清理選項</h3>
+            <p id="formXObjectModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
+            </p>
 
-                <div id="directContentListContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
-                </div>
+            <div id="formXObjectListContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetTriggerWordsBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeTriggerWordsModalBtn" class="button">取消</button>
-                        <button id="applyTriggerWordsBtn" class="button button-primary">套用</button>
-                    </div>
+            <div class="modal-actions bar">
+                <button id="resetFormXObjectBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeFormXObjectKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyFormXObjectKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 表單外部物件 (Form XObject) 設定 Modal -->
-        <div
-            id="formXObjectKeywordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="formXObjectKeywordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「表單外部物件」清理選項</h3>
-                <p id="formXObjectModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 註解 (Annotation) 設定 Modal -->
+    <div id="annotsSettingsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="annotsSettingsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「註解」清理選項</h3>
+            <p id="annotsModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
+            </p>
 
-                <div id="formXObjectListContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
-                </div>
+            <div id="annotsSubtypesContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetFormXObjectBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeFormXObjectKeywordsModalBtn" class="button">取消</button>
-                        <button id="applyFormXObjectKeywordsBtn" class="button button-primary">套用</button>
-                    </div>
+            <div class="modal-actions bar">
+                <button id="resetAnnotsSettingsBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeAnnotsSettingsModalBtn" class="button">取消</button>
+                    <button id="applyAnnotsSettingsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 註解 (Annotation) 設定 Modal -->
-        <div
-            id="annotsSettingsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="annotsSettingsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「註解」清理選項</h3>
-                <p id="annotsModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 影像外部物件 (Image XObject) 設定 Modal -->
+    <div id="imageKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="imageKeywordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「影像外部物件」清理選項</h3>
+            <p id="imageXObjectModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
+            </p>
 
-                <div id="annotsSubtypesContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
-                </div>
+            <div id="imageXObjectListContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetAnnotsSettingsBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeAnnotsSettingsModalBtn" class="button">取消</button>
-                        <button id="applyAnnotsSettingsBtn" class="button button-primary">套用</button>
-                    </div>
+            <div class="modal-actions bar">
+                <button id="resetImageXObjectBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeImageKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 影像外部物件 (Image XObject) 設定 Modal -->
-        <div
-            id="imageKeywordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="imageKeywordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「影像外部物件」清理選項</h3>
-                <p id="imageXObjectModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 延伸圖形狀態 (ExtGState) 設定 Modal -->
+    <div id="extGStateKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="extGStateKeywordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「延伸圖形狀態」清理選項</h3>
+            <p id="extGStateModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：<br />
+                <small style="color: var(--muted); display: block; margin-top: 6px;">💡
+                    註：此項為屬性狀態而非實體物件，因此不提供預覽。</small>
+            </p>
 
-                <div id="imageXObjectListContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
-                </div>
+            <div id="extGStateListContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetImageXObjectBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeImageKeywordsModalBtn" class="button">取消</button>
-                        <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
-                    </div>
+            <div class="modal-actions bar">
+                <button id="resetExtGStateBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 延伸圖形狀態 (ExtGState) 設定 Modal -->
-        <div
-            id="extGStateKeywordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="extGStateKeywordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「延伸圖形狀態」清理選項</h3>
-                <p id="extGStateModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 選擇性內容群組 (OCG) 設定 Modal -->
+    <div id="ocgKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="ocgKeywordsModalTitle">
+        <div class="modal-card modal-lg">
+            <h3>⚙ 設定「選擇性內容群組」清理選項</h3>
+            <p id="ocgModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：<br />
+                <small style="color: var(--muted); display: block; margin-top: 6px;">💡
+                    註：此項無單一特定位置，預覽以關閉該圖層方式呈現。</small>
+            </p>
 
-                <div id="extGStateListContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
-                </div>
+            <div id="ocgListContainer" class="modal-list-container">
+                <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetExtGStateBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeExtGStateKeywordsModalBtn" class="button">取消</button>
-                        <button id="applyExtGStateKeywordsBtn" class="button button-primary">套用</button>
-                    </div>
+            <div class="modal-actions bar">
+                <button id="resetOCGBtn" class="button btn-outline">回復預設值</button>
+                <div class="right-group">
+                    <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
+                    <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 選擇性內容群組 (OCG) 設定 Modal -->
-        <div
-            id="ocgKeywordsModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ocgKeywordsModalTitle"
-        >
-            <div class="modal-card modal-lg">
-                <h3>⚙ 設定「選擇性內容群組」清理選項</h3>
-                <p id="ocgModalDesc" class="modal-desc">
-                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                        class="badge badge-success"
-                        >保留</strong
-                    >）：
-                </p>
+    <!-- 浮水印物件即時預覽 Modal (磨砂玻璃科技感) -->
+    <div id="objectPreviewModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="objectPreviewModalTitle">
+        <div class="modal-card modal-xl">
+            <!-- 標題列 -->
+            <div class="preview-modal-header">
+                <h3 id="objectPreviewTitle" class="preview-modal-title">🔍 即時預覽</h3>
+                <button id="closeObjectPreviewModalBtn" class="icon-btn preview-modal-close-btn" aria-label="關閉或設定"
+                    title="關閉預覽">
+                    ×
+                </button>
+            </div>
 
-                <div id="ocgListContainer" class="modal-list-container">
-                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+            <!-- 預覽本體（iframe + 載入 spinner） -->
+            <div class="preview-modal-body">
+                <!-- 載入動畫 Spinner（預設隱藏） -->
+                <div id="objectPreviewSpinner" class="preview-modal-spinner hidden">
+                    <div class="preview-modal-spinner-icon"></div>
+                    <p class="preview-modal-spinner-text">正在產生預覽，請稍候...</p>
                 </div>
 
-                <div class="modal-actions bar">
-                    <button id="resetOCGBtn" class="button btn-outline">回復預設值</button>
-                    <div class="right-group">
-                        <button id="closeOCGKeywordsModalBtn" class="button">取消</button>
-                        <button id="applyOCGKeywordsBtn" class="button button-primary">套用</button>
-                    </div>
-                </div>
+                <!-- PDF 預覽 Iframe（預設隱藏，預覽生成後顯現） -->
+                <iframe id="objectPreviewIframe" class="preview-modal-iframe hidden" src=""></iframe>
+            </div>
+
+            <!-- 底部關閉按鈕 -->
+            <div class="preview-modal-footer modal-actions">
+                <button id="closeObjectPreviewBtn" class="button">關閉預覽</button>
             </div>
         </div>
+    </div>
 
-        <!-- 浮水印物件即時預覽 Modal (磨砂玻璃科技感) -->
-        <div
-            id="objectPreviewModal"
-            class="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="objectPreviewModalTitle"
-        >
-            <div class="modal-card modal-xl">
-                <!-- 標題列 -->
-                <div class="preview-modal-header">
-                    <h3 id="objectPreviewTitle" class="preview-modal-title">🔍 即時預覽</h3>
-                    <button
-                        id="closeObjectPreviewModalBtn"
-                        class="icon-btn preview-modal-close-btn"
-                        aria-label="關閉或設定"
-                        title="關閉預覽"
-                    >
-                        ×
-                    </button>
-                </div>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/ui-modals.js"></script>
+    <script src="js/pdf-scanner.js"></script>
+    <script src="js/pdf-cleaner.js"></script>
+    <script src="js/app.js"></script>
+</body>
 
-                <!-- 預覽本體（iframe + 載入 spinner） -->
-                <div class="preview-modal-body">
-                    <!-- 載入動畫 Spinner（預設隱藏） -->
-                    <div id="objectPreviewSpinner" class="preview-modal-spinner hidden">
-                        <div class="preview-modal-spinner-icon"></div>
-                        <p class="preview-modal-spinner-text">正在產生預覽，請稍候...</p>
-                    </div>
-
-                    <!-- PDF 預覽 Iframe（預設隱藏，預覽生成後顯現） -->
-                    <iframe id="objectPreviewIframe" class="preview-modal-iframe hidden" src=""></iframe>
-                </div>
-
-                <!-- 底部關閉按鈕 -->
-                <div class="preview-modal-footer modal-actions">
-                    <button id="closeObjectPreviewBtn" class="button">關閉預覽</button>
-                </div>
-            </div>
-        </div>
-
-        <script src="js/config.js"></script>
-        <script src="js/utils.js"></script>
-        <script src="js/state.js"></script>
-        <script src="js/ui.js"></script>
-        <script src="js/ui-modals.js"></script>
-        <script src="js/pdf-scanner.js"></script>
-        <script src="js/pdf-cleaner.js"></script>
-        <script src="js/app.js"></script>
-    </body>
 </html>

@@ -562,9 +562,8 @@ function removeImageXObjects(pdfDoc, resources, pageIndex) {
             xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of('Subtype'))) : null;
 
         if (subtype instanceof PDFName && subtype.toString() === '/Image') {
-            const name = key.value();
-            const uniqueKey = `${pageIndex}:${name}`;
-            if (imagesToDestroy.includes(uniqueKey)) {
+            const xObjRef = xObjects.get(key);
+            if (xObjRef && imagesToDestroy.includes(xObjRef.toString())) {
                 deletedKeys.push(key);
             }
         }

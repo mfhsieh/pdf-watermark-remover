@@ -59,6 +59,19 @@ const DEFAULT_TRANSPARENCY_THRESHOLD = 0.5;
 /** @type {number} 全域高透明度特徵門檻 */
 let TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
 
+// 4. 高頻率特徵門檻 (Heuristic Repetition Threshold)
+const DEFAULT_HEURISTIC_THRESHOLD = 0.8;
+/** @type {number} 高頻率出現門檻 (0~1) */
+let HEURISTIC_THRESHOLD = DEFAULT_HEURISTIC_THRESHOLD;
+
+// 5. 預覽標示紅框外觀設定 (Form XObject, Image XObject, Annotation 共用)
+const PREVIEW_HIGHLIGHT_CONFIG = {
+    color: [1, 0.2, 0.2], // RGB 顏色比例 (0~1)，紅色
+    borderWidth: 3,       // 邊框寬度
+    fillOpacity: 0.25,    // 底色半透明度
+    borderOpacity: 0.8,   // 邊框半透明度
+};
+
 /**
  * 將字串動態編譯為 Big5 格式的 Latin1 字串
  * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
@@ -191,6 +204,7 @@ function loadGlobalKeywords() {
         const savedKeys = localStorage.getItem('WATERMARK_KEY_KEYWORDS');
         const savedContents = localStorage.getItem('WATERMARK_CONTENT_KEYWORDS');
         const savedThreshold = localStorage.getItem('TRANSPARENCY_THRESHOLD');
+        const savedHeuristicThreshold = localStorage.getItem('HEURISTIC_THRESHOLD');
 
         WATERMARK_KEY_KEYWORDS = savedKeys ? JSON.parse(savedKeys) : [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = savedContents ? JSON.parse(savedContents) : [...DEFAULT_CONTENT_KEYWORDS];
@@ -198,6 +212,10 @@ function loadGlobalKeywords() {
             savedThreshold !== null && !isNaN(parseFloat(savedThreshold))
                 ? parseFloat(savedThreshold)
                 : DEFAULT_TRANSPARENCY_THRESHOLD;
+        HEURISTIC_THRESHOLD =
+            savedHeuristicThreshold !== null && !isNaN(parseFloat(savedHeuristicThreshold))
+                ? parseFloat(savedHeuristicThreshold)
+                : DEFAULT_HEURISTIC_THRESHOLD;
 
         // 確保新加入的預設關鍵字也能生效於舊使用者
         DEFAULT_KEY_KEYWORDS.forEach((kw) => {
@@ -214,6 +232,7 @@ function loadGlobalKeywords() {
         WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];
         TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
+        HEURISTIC_THRESHOLD = DEFAULT_HEURISTIC_THRESHOLD;
     }
     buildFinalContentKeywords();
 }
@@ -223,15 +242,23 @@ function loadGlobalKeywords() {
  * @param {string[]} keysArray - 資源鍵名關鍵字陣列
  * @param {string[]} contentsArray - 內容文字關鍵字陣列
  * @param {number} threshold - 透明度門檻值
+ * @param {number} heuristicThreshold - 智慧偵測高頻率門檻
  */
-function saveGlobalKeywords(keysArray, contentsArray, threshold = DEFAULT_TRANSPARENCY_THRESHOLD) {
+function saveGlobalKeywords(
+    keysArray,
+    contentsArray,
+    threshold = DEFAULT_TRANSPARENCY_THRESHOLD,
+    heuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD
+) {
     WATERMARK_KEY_KEYWORDS = keysArray;
     WATERMARK_CONTENT_KEYWORDS = contentsArray;
     TRANSPARENCY_THRESHOLD = threshold;
+    HEURISTIC_THRESHOLD = heuristicThreshold;
 
     localStorage.setItem('WATERMARK_KEY_KEYWORDS', JSON.stringify(keysArray));
     localStorage.setItem('WATERMARK_CONTENT_KEYWORDS', JSON.stringify(contentsArray));
     localStorage.setItem('TRANSPARENCY_THRESHOLD', TRANSPARENCY_THRESHOLD.toString());
+    localStorage.setItem('HEURISTIC_THRESHOLD', HEURISTIC_THRESHOLD.toString());
 
     buildFinalContentKeywords();
 }
@@ -246,6 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const contentInput = document.getElementById('contentKeywordsInput');
     const transparencyInput = document.getElementById('transparencyThresholdInput');
     const transparencySlider = document.getElementById('transparencyThresholdSlider');
+    const heuristicInput = document.getElementById('heuristicThresholdInput');
+    const heuristicSlider = document.getElementById('heuristicThresholdSlider');
 
     // 雙向綁定：透明度滑桿與輸入框
     if (transparencySlider && transparencyInput) {
@@ -258,6 +287,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (val < 0) val = 0;
                 if (val > 1) val = 1;
                 transparencySlider.value = val;
+            }
+        });
+    }
+
+    // 雙向綁定：智慧偵測滑桿與輸入框
+    if (heuristicSlider && heuristicInput) {
+        heuristicSlider.addEventListener('input', (e) => {
+            heuristicInput.value = e.target.value;
+        });
+        heuristicInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                heuristicSlider.value = val;
             }
         });
     }
@@ -276,6 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
         contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(', ');
         transparencyInput.value = TRANSPARENCY_THRESHOLD;
         if (transparencySlider) transparencySlider.value = TRANSPARENCY_THRESHOLD;
+        if (heuristicInput) heuristicInput.value = HEURISTIC_THRESHOLD;
+        if (heuristicSlider) heuristicSlider.value = HEURISTIC_THRESHOLD;
         modal.classList.add('active');
 
         // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
@@ -310,6 +356,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const resetHeuristicBtn = document.getElementById('resetHeuristicBtn');
+    if (resetHeuristicBtn) {
+        resetHeuristicBtn.addEventListener('click', () => {
+            if (confirm('確定要將「高頻率出現智慧偵測門檻」回復為預設值嗎？')) {
+                heuristicInput.value = DEFAULT_HEURISTIC_THRESHOLD;
+                if (heuristicSlider) heuristicSlider.value = DEFAULT_HEURISTIC_THRESHOLD;
+            }
+        });
+    }
+
     document.getElementById('saveGlobalKeywordsBtn').addEventListener('click', () => {
         const keysRaw = keyInput.value
             .split(',')
@@ -322,7 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const thresholdRaw = parseFloat(transparencyInput.value);
         const finalThreshold = isNaN(thresholdRaw) ? DEFAULT_TRANSPARENCY_THRESHOLD : thresholdRaw;
 
-        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold);
+        let finalHeuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD;
+        if (heuristicInput) {
+            const hRaw = parseFloat(heuristicInput.value);
+            finalHeuristicThreshold = isNaN(hRaw) ? DEFAULT_HEURISTIC_THRESHOLD : hRaw;
+        }
+
+        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold, finalHeuristicThreshold);
         modal.classList.remove('active');
         addStatusMessage('已儲存自訂設定。', 'success');
 

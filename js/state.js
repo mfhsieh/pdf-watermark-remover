@@ -21,7 +21,7 @@ let detectedDirectContents = new Map();
 let directContentsToDestroy = [];
 
 // 影像外部物件 (Image XObject) 狀態管理變數
-/** @type {Map<string, {keyName: string, page: number, ref: any, rawStream: string, width: number, height: number, filterStr: string}>} 影像外部物件狀態（key = `${page}:${name}`） */
+/** @type {Map<string, {keyName: string, pages: number[], ref: any, rawStream: string, width: number, height: number, filterStr: string}>} 影像外部物件狀態（key = refStr） */
 let detectedImages = new Map();
 /** @type {string[]} 儲存選定要清除的影像外部物件鍵值 */
 let imagesToDestroy = [];
@@ -323,8 +323,8 @@ async function openObjectPreview(strategyType, key, entry) {
             objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
             previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
         } else if (strategyType === 'imageXObjectItem') {
-            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.page} 頁)`;
-            previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.page - 1);
+            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
+            previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.pages[0] - 1);
         } else if (strategyType === 'directContentItem') {
             objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：串流 (第 ${entry.page} 頁)`;
             previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);

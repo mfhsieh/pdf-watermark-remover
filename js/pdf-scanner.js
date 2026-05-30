@@ -107,6 +107,44 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
 }
 
 /**
+ * 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
+ * @param {PDFDocument} previewDoc 
+ * @param {PDFPage} page 
+ * @param {number} x 
+ * @param {number} y 
+ * @param {number} width 
+ * @param {number} height 
+ */
+function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
+    const config = typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
+        ? PREVIEW_HIGHLIGHT_CONFIG
+        : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+
+    const extGStateName = 'GsPreviewHighlight';
+    const extGStateDict = previewDoc.context.obj({
+        Type: 'ExtGState',
+        ca: config.fillOpacity,
+        CA: config.borderOpacity,
+    });
+
+    let pageResources = page.node.get(PDFName.of('Resources'));
+    if (!(pageResources instanceof PDFDict)) {
+        pageResources = previewDoc.context.obj({});
+        page.node.set(PDFName.of('Resources'), pageResources);
+    }
+
+    let extGState = previewDoc.context.lookup(pageResources.get(PDFName.of('ExtGState')));
+    if (!(extGState instanceof PDFDict)) {
+        extGState = previewDoc.context.obj({});
+        pageResources.set(PDFName.of('ExtGState'), extGState);
+    }
+    extGState.set(PDFName.of(extGStateName), extGStateDict);
+
+    const [r, g, b] = config.color;
+    return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${x} ${y} ${width} ${height} re\nB\nQ`;
+}
+
+/**
  * 生成 Form XObject 的即時預覽 URL
  * @param {string} keyName - 資源鍵名
  * @param {number} pageIndex - 頁面索引 (0-indexed)
@@ -168,28 +206,8 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     const w = Math.abs(targetRect[2] - targetRect[0]);
     const h = Math.abs(targetRect[3] - targetRect[1]);
 
-    // 建立 ExtGState 供紅框半透明使用
-    const extGStateName = 'GsPreviewRedBox';
-    const extGStateDict = previewDoc.context.obj({
-        Type: 'ExtGState',
-        ca: 0.25,
-        CA: 0.8,
-    });
-
-    let hasExtGState = false;
-    if (pageResources instanceof PDFDict) {
-        let extGState = previewDoc.context.lookup(pageResources.get(PDFName.of('ExtGState')));
-        if (!(extGState instanceof PDFDict)) {
-            extGState = previewDoc.context.obj({});
-            pageResources.set(PDFName.of('ExtGState'), extGState);
-        }
-        extGState.set(PDFName.of(extGStateName), extGStateDict);
-        hasExtGState = true;
-    }
-
-    const gsCommand = hasExtGState ? `/${extGStateName} gs\n` : '';
-    // 繪製紅框的 PDF 原始指令：設定顏色與透明度、畫矩形、填滿並描邊 (B)
-    const boxCmd = `${gsCommand}1 0.2 0.2 rg\n1 0.2 0.2 RG\n3 w\n${x0} ${y0} ${w} ${h} re\nB`;
+    // 取得共用的紅框描繪指令
+    const boxCmd = getPreviewHighlightRawCommand(previewDoc, page, x0, y0, w, h);
 
     // 4. 嘗試從原頁面 Contents Stream 中提取原始的 cm 變換矩陣（含旋轉角度）
     // 若找得到，就用原始矩陣還原浮水印的真實角度；找不到則退回 BBox 平移模式
@@ -249,7 +267,15 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
 
     // 由於複製頁面已經連帶複製了 Resources 字典，該圖片物件依然以原 keyName 存在於該頁面的 XObject 中
     const cleanKeyName = keyName.replace(/^\//, '');
-    const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${cleanKeyName} Do Q`;
+    
+    // 取得共用的紅框描繪指令
+    const highlightCmd = getPreviewHighlightRawCommand(previewDoc, page, xOffset, yOffset, finalW, finalH);
+
+    // q: 儲存狀態
+    // {finalW} 0 0 {finalH} {xOffset} {yOffset} cm: 縮放平移矩陣
+    // /Key Do: 繪製圖片
+    // Q: 恢復狀態
+    const drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${cleanKeyName} Do Q\n${highlightCmd}`;
     const contentStream = previewDoc.context.stream(drawCommand);
     const contentStreamRef = previewDoc.context.register(contentStream);
     page.node.set(PDFName.of('Contents'), contentStreamRef);
@@ -379,16 +405,20 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
             const w = Math.abs(targetRect[2] - targetRect[0]);
             const h = Math.abs(targetRect[3] - targetRect[1]);
 
+            const config = typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
+                ? PREVIEW_HIGHLIGHT_CONFIG
+                : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+
             page.drawRectangle({
                 x: x0,
                 y: y0,
                 width: w,
                 height: h,
-                borderWidth: 3,
-                borderColor: PDFLib.rgb(1, 0.2, 0.2),
-                color: PDFLib.rgb(1, 0.2, 0.2),
-                opacity: 0.25,
-                borderOpacity: 0.8,
+                borderWidth: config.borderWidth,
+                borderColor: PDFLib.rgb(...config.color),
+                color: PDFLib.rgb(...config.color),
+                opacity: config.fillOpacity,
+                borderOpacity: config.borderOpacity,
             });
         }
 
@@ -702,25 +732,34 @@ function scanResources(scanDoc, page, pageIndex) {
                         } catch (e) {}
                     }
                     if (subtype.toString() === '/Image' && xObj instanceof PDFRawStream) {
+                        const xObjRef = xObjects.get(key);
+                        if (!xObjRef) continue;
+                        const refStr = xObjRef.toString();
                         const keyName = key.value();
-                        const uniqueKey = `${pageIndex}:${keyName}`;
-                        const width = xObj.dict.get(PDFName.of('Width'));
-                        const height = xObj.dict.get(PDFName.of('Height'));
-                        const filter = xObj.dict.get(PDFName.of('Filter'));
-                        const filterStr = filter ? filter.toString() : 'RAW';
 
-                        detectedImages.set(uniqueKey, {
-                            keyName: keyName,
-                            width: width,
-                            height: height,
-                            filterStr: filterStr,
-                            page: pageIndex + 1,
-                            ref: xObjects.get(key),
-                            rawStream: xObj,
-                        });
+                        if (!detectedImages.has(refStr)) {
+                            const width = xObj.dict.get(PDFName.of('Width'));
+                            const height = xObj.dict.get(PDFName.of('Height'));
+                            const filter = xObj.dict.get(PDFName.of('Filter'));
+                            const filterStr = filter ? filter.toString() : 'RAW';
 
-                        if (isSuspectKeyName(keyName)) {
-                            if (!imagesToDestroy.includes(uniqueKey)) imagesToDestroy.push(uniqueKey);
+                            const entry = {
+                                keyName: keyName,
+                                width: width,
+                                height: height,
+                                filterStr: filterStr,
+                                pages: [pageIndex + 1],
+                                ref: xObjRef,
+                                rawStream: xObj,
+                            };
+                            detectedImages.set(refStr, entry);
+
+                            if (isSuspectKeyName(keyName)) {
+                                if (!imagesToDestroy.includes(refStr)) imagesToDestroy.push(refStr);
+                            }
+                        } else {
+                            const entry = detectedImages.get(refStr);
+                            if (entry && !entry.pages.includes(pageIndex + 1)) entry.pages.push(pageIndex + 1);
                         }
                     }
                 }
@@ -842,6 +881,31 @@ async function performBackgroundScan(scanDoc) {
         scanAnnotations(scanDoc, page, i);
         scanResources(scanDoc, page, i);
         scanDirectContent(scanDoc, page, i);
+    }
+
+    // --- 啟發式高頻率出現智慧偵測 (Heuristic Auto-Detect) ---
+    if (pageCount > 1) {
+        const threshold = typeof HEURISTIC_THRESHOLD !== 'undefined' ? HEURISTIC_THRESHOLD : 0.8;
+
+        // 檢查 Form XObjects
+        for (const [refStr, entry] of detectedFormXObjects.entries()) {
+            if (entry.pages.length / pageCount >= threshold) {
+                entry.isHeuristic = true;
+                if (!formXObjectsToDestroy.includes(refStr)) {
+                    formXObjectsToDestroy.push(refStr);
+                }
+            }
+        }
+
+        // 檢查 Image XObjects
+        for (const [refStr, entry] of detectedImages.entries()) {
+            if (entry.pages.length / pageCount >= threshold) {
+                entry.isHeuristic = true;
+                if (!imagesToDestroy.includes(refStr)) {
+                    imagesToDestroy.push(refStr);
+                }
+            }
+        }
     }
 
     console.log(

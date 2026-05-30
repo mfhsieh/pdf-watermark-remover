@@ -252,7 +252,19 @@ new WatermarkStrategyModal({
     renderLabel: (labelEl, key, entry) => {
         const pageLabel = ` (第 ${entry.pages.join(', ')} 頁)`;
         const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
-        labelEl.appendChild(document.createTextNode(`${displayName}${pageLabel} [實體: ${key}]`));
+        
+        const textSpan = document.createElement('span');
+        textSpan.appendChild(document.createTextNode(`${displayName}${pageLabel} [實體: ${key}]`));
+        
+        if (entry.isHeuristic) {
+            const highlight = document.createElement('span');
+            highlight.style.color = '#dc3545';
+            highlight.style.fontWeight = 'bold';
+            highlight.textContent = ' [高頻偵測]';
+            textSpan.appendChild(highlight);
+        }
+        
+        labelEl.appendChild(textSpan);
     },
     applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個「表單外部物件」。`,
     resetMsg: '已將當前檔案中的「表單外部物件」清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。',
@@ -344,15 +356,29 @@ new WatermarkStrategyModal({
         imagesToDestroy = list;
     },
     getSuspectState: (key, entry) => isSuspectImageXObject(entry),
-    getSortCompare: (a, b) =>
-        a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
+    getSortCompare: (a, b) => {
+        const pageA = a[1].pages && a[1].pages.length > 0 ? a[1].pages[0] : 0;
+        const pageB = b[1].pages && b[1].pages.length > 0 ? b[1].pages[0] : 0;
+        return pageA !== pageB ? pageA - pageB : a[1].keyName.localeCompare(b[1].keyName);
+    },
     renderLabel: (labelEl, key, entry) => {
         const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
-        labelEl.appendChild(
-            document.createTextNode(
-                `${displayName} (${entry.width}x${entry.height}, ${entry.filterStr}) (第 ${entry.page} 頁)`
-            )
+        const pageLabel = entry.pages && entry.pages.length > 0 ? ` (第 ${entry.pages.join(', ')} 頁)` : '';
+        
+        const textSpan = document.createElement('span');
+        textSpan.appendChild(
+            document.createTextNode(`${displayName} (${entry.width}x${entry.height}, ${entry.filterStr})${pageLabel}`)
         );
+        
+        if (entry.isHeuristic) {
+            const highlight = document.createElement('span');
+            highlight.style.color = '#dc3545';
+            highlight.style.fontWeight = 'bold';
+            highlight.textContent = ' [高頻偵測]';
+            textSpan.appendChild(highlight);
+        }
+        
+        labelEl.appendChild(textSpan);
     },
     applyMsgTemplate: (len) => `已成功套用「影像外部物件」清理設定！共選定清除 ${len} 個影像實例。`,
     resetMsg: '已將當前檔案中的「影像外部物件」清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。',
