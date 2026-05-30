@@ -272,6 +272,12 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 <dt><a href="#updateScanResultUI">updateScanResultUI(optionsContainer)</a></dt>
 <dd><p>掃描完成後更新 UI：根據偵測結果顯示/隱藏策略列、自動勾選疑似浮水印策略，並給出掃描摘要提示。</p>
 </dd>
+<dt><a href="#loadAndDecryptPdf">loadAndDecryptPdf(file)</a> ⇒ <code>Promise.&lt;{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}&gt;</code></dt>
+<dd><p>讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密</p>
+</dd>
+<dt><a href="#performBackgroundScan">performBackgroundScan(scanDoc)</a></dt>
+<dd><p>進行背景高速掃描以找出 PDF 中可能包含浮水印的物件</p>
+</dd>
 <dt><a href="#showOriginalPreview">showOriginalPreview(file)</a></dt>
 <dd><p>載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
 並將解密後的位元組與密碼快取，最後顯示預覽。</p>
@@ -1024,6 +1030,28 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | Param | Type | Description |
 | --- | --- | --- |
 | optionsContainer | <code>HTMLElement</code> | 策略選項容器 DOM 元素 |
+
+<a name="loadAndDecryptPdf"></a>
+
+## loadAndDecryptPdf(file) ⇒ <code>Promise.&lt;{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}&gt;</code>
+讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| file | <code>File</code> | 
+
+<a name="performBackgroundScan"></a>
+
+## performBackgroundScan(scanDoc)
+進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| scanDoc | <code>PDFDocument</code> | 
 
 <a name="showOriginalPreview"></a>
 

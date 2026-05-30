@@ -4,7 +4,7 @@
 
 在瀏覽器端直接處理 PDF 檔案，**檔案不會上傳至伺服器**，可保護您的文件隱私。
 
-[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](https://github.com/mfhsieh/pdf-watermark-remover/raw/main/index.html)
+[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](https://github.com/mfhsieh/pdf-watermark-remover/archive/refs/heads/main.zip)
 
 ## 📌 專案簡介
 
@@ -56,8 +56,8 @@
 
 ## 🚀 離線使用
 
-本專案為**單頁應用程式 (SPA)**，所有 CSS 與 JavaScript 皆內嵌於單一 `index.html`，可直接離線使用：
-- **雙擊直接開啟**：在任何現代瀏覽器中直接執行，無需安裝。
+本專案為**純前端應用程式 (SPA)**，無後端伺服器依賴，可直接離線使用：
+- **下載與執行**：請下載整個專案資料夾（包含 `index.html`、`css/`、`js/` 等目錄），在任何現代瀏覽器中雙擊打開 `index.html` 即可執行，無需安裝。
 - **離線運作**：處理無加密的 PDF 可完全離線；若需解除加密限制，首次使用需連線下載 `qpdf-wasm` 引擎（約 1.8 MB），之後由瀏覽器快取。
 
 ---

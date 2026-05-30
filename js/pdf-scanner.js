@@ -441,86 +441,70 @@ function updateScanResultUI(optionsContainer) {
     }
 }
 
-/**
- * 載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
- * 並將解密後的位元組與密碼快取，最後顯示預覽。
- * @param {File} file - 使用者上傳的原始 PDF 檔案
- */
-async function showOriginalPreview(file) {
-    // 0. 主動清空並重置所有舊狀態（含密碼快取）
-    resetAllState();
 
-    // 1. 讀取原始位元組，嘗試偵測是否有開啟密碼
+/**
+ * 讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密
+ * @param {File} file 
+ * @returns {Promise<{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}>}
+ */
+async function loadAndDecryptPdf(file) {
     const rawBuffer = await file.arrayBuffer();
     const rawBytes = new Uint8Array(rawBuffer);
 
     let previewBytes = rawBytes; // 預設使用原始位元組作為預覽來源
     let needsPassword = false;
-    let decryptedSuccessfully = false; // 用於在 showOriginalPreview 函式末端判斷是否成功解密，以決定是否顯示按鈕
+    let decryptedSuccessfully = false;
 
     try {
         const testDoc = await PDFDocument.load(rawBytes, { updateMetadata: false });
         testDoc.getPageCount(); // 觸發 lazy-parsing
-        // 正常無加密 PDF，直接快取解密後的原始位元組
         cachedDecryptedBytes = rawBytes;
     } catch (e) {
-        // 進一步確認：嘗試以空密碼解密（空密碼可解開「僅有編輯權限限制」的 PDF）
         try {
             const decrypted = await decryptWithQpdfWasm(rawBytes, "");
-            // 空密碼成功→僅有權限限制，直接快取解密後的位元組
             cachedDecryptedBytes = decrypted;
             previewBytes = decrypted;
             addStatusMessage("⚠️ 偵測到編輯權限限制，已自動解除。", "info");
         } catch {
-            // 空密碼失敗→需要開啟密碼
             needsPassword = true;
         }
     }
 
     if (needsPassword) {
-
-        // 優先在記憶體中嘗試上一次成功解密的密碼 (lastSuccessPassword)
         if (lastSuccessPassword) {
             try {
                 addStatusMessage("🔒 偵測到開啟密碼保護，嘗試套用前次成功解密的記憶體密碼...", "info");
                 const decrypted = await decryptWithQpdfWasm(rawBytes, lastSuccessPassword);
-                // 驗證解密成功
                 const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
                 testDoc.getPageCount();
 
-                // 成功！
                 cachedPassword = lastSuccessPassword;
                 cachedDecryptedBytes = decrypted;
                 previewBytes = decrypted;
                 decryptedSuccessfully = true;
                 addStatusMessage("🔓 已自動套用前次使用的密碼並解密成功！", "success");
             } catch (e) {
-                // 嘗試失敗，提示使用者需要重新輸入
                 addStatusMessage("⚠️ 前次密碼不適用於此檔案，請重新輸入密碼。", "info");
             }
         }
 
-        // 若未成功（無前次密碼，或前次密碼錯誤），則詢問使用者
         if (!decryptedSuccessfully) {
             addStatusMessage("🔒 此 PDF 設有開啟密碼，請輸入密碼以繼續。", "info");
             let attempts = 0;
             while (true) {
                 const pwd = await promptForPassword(attempts > 0);
                 if (pwd === null) {
-                    // 使用者取消：仍以原始未解密的 PDF 顯示預覽（瀏覽器內建會彈窗詢問密碼）
                     addStatusMessage("已取消密碼輸入。如需繼續處理，請重新選擇 PDF 並輸入密碼。", "info");
                     break;
                 }
                 attempts++;
                 try {
                     const decrypted = await decryptWithQpdfWasm(rawBytes, pwd);
-                    // 驗證解密成功
                     const testDoc = await PDFDocument.load(decrypted, { updateMetadata: false });
                     testDoc.getPageCount();
 
-                    // 成功：快取密碼與解密後的位元組，並儲存為 lastSuccessPassword 以供下次使用
                     cachedPassword = pwd;
-                    lastSuccessPassword = pwd; // 更新跨檔案記憶體暫存密碼
+                    lastSuccessPassword = pwd; 
                     cachedDecryptedBytes = decrypted;
                     previewBytes = decrypted;
                     decryptedSuccessfully = true;
@@ -533,272 +517,250 @@ async function showOriginalPreview(file) {
         }
     }
 
-    // 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件 (Annots, XObject, ExtGState, OCG, Contents)
+    return { previewBytes, needsPassword, decryptedSuccessfully };
+}
 
+function scanOCG(scanDoc) {
+    const catalogDict = scanDoc.catalog;
+    if (!catalogDict.has(PDFName.of("OCProperties"))) return;
+
+    const ocPropertiesRef = catalogDict.get(PDFName.of("OCProperties"));
+    const ocProperties = scanDoc.context.lookup(ocPropertiesRef);
+    if (!(ocProperties instanceof PDFDict)) return;
+
+    const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
+    if (!ocgsRef) return;
+
+    const ocgs = scanDoc.context.lookup(ocgsRef);
+    if (!(ocgs instanceof PDFArray)) return;
+
+    for (let idx = 0; idx < ocgs.size(); idx += 1) {
+        const ocgRef = ocgs.get(idx);
+        const ocgRefStr = ocgRef.toString();
+        const ocg = scanDoc.context.lookup(ocgRef);
+        if (ocg instanceof PDFDict) {
+            const nameObject = ocg.lookup(PDFName.of("Name"));
+            if (nameObject instanceof PDFString || nameObject instanceof PDFHexString) {
+                const name = nameObject.decodeText();
+                const entry = { name: name, ref: ocgRef };
+                detectedOCGs.set(ocgRefStr, entry);
+
+                if (isSuspectOCG(entry)) {
+                    if (!ocgsToDestroy.includes(ocgRefStr)) ocgsToDestroy.push(ocgRefStr);
+                }
+            }
+        }
+    }
+}
+
+function scanAnnotations(scanDoc, page, pageIndex) {
+    const annots = page.node.lookup(PDFName.of("Annots"));
+    if (!(annots instanceof PDFArray)) return;
+
+    for (let idx = 0; idx < annots.size(); idx++) {
+        const annotRef = annots.get(idx);
+        const annot = scanDoc.context.lookup(annotRef);
+        if (annot instanceof PDFDict) {
+            const subtype = scanDoc.context.lookup(annot.get(PDFName.of("Subtype")));
+            if (subtype instanceof PDFName) {
+                const subtypeStr = subtype.toString().replace(/^\//, "");
+                const annotRefStr = annotRef.toString();
+
+                const entry = {
+                    subtype: subtypeStr,
+                    page: pageIndex + 1,
+                    ref: annotRef,
+                    annotIndex: idx
+                };
+                detectedAnnotations.set(annotRefStr, entry);
+
+                if (isSuspectAnnotation(entry)) {
+                    if (!annotsToDestroy.includes(annotRefStr)) annotsToDestroy.push(annotRefStr);
+                }
+            }
+        }
+    }
+}
+
+function scanResources(scanDoc, page, pageIndex) {
+    const resourcesNode = page.node.lookup(PDFName.of("Resources"));
+    if (!resourcesNode) return;
+
+    const resources = scanDoc.context.lookup(resourcesNode);
+    if (!(resources instanceof PDFDict)) return;
+
+    const xObjectsNode = resources.get(PDFName.of("XObject"));
+    if (xObjectsNode) {
+        const xObjects = scanDoc.context.lookup(xObjectsNode);
+        if (xObjects instanceof PDFDict) {
+            for (const key of xObjects.keys()) {
+                const xObj = scanDoc.context.lookup(xObjects.get(key));
+                const subtype = xObj instanceof PDFRawStream ? scanDoc.context.lookup(xObj.dict.get(PDFName.of("Subtype"))) : null;
+                if (subtype instanceof PDFName) {
+                    if (subtype.toString() === "/Form" && xObj instanceof PDFRawStream) {
+                        try {
+                            const data = getDecodedStreamContents(xObj);
+                            const rawStr = decodeBinaryToText(data);
+                            const xObjRef = xObjects.get(key);
+                            const refStr = xObjRef.toString();
+                            
+                            if (!detectedFormXObjects.has(refStr)) {
+                                const keyName = key.value();
+                                const entry = { keyName: keyName, pages: [pageIndex + 1], rawStr: rawStr, ref: xObjRef };
+                                detectedFormXObjects.set(refStr, entry);
+                                if (isSuspectFormXObject(entry, rawStr)) {
+                                    if (!formXObjectsToDestroy.includes(refStr)) formXObjectsToDestroy.push(refStr);
+                                }
+                            } else {
+                                const entry = detectedFormXObjects.get(refStr);
+                                if (entry && !entry.pages.includes(pageIndex + 1)) entry.pages.push(pageIndex + 1);
+                            }
+                        } catch (e) { }
+                    }
+                    if (subtype.toString() === "/Image" && xObj instanceof PDFRawStream) {
+                        const keyName = key.value();
+                        const uniqueKey = `${pageIndex}:${keyName}`;
+                        const width = xObj.dict.get(PDFName.of("Width"));
+                        const height = xObj.dict.get(PDFName.of("Height"));
+                        const filter = xObj.dict.get(PDFName.of("Filter"));
+                        const filterStr = filter ? filter.toString() : "RAW";
+
+                        detectedImages.set(uniqueKey, {
+                            keyName: keyName, width: width, height: height,
+                            filterStr: filterStr, page: pageIndex + 1, ref: xObjects.get(key), rawStream: xObj
+                        });
+
+                        if (isSuspectKeyName(keyName)) {
+                            if (!imagesToDestroy.includes(uniqueKey)) imagesToDestroy.push(uniqueKey);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const extGStateNode = resources.get(PDFName.of("ExtGState"));
+    if (extGStateNode) {
+        const extGState = scanDoc.context.lookup(extGStateNode);
+        if (extGState instanceof PDFDict) {
+            for (const key of extGState.keys()) {
+                const keyName = key.value();
+                const gsObj = scanDoc.context.lookup(extGState.get(key));
+
+                let details = [];
+                let caVal = 1.0, CAVal = 1.0;
+                if (gsObj instanceof PDFDict) {
+                    const ca = gsObj.get(PDFName.of("ca"));
+                    const CA = gsObj.get(PDFName.of("CA"));
+                    const BM = gsObj.get(PDFName.of("BM"));
+                    if (ca !== undefined) {
+                        details.push(`ca: ${ca.toString()}`);
+                        if (typeof ca.value === "function") caVal = ca.value();
+                    }
+                    if (CA !== undefined) {
+                        details.push(`CA: ${CA.toString()}`);
+                        if (typeof CA.value === "function") CAVal = CA.value();
+                    }
+                    if (BM !== undefined) details.push(`BM: ${BM.toString()}`);
+                }
+                const detailText = details.length > 0 ? details.join(", ") : "無透明度細節設定";
+                const uniqueKey = `${pageIndex}:${keyName}`;
+
+                detectedExtGStates.set(uniqueKey, {
+                    keyName: keyName, detailText: detailText, page: pageIndex + 1,
+                    ref: gsObj, caVal: caVal, CAVal: CAVal
+                });
+
+                if (isSuspectExtGState(detectedExtGStates.get(uniqueKey))) {
+                    if (!extGStatesToDestroy.includes(uniqueKey)) extGStatesToDestroy.push(uniqueKey);
+                }
+            }
+        }
+    }
+}
+
+function scanDirectContent(scanDoc, page, pageIndex) {
+    const contents = scanDoc.context.lookup(page.node.lookup(PDFName.of("Contents")));
+    if (!contents) return;
+
+    const streams = [];
+    if (contents instanceof PDFArray) {
+        for (let idx = 0; idx < contents.size(); idx++) {
+            streams.push({ item: scanDoc.context.lookup(contents.get(idx)), index: idx });
+        }
+    } else {
+        streams.push({ item: contents, index: null });
+    }
+
+    streams.forEach(entry => {
+        const stream = entry.item;
+        if (stream instanceof PDFRawStream) {
+            let streamRef = contents instanceof PDFArray ? contents.get(entry.index) : page.node.get(PDFName.of("Contents"));
+            if (streamRef) {
+                const refStr = streamRef.toString();
+                try {
+                    const data = getDecodedStreamContents(stream);
+                    const rawStr = decodeBinaryToText(data);
+
+                    detectedDirectContents.set(refStr, {
+                        page: pageIndex + 1, ref: streamRef, rawText: rawStr, streamIndex: entry.index
+                    });
+
+                    if (isSuspectContentText(rawStr)) {
+                        if (!directContentsToDestroy.includes(refStr)) directContentsToDestroy.push(refStr);
+                    }
+                } catch (e) {
+                    console.error("Direct content parse error", e);
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
+ * @param {PDFDocument} scanDoc 
+ */
+async function performBackgroundScan(scanDoc) {
+    // 重置全部 6 個偵測 Map，確保與 resetAllState 行為一致
+    detectedFormXObjects.clear();
+    detectedDirectContents.clear();
+    detectedAnnotations.clear();
+    detectedExtGStates.clear();
+    detectedOCGs.clear();
+    detectedImages.clear();
+
+    scanOCG(scanDoc);
+
+    const pageCount = scanDoc.getPageCount();
+    for (let i = 0; i < pageCount; i++) {
+        const page = scanDoc.getPage(i);
+        scanAnnotations(scanDoc, page, i);
+        scanResources(scanDoc, page, i);
+        scanDirectContent(scanDoc, page, i);
+    }
+    
+    console.log("[Scanner] 背景掃描完成 — 註解:", detectedAnnotations.size, "，直接內容:", detectedDirectContents.size, "，FormXObj:", detectedFormXObjects.size, "，Image:", detectedImages.size, "，ExtGState:", detectedExtGStates.size, "，OCG:", detectedOCGs.size);
+}
+
+/**
+ * 載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
+ * 並將解密後的位元組與密碼快取，最後顯示預覽。
+ * @param {File} file - 使用者上傳的原始 PDF 檔案
+ */
+async function showOriginalPreview(file) {
+    // 0. 主動清空並重置所有舊狀態（含密碼快取）
+    resetAllState();
+
+    const { previewBytes, needsPassword, decryptedSuccessfully } = await loadAndDecryptPdf(file);
+
+    // 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
     if (!needsPassword || decryptedSuccessfully) {
         try {
             const scanDoc = await PDFDocument.load(previewBytes, { updateMetadata: false });
-            // 重置全部 6 個偵測 Map，確保與 resetAllState 行為一致
-            detectedFormXObjects.clear();
-            detectedDirectContents.clear();
-            detectedAnnotations.clear();
-            detectedExtGStates.clear();
-            detectedOCGs.clear();
-            detectedImages.clear();
-
-            // Check OCG
-            const catalogDict = scanDoc.catalog;
-            if (catalogDict.has(PDFName.of("OCProperties"))) {
-                const ocPropertiesRef = catalogDict.get(PDFName.of("OCProperties"));
-                const ocProperties = scanDoc.context.lookup(ocPropertiesRef);
-                if (ocProperties instanceof PDFDict) {
-                    const ocgsRef = ocProperties.get(PDFName.of("OCGs"));
-                    if (ocgsRef) {
-                        const ocgs = scanDoc.context.lookup(ocgsRef);
-                        if (ocgs instanceof PDFArray) {
-                            for (let idx = 0; idx < ocgs.size(); idx += 1) {
-                                const ocgRef = ocgs.get(idx);
-                                const ocgRefStr = ocgRef.toString();
-                                const ocg = scanDoc.context.lookup(ocgRef);
-                                if (ocg instanceof PDFDict) {
-                                    const nameObject = ocg.lookup(PDFName.of("Name"));
-                                    if (nameObject instanceof PDFString || nameObject instanceof PDFHexString) {
-                                        const name = nameObject.decodeText();
-                                        const entry = {
-                                            name: name,
-                                            ref: ocgRef
-                                        };
-                                        detectedOCGs.set(ocgRefStr, entry);
-
-                                        // 預設勾選：使用統一的 OCG 判定函數
-                                        if (isSuspectOCG(entry)) {
-                                            if (!ocgsToDestroy.includes(ocgRefStr)) {
-                                                ocgsToDestroy.push(ocgRefStr);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            const pageCount = scanDoc.getPageCount();
-            for (let i = 0; i < pageCount; i++) {
-                const page = scanDoc.getPage(i);
-
-                // Check Annots
-                const annots = page.node.lookup(PDFName.of("Annots"));
-                if (annots instanceof PDFArray) {
-                    for (let idx = 0; idx < annots.size(); idx++) {
-                        const annotRef = annots.get(idx);
-                        const annot = scanDoc.context.lookup(annotRef);
-                        if (annot instanceof PDFDict) {
-                            const subtype = scanDoc.context.lookup(annot.get(PDFName.of("Subtype")));
-                            if (subtype instanceof PDFName) {
-                                const subtypeStr = subtype.toString().replace(/^\//, "");
-                                const annotRefStr = annotRef.toString();
-
-                                const entry = {
-                                    subtype: subtypeStr,
-                                    page: i + 1,
-                                    ref: annotRef,
-                                    annotIndex: idx
-                                };
-                                detectedAnnotations.set(annotRefStr, entry);
-
-                                // 預設勾選：使用統一的 Annotation 判定函數
-                                if (isSuspectAnnotation(entry)) {
-                                    if (!annotsToDestroy.includes(annotRefStr)) {
-                                        annotsToDestroy.push(annotRefStr);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Check Resources
-                const resourcesNode = page.node.lookup(PDFName.of("Resources"));
-                if (resourcesNode) {
-                    const resources = scanDoc.context.lookup(resourcesNode);
-                    if (resources instanceof PDFDict) {
-                        const xObjectsNode = resources.get(PDFName.of("XObject"));
-                        if (xObjectsNode) {
-                            const xObjects = scanDoc.context.lookup(xObjectsNode);
-                            if (xObjects instanceof PDFDict) {
-                                for (const key of xObjects.keys()) {
-                                    const xObj = scanDoc.context.lookup(xObjects.get(key));
-                                    const subtype = xObj instanceof PDFRawStream ? scanDoc.context.lookup(xObj.dict.get(PDFName.of("Subtype"))) : null;
-                                    if (subtype instanceof PDFName) {
-                                        if (subtype.toString() === "/Form") {
-                                            if (xObj instanceof PDFRawStream) {
-                                                try {
-                                                    const data = getDecodedStreamContents(xObj);
-                                                    const rawStr = decodeBinaryToText(data);
-                                                    const xObjRef = xObjects.get(key);
-                                                    const refStr = xObjRef.toString();
-                                                    if (!detectedFormXObjects.has(refStr)) {
-                                                        const keyName = key.value();
-                                                        const entry = {
-                                                            keyName: keyName,
-                                                            pages: [i + 1],
-                                                            rawStr: rawStr,
-                                                            ref: xObjRef
-                                                        };
-                                                        detectedFormXObjects.set(refStr, entry);
-                                                        if (isSuspectFormXObject(entry, rawStr)) {
-                                                            if (!formXObjectsToDestroy.includes(refStr)) {
-                                                                formXObjectsToDestroy.push(refStr);
-                                                            }
-                                                        }
-                                                    } else {
-                                                        const entry = detectedFormXObjects.get(refStr);
-                                                        if (entry && !entry.pages.includes(i + 1)) {
-                                                            entry.pages.push(i + 1);
-                                                        }
-                                                    }
-                                                } catch (e) { }
-                                            }
-                                        }
-                                        if (subtype.toString() === "/Image") {
-                                            if (xObj instanceof PDFRawStream) {
-                                                const keyName = key.value();
-                                                const uniqueKey = `${i}:${keyName}`;
-
-                                                // 獲取寬、高、Filter 等特徵
-                                                const width = xObj.dict.get(PDFName.of("Width"));
-                                                const height = xObj.dict.get(PDFName.of("Height"));
-                                                const filter = xObj.dict.get(PDFName.of("Filter"));
-
-                                                const filterStr = filter ? filter.toString() : "RAW";
-
-                                                detectedImages.set(uniqueKey, {
-                                                    keyName: keyName,
-                                                    width: width,
-                                                    height: height,
-                                                    filterStr: filterStr,
-                                                    page: i + 1,
-                                                    ref: xObjects.get(key),
-                                                    rawStream: xObj
-                                                });
-
-                                                // 預設勾選：若名稱疑似浮水印，則預先打勾
-                                                if (isSuspectKeyName(keyName)) {
-                                                    if (!imagesToDestroy.includes(uniqueKey)) {
-                                                        imagesToDestroy.push(uniqueKey);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        const extGStateNode = resources.get(PDFName.of("ExtGState"));
-                        if (extGStateNode) {
-                            const extGState = scanDoc.context.lookup(extGStateNode);
-                            if (extGState instanceof PDFDict) {
-                                for (const key of extGState.keys()) {
-                                    const keyName = key.value();
-                                    const gsObj = scanDoc.context.lookup(extGState.get(key));
-
-                                    // 萃取特徵，例如透明度 ca/CA 與混合模式 BM
-                                    let details = [];
-                                    let caVal = 1.0;
-                                    let CAVal = 1.0;
-                                    if (gsObj instanceof PDFDict) {
-                                        const ca = gsObj.get(PDFName.of("ca"));
-                                        const CA = gsObj.get(PDFName.of("CA"));
-                                        const BM = gsObj.get(PDFName.of("BM"));
-                                        if (ca !== undefined) {
-                                            details.push(`ca: ${ca.toString()}`);
-                                            if (typeof ca.value === "function") caVal = ca.value();
-                                        }
-                                        if (CA !== undefined) {
-                                            details.push(`CA: ${CA.toString()}`);
-                                            if (typeof CA.value === "function") CAVal = CA.value();
-                                        }
-                                        if (BM !== undefined) details.push(`BM: ${BM.toString()}`);
-                                    }
-                                    const detailText = details.length > 0 ? details.join(", ") : "無透明度細節設定";
-                                    const uniqueKey = `${i}:${keyName}`;
-
-                                    detectedExtGStates.set(uniqueKey, {
-                                        keyName: keyName,
-                                        detailText: detailText,
-                                        page: i + 1,
-                                        ref: gsObj,
-                                        caVal: caVal,
-                                        CAVal: CAVal
-                                    });
-
-                                    // 預設勾選：使用統一的 ExtGState 判定函數
-                                    if (isSuspectExtGState(detectedExtGStates.get(uniqueKey))) {
-                                        if (!extGStatesToDestroy.includes(uniqueKey)) {
-                                            extGStatesToDestroy.push(uniqueKey);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Check Direct Content
-                const contents = scanDoc.context.lookup(page.node.lookup(PDFName.of("Contents")));
-                if (contents) {
-                    const streams = [];
-                    if (contents instanceof PDFArray) {
-                        for (let idx = 0; idx < contents.size(); idx++) {
-                            streams.push({ item: scanDoc.context.lookup(contents.get(idx)), index: idx });
-                        }
-                    } else {
-                        streams.push({ item: contents, index: null });
-                    }
-
-                    streams.forEach(entry => {
-                        const stream = entry.item;
-                        if (stream instanceof PDFRawStream) {
-                            let streamRef = null;
-                            if (contents instanceof PDFArray) {
-                                streamRef = contents.get(entry.index);
-                            } else {
-                                streamRef = page.node.get(PDFName.of("Contents"));
-                            }
-
-                            if (streamRef) {
-                                const refStr = streamRef.toString();
-                                try {
-                                    const data = getDecodedStreamContents(stream);
-                                    const rawStr = decodeBinaryToText(data);
-
-                                    detectedDirectContents.set(refStr, {
-                                        page: i + 1,
-                                        ref: streamRef,
-                                        rawText: rawStr,
-                                        streamIndex: entry.index
-                                    });
-
-                                    // 預設勾選：如果 rawText 中符合 suspect keywords，則預先標記
-                                    if (isSuspectContentText(rawStr)) {
-                                        if (!directContentsToDestroy.includes(refStr)) {
-                                            directContentsToDestroy.push(refStr);
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error("Direct content parse error", e);
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-            console.log("[Scanner] 背景掃描完成 — 註解:", detectedAnnotations.size, "，直接內容:", detectedDirectContents.size, "，FormXObj:", detectedFormXObjects.size, "，Image:", detectedImages.size, "，ExtGState:", detectedExtGStates.size, "，OCG:", detectedOCGs.size);
+            await performBackgroundScan(scanDoc);
         } catch (scanErr) {
-            console.error("背景掃描類型失敗", scanErr);
+            console.error("背景掃描失敗", scanErr);
         }
     }
 
