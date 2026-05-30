@@ -553,7 +553,7 @@ function removeOCG(pdfDoc) {
  * @returns {number} 處理掉的 Image 數量
  */
 function removeImageXObjects(pdfDoc, resources, pageIndex) {
-    const xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
+    let xObjects = pdfDoc.context.lookup(resources.get(PDFName.of("XObject")));
     if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
 
     let count = 0;
@@ -565,13 +565,28 @@ function removeImageXObjects(pdfDoc, resources, pageIndex) {
         if (subtype instanceof PDFName && subtype.toString() === "/Image") {
             const name = key.value();
             const uniqueKey = `${pageIndex}:${name}`;
-            // 比對被選定要清除的影像
             if (imagesToDestroy.includes(uniqueKey)) {
-                xObjects.delete(key);
-                deletedKeys.push(key.value());
-                count += 1;
+                deletedKeys.push(key);
             }
         }
     }
-    return { count, deletedKeys };
+
+    if (deletedKeys.length > 0) {
+        const xObjectsKey = PDFName.of("XObject");
+        const xObjectsRef = resources.get(xObjectsKey);
+        
+        if (xObjects.clone) {
+            xObjects = xObjects.clone(pdfDoc.context);
+            if (xObjectsRef && typeof xObjectsRef.clone === 'function' && !resources.has(xObjectsKey)) {
+                resources.set(xObjectsKey, xObjects);
+            } else {
+                resources.set(xObjectsKey, pdfDoc.context.register(xObjects));
+            }
+        }
+        for (const key of deletedKeys) {
+            xObjects.delete(key);
+        }
+        count = deletedKeys.length;
+    }
+    return { count, deletedKeys: deletedKeys.map(k => k.value()) };
 }
