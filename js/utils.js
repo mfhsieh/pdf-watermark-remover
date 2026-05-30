@@ -189,7 +189,9 @@ function decodeHexStringsInText(text) {
                 decodedStr += String.fromCharCode(byteVal);
             }
             expandedText += ' ' + decodedStr;
-        } catch (e) {}
+        } catch (e) {
+            console.debug('hex string 解碼失敗（可忽略）', e);
+        }
     }
     return expandedText;
 }

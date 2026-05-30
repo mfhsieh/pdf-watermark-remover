@@ -3,6 +3,15 @@
 // ==========================================
 
 /**
+ * 將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
+ * @param {string} str - 需要跳脫的原始字串
+ * @returns {string} 跳脫後的字串
+ */
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
  * @param {PDFDocument} pdfDoc - PDF 文件物件
  * @param {PDFPage} page - 頁面物件
@@ -31,7 +40,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 let modified = false;
                 for (const key of deletedXObjKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/' + cleanKey + '\\s+Do\\b', 'g');
+                    const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
                     const newText = text.replace(regex, '');
                     if (newText !== text) {
                         text = newText;
@@ -40,7 +49,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 }
                 for (const key of deletedExtGStateKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/' + cleanKey + '\\s+gs\\b', 'g');
+                    const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
                     const newText = text.replace(regex, '');
                     if (newText !== text) {
                         text = newText;
@@ -49,7 +58,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 }
                 for (const key of deletedOcgKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/OC\\s+/' + cleanKey + '\\s+BDC[\\s\\S]*?EMC', 'g');
+                    const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
                     const newText = text.replace(regex, '');
                     if (newText !== text) {
                         text = newText;
@@ -181,14 +190,14 @@ function processPdf(pdfDoc, options) {
 }
 
 /**
- * 策略一：清除 Form XObject 浮水印
- * Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
- * 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
- * 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
+ *  策略一：清除 Form XObject 浮水印
+ *  Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
+ *  大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
+ *  逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
  *
- * @param {PDFDocument} pdfDoc - PDF 文件物件
- * @param {PDFDict} resources - 頁面資源字典
- * @returns {number} 清除的 Form XObject 數量
+ *  @param {PDFDocument} pdfDoc - PDF 文件物件
+ *  @param {PDFDict} resources - 頁面資源字典
+ *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
 function removeFormXObjects(pdfDoc, resources) {
     const xObjectsKey = PDFName.of('XObject');
@@ -331,19 +340,20 @@ function removeDirectContent(pdfDoc, page) {
 }
 
 /**
- * 策略四：清理 ExtGState 半透明狀態
- * ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
- * 遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
+ *  策略五：清理 ExtGState 半透明狀態
+ *  ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
+ *  遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
  *
- * @param {PDFDocument} pdfDoc - 文件物件
- * @param {PDFDict} resources - 資源字典
- * @returns {number} 處理掉的 ExtGState 數量
+ *  @param {PDFDocument} pdfDoc - 文件物件
+ *  @param {PDFDict} resources - 資源字典
+ *  @param {number} pageIndex - 當前處理頁面的 0-indexed 索引
+ *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
 function removeExtGState(pdfDoc, resources, pageIndex) {
     const extGStateKey = PDFName.of('ExtGState');
     const extGStateRef = resources.get(extGStateKey);
     let extGState = pdfDoc.context.lookup(extGStateRef);
-    if (!(extGState instanceof PDFDict)) return 0;
+    if (!(extGState instanceof PDFDict)) return { count: 0, deletedKeys: [] };
 
     let count = 0;
     const deletedKeys = [];
@@ -373,13 +383,12 @@ function removeExtGState(pdfDoc, resources, pageIndex) {
 }
 
 /**
- * 策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
- * OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
- * 找到所有的圖層清單 (/OCGs Array)，比對圖層的 indirect reference 是否在 ocgsToDestroy 中。
- * 若符合，則將該 OCG 圖層的 Reference 加入到 /D (Default View) 字典的 /OFF 陣列中，以達到隱藏的效果。
+ *  策略六（頁面層級）：清理 OCG 圖層浮水印相關的 Properties 與 XObject 資源
+ *  針對頁面 Resources 中帶有 /OC 屬性且關聯到待刪除 OCG 的 Properties 與 XObject 進行移除。
  *
- * @param {PDFDocument} pdfDoc - PDF 文件物件
- * @returns {number} 隱藏 of OCG 圖層數量
+ *  @param {PDFDocument} pdfDoc - PDF 文件物件
+ *  @param {PDFDict} resources - 頁面資源字典
+ *  @returns {{count: number, deletedPropertiesKeys: string[], deletedXObjectKeys: string[]}} 清除統計
  */
 
 function removeOCGs(pdfDoc, resources) {
@@ -480,9 +489,9 @@ function removeOCGs(pdfDoc, resources) {
     return { count, deletedPropertiesKeys: deletedPropertiesKeys.map((k) => k.value()), deletedXObjectKeys };
 }
 /**
- * 針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
- * @param {PDFDocument} pdfDoc - PDF 文件物件
- * @returns {number} 清除的 OCG 圖層數量
+ *  策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
+ *  @param {PDFDocument} pdfDoc - PDF 文件物件
+ *  @returns {number} 清除的 OCG 圖層數量
  */
 function removeOCG(pdfDoc) {
     const catalogDict = pdfDoc.catalog;
@@ -540,15 +549,15 @@ function removeOCG(pdfDoc) {
 }
 
 /**
- * 策略六：清除圖片型浮水印 (Image XObject)
- * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
- * 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
- * 若符合，則將其從資源字典中移除。
+ *  策略四：清除圖片型浮水印 (Image XObject)
+ *  當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
+ *  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
+ *  若符合，則將其從資源字典中移除。
  *
- * @param {PDFDocument} pdfDoc - 文件物件
- * @param {PDFDict} resources - 頁面資源字典
- * @param {number} pageIndex - 當前處理頁面的 0-indexed 索引
- * @returns {number} 處理掉的 Image 數量
+ *  @param {PDFDocument} pdfDoc - 文件物件
+ *  @param {PDFDict} resources - 頁面資源字典
+ *  @param {number} pageIndex - 當前處理頁面的 0-indexed 索引
+ *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
 function removeImageXObjects(pdfDoc, resources, pageIndex) {
     let xObjects = pdfDoc.context.lookup(resources.get(PDFName.of('XObject')));

@@ -96,7 +96,7 @@ class WatermarkStrategyModal {
         const map = this.getDetectedMap();
         const destroyList = this.getDestroyList();
 
-        this.listContainer.innerHTML = '';
+        this.listContainer.replaceChildren();
 
         // 清除之前渲染可能留在 listContainer 上方的「全選/全不選」控制列
         const prevSibling = this.listContainer.previousElementSibling;

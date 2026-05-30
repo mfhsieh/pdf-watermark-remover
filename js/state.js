@@ -132,20 +132,28 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
         // 主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
         try {
             qpdf.FS.unlink(inputPath);
-        } catch {}
+        } catch (e) {
+            console.debug('FS.unlink inputPath 失敗（可忽略）', e);
+        }
         try {
             qpdf.FS.unlink(outputPath);
-        } catch {}
+        } catch (e) {
+            console.debug('FS.unlink outputPath 失敗（可忽略）', e);
+        }
 
         return new Uint8Array(decryptedBytes);
     } catch (err) {
         // 發生任何異常時，亦必須在 catch 中進行檔案釋放與記憶體垃圾回收
         try {
             qpdf.FS.unlink(inputPath);
-        } catch {}
+        } catch (e) {
+            console.debug('FS.unlink inputPath 失敗（可忽略）', e);
+        }
         try {
             qpdf.FS.unlink(outputPath);
-        } catch {}
+        } catch (e) {
+            console.debug('FS.unlink outputPath 失敗（可忽略）', e);
+        }
         throw err;
     }
 }
@@ -277,7 +285,9 @@ function clearPreviewUrlCache() {
     previewUrlCache.forEach((url) => {
         try {
             URL.revokeObjectURL(url);
-        } catch (e) {}
+        } catch (e) {
+            console.debug('revokeObjectURL 失敗（可忽略）', e);
+        }
     });
     previewUrlCache = [];
 }

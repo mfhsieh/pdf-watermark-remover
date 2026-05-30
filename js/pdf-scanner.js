@@ -116,10 +116,7 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
  * @param {number} height
  */
 function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
-    const config =
-        typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
-            ? PREVIEW_HIGHLIGHT_CONFIG
-            : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+    const config = PREVIEW_HIGHLIGHT_CONFIG;
 
     const extGStateName = 'GsPreviewHighlight';
     const extGStateDict = previewDoc.context.obj({
@@ -406,10 +403,7 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
             const w = Math.abs(targetRect[2] - targetRect[0]);
             const h = Math.abs(targetRect[3] - targetRect[1]);
 
-            const config =
-                typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
-                    ? PREVIEW_HIGHLIGHT_CONFIG
-                    : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+            const config = PREVIEW_HIGHLIGHT_CONFIG;
 
             page.drawRectangle({
                 x: x0,
@@ -731,7 +725,9 @@ function scanResources(scanDoc, page, pageIndex) {
                                 const entry = detectedFormXObjects.get(refStr);
                                 if (entry && !entry.pages.includes(pageIndex + 1)) entry.pages.push(pageIndex + 1);
                             }
-                        } catch (e) {}
+                        } catch (e) {
+                            console.debug('Form XObject 解碼失敗（可忽略）', e);
+                        }
                     }
                     if (subtype.toString() === '/Image' && xObj instanceof PDFRawStream) {
                         const xObjRef = xObjects.get(key);
@@ -887,7 +883,7 @@ async function performBackgroundScan(scanDoc) {
 
     // --- 啟發式高頻率出現智慧偵測 (Heuristic Auto-Detect) ---
     if (pageCount > 1) {
-        const threshold = typeof HEURISTIC_THRESHOLD !== 'undefined' ? HEURISTIC_THRESHOLD : 0.8;
+        const threshold = HEURISTIC_THRESHOLD;
 
         // 檢查 Form XObjects
         for (const [refStr, entry] of detectedFormXObjects.entries()) {

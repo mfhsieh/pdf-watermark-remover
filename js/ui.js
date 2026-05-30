@@ -33,7 +33,7 @@ const processedPreview = document.getElementById('processedPreview');
 /** @type {HTMLElement} 物件預覽彈窗元素 */
 const objectPreviewModal = document.getElementById('objectPreviewModal');
 /** @type {HTMLElement} 物件預覽彈窗標題 */
-const objectPreviewTitle = document.getElementById('objectPreviewTitle');
+const objectPreviewTitle = document.getElementById('objectPreviewModalTitle');
 /** @type {HTMLElement} 物件預覽載入中指示器 */
 const objectPreviewSpinner = document.getElementById('objectPreviewSpinner');
 /** @type {HTMLIFrameElement} 物件預覽 iframe */

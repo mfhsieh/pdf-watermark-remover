@@ -2,15 +2,22 @@
 // [Event Controllers] 事件綁定與流程控制
 // ==========================================
 
+/**
+ * 共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描
+ * @param {File} file - 使用者選取的 PDF 檔案
+ */
+function handleFileSelected(file) {
+    selectedFile = file;
+    updateFileAreaDisplay();
+    clearStatusMessages();
+    addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
+    downloadArea.classList.add('hidden');
+    showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
+}
 // 監聽傳統點擊選擇檔案事件
 fileInput.addEventListener('change', (event) => {
     if (event.target.files.length > 0) {
-        selectedFile = event.target.files[0];
-        updateFileAreaDisplay();
-        clearStatusMessages();
-        addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
-        downloadArea.classList.add('hidden');
-        showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
+        handleFileSelected(event.target.files[0]);
     }
 });
 
@@ -32,8 +39,6 @@ fileArea.addEventListener('drop', (event) => {
 
     const file = event.dataTransfer.files[0];
     if (file && file.type === 'application/pdf') {
-        selectedFile = file;
-
         // 嘗試將拖曳檔案與 input 同步（相容性處理，部分舊瀏覽器 input.files 為唯讀）
         try {
             fileInput.files = event.dataTransfer.files;
@@ -41,11 +46,7 @@ fileArea.addEventListener('drop', (event) => {
             console.warn('無法同步 fileInput.files，將僅使用 selectedFile 變數維持選檔狀態:', err);
         }
 
-        updateFileAreaDisplay();
-        clearStatusMessages();
-        addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
-        downloadArea.classList.add('hidden');
-        showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
+        handleFileSelected(file);
     } else {
         clearStatusMessages();
         addStatusMessage('僅支援 PDF 檔案格式。', 'error');

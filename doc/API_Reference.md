@@ -297,6 +297,9 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 <dd><p>載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
 並將解密後的位元組與密碼快取，最後顯示預覽。</p>
 </dd>
+<dt><a href="#escapeRegex">escapeRegex(str)</a> ⇒ <code>string</code></dt>
+<dd><p>將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式</p>
+</dd>
 <dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
 </dd>
@@ -307,11 +310,11 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 並主動清理 Content Stream 中的參照 (如 <code>Do</code>, <code>gs</code>)，確保 PDF 結構完整，防止 Acrobat Reader 報錯。
 同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。</p>
 </dd>
-<dt><a href="#removeFormXObjects">removeFormXObjects(pdfDoc, resources)</a> ⇒ <code>number</code></dt>
+<dt><a href="#removeFormXObjects">removeFormXObjects(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
 <dd><p>策略一：清除 Form XObject 浮水印
-Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
-大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
-逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。</p>
+ Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
+ 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
+ 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。</p>
 </dd>
 <dt><a href="#removeAnnotations">removeAnnotations(page)</a> ⇒ <code>number</code></dt>
 <dd><p>策略二：清除註解 (Annotation)
@@ -324,31 +327,32 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。</p>
 </dd>
-<dt><a href="#removeExtGState">removeExtGState(pdfDoc, resources)</a> ⇒ <code>number</code></dt>
-<dd><p>策略四：清理 ExtGState 半透明狀態
-ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
-遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。</p>
+<dt><a href="#removeExtGState">removeExtGState(pdfDoc, resources, pageIndex)</a> ⇒ <code>Object</code></dt>
+<dd><p>策略五：清理 ExtGState 半透明狀態
+ ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
+ 遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。</p>
 </dd>
-<dt><a href="#removeOCGs">removeOCGs(pdfDoc)</a> ⇒ <code>number</code></dt>
-<dd><p>策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
-OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
-找到所有的圖層清單 (/OCGs Array)，比對圖層的 indirect reference 是否在 ocgsToDestroy 中。
-若符合，則將該 OCG 圖層的 Reference 加入到 /D (Default View) 字典的 /OFF 陣列中，以達到隱藏的效果。</p>
+<dt><a href="#removeOCGs">removeOCGs(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
+<dd><p>策略六（頁面層級）：清理 OCG 圖層浮水印相關的 Properties 與 XObject 資源
+ 針對頁面 Resources 中帶有 /OC 屬性且關聯到待刪除 OCG 的 Properties 與 XObject 進行移除。</p>
 </dd>
 <dt><a href="#removeOCG">removeOCG(pdfDoc)</a> ⇒ <code>number</code></dt>
-<dd><p>針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）</p>
+<dd><p>策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）</p>
 </dd>
-<dt><a href="#removeImageXObjects">removeImageXObjects(pdfDoc, resources, pageIndex)</a> ⇒ <code>number</code></dt>
-<dd><p>策略六：清除圖片型浮水印 (Image XObject)
-當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
-我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
-若符合，則將其從資源字典中移除。</p>
+<dt><a href="#removeImageXObjects">removeImageXObjects(pdfDoc, resources, pageIndex)</a> ⇒ <code>Object</code></dt>
+<dd><p>策略四：清除圖片型浮水印 (Image XObject)
+ 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
+ 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
+ 若符合，則將其從資源字典中移除。</p>
 </dd>
 <dt><a href="#openObjectPreview">openObjectPreview(strategyType, key, entry)</a></dt>
 <dd><p>開啟物件即時預覽彈窗</p>
 </dd>
 <dt><a href="#closeObjectPreview">closeObjectPreview()</a></dt>
 <dd><p>關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏</p>
+</dd>
+<dt><a href="#handleFileSelected">handleFileSelected(file)</a></dt>
+<dd><p>共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描</p>
 </dd>
 <dt><a href="#formatBytes">formatBytes(bytes)</a> ⇒ <code>string</code></dt>
 <dd><p>輔助函式：格式化檔案大小單位</p>
@@ -1147,6 +1151,18 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | --- | --- | --- |
 | file | <code>File</code> | 使用者上傳的原始 PDF 檔案 |
 
+<a name="escapeRegex"></a>
+
+## escapeRegex(str) ⇒ <code>string</code>
+將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
+
+**Kind**: global function  
+**Returns**: <code>string</code> - 跳脫後的字串  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| str | <code>string</code> | 需要跳脫的原始字串 |
+
 <a name="cleanContentStreams"></a>
 
 ## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)
@@ -1182,14 +1198,14 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 
 <a name="removeFormXObjects"></a>
 
-## removeFormXObjects(pdfDoc, resources) ⇒ <code>number</code>
+## removeFormXObjects(pdfDoc, resources) ⇒ <code>Object</code>
 策略一：清除 Form XObject 浮水印
-Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
-大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
-逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
+ Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
+ 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
+ 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
 
 **Kind**: global function  
-**Returns**: <code>number</code> - 清除的 Form XObject 數量  
+**Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1228,38 +1244,38 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="removeExtGState"></a>
 
-## removeExtGState(pdfDoc, resources) ⇒ <code>number</code>
-策略四：清理 ExtGState 半透明狀態
-ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
-遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
+## removeExtGState(pdfDoc, resources, pageIndex) ⇒ <code>Object</code>
+策略五：清理 ExtGState 半透明狀態
+ ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
+ 遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
 
 **Kind**: global function  
-**Returns**: <code>number</code> - 處理掉的 ExtGState 數量  
+**Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | 文件物件 |
 | resources | <code>PDFDict</code> | 資源字典 |
+| pageIndex | <code>number</code> | 當前處理頁面的 0-indexed 索引 |
 
 <a name="removeOCGs"></a>
 
-## removeOCGs(pdfDoc) ⇒ <code>number</code>
-策略五：隱藏 OCG 圖層浮水印 (Optional Content Group)
-OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中。
-找到所有的圖層清單 (/OCGs Array)，比對圖層的 indirect reference 是否在 ocgsToDestroy 中。
-若符合，則將該 OCG 圖層的 Reference 加入到 /D (Default View) 字典的 /OFF 陣列中，以達到隱藏的效果。
+## removeOCGs(pdfDoc, resources) ⇒ <code>Object</code>
+策略六（頁面層級）：清理 OCG 圖層浮水印相關的 Properties 與 XObject 資源
+ 針對頁面 Resources 中帶有 /OC 屬性且關聯到待刪除 OCG 的 Properties 與 XObject 進行移除。
 
 **Kind**: global function  
-**Returns**: <code>number</code> - 隱藏 of OCG 圖層數量  
+**Returns**: <code>Object</code> - 清除統計  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| resources | <code>PDFDict</code> | 頁面資源字典 |
 
 <a name="removeOCG"></a>
 
 ## removeOCG(pdfDoc) ⇒ <code>number</code>
-針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
+策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
 
 **Kind**: global function  
 **Returns**: <code>number</code> - 清除的 OCG 圖層數量  
@@ -1270,14 +1286,14 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 
 <a name="removeImageXObjects"></a>
 
-## removeImageXObjects(pdfDoc, resources, pageIndex) ⇒ <code>number</code>
-策略六：清除圖片型浮水印 (Image XObject)
-當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
-我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
-若符合，則將其從資源字典中移除。
+## removeImageXObjects(pdfDoc, resources, pageIndex) ⇒ <code>Object</code>
+策略四：清除圖片型浮水印 (Image XObject)
+ 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
+ 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
+ 若符合，則將其從資源字典中移除。
 
 **Kind**: global function  
-**Returns**: <code>number</code> - 處理掉的 Image 數量  
+**Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1304,6 +1320,17 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
 
 **Kind**: global function  
+<a name="handleFileSelected"></a>
+
+## handleFileSelected(file)
+共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| file | <code>File</code> | 使用者選取的 PDF 檔案 |
+
 <a name="formatBytes"></a>
 
 ## formatBytes(bytes) ⇒ <code>string</code>
