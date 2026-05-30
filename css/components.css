@@ -1,0 +1,356 @@
+/* 卡片與功能面板樣式 */
+.card,
+.info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
+    padding: 28px;
+    margin-bottom: 24px;
+}
+
+/* 檔案拖曳上傳互動區域 */
+.file-area {
+    position: relative;
+    border: 2px dashed var(--primary);
+    border-radius: 14px;
+    min-height: 85px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+    margin-bottom: 24px;
+    background: rgba(47, 107, 235, 0.04);
+    padding: 12px 24px;
+}
+
+/* 檔案拖曳滑過時的動態 hover 視覺回饋 */
+.file-area:hover {
+    background: rgba(47, 107, 235, 0.08);
+    border-color: var(--primary-dark);
+}
+
+/* 拖曳檔案懸停於上方時的視覺回饋 */
+.file-area.dragging {
+    background: rgba(47, 107, 235, 0.14);
+    border-color: var(--primary-dark);
+    box-shadow: 0 0 0 4px rgba(47, 107, 235, 0.12);
+}
+
+/* 隱藏原生 input file，使其完全透明並鋪滿整個拖曳區 */
+.file-area input[type='file'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* 拖曳區內部元件排版：自動折行與置中對齊 */
+.file-area-inner {
+    /* 避免子元素干擾拖曳事件 */
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.file-area-inner strong {
+    display: inline-block;
+    font-size: 1.05rem;
+    color: var(--primary);
+}
+
+.file-area-inner span {
+    display: inline-block;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* 浮水印清理策略選項清單 */
+.options {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.options h2 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+}
+
+/* 選項 checkbox 文字行高與對齊調整 */
+.options label {
+    display: block;
+    color: var(--text);
+    font-size: 0.98rem;
+}
+
+.options input {
+    margin-right: 10px;
+}
+
+/* 按鈕與動態回饋 */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    cursor: pointer;
+    background: var(--border);
+    color: var(--text);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* 按鈕懸浮與點擊微互動 */
+.button:hover {
+    transform: translateY(-1px);
+}
+
+/* 湛藍色主按鈕樣式 */
+.button-primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* 狀態資訊文字顯示 - 升級為高科技控制台日誌面板 */
+.status {
+    margin-top: 20px;
+    line-height: 1.65;
+    color: var(--text);
+    background: #fafbfe;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+    font-size: 0.875rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    scroll-behavior: smooth;
+}
+
+.status-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: statusLineFadeIn 0.2s ease-out forwards;
+    word-break: break-all;
+}
+
+.status-line.info {
+    color: var(--muted);
+}
+
+.status-line.success {
+    color: #0f973d;
+    font-weight: 500;
+}
+
+.status-line.error {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+@keyframes statusLineFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.download-area {
+    margin-top: 22px;
+}
+
+.download-area .button {
+    text-decoration: none;
+}
+
+/* 物件預覽按鈕（👁️）共用基底樣式
+           .preview-item-btn 用於清單項目旁；.small-preview-btn 僅縮小尺寸供 OCG 等場景使用 */
+.preview-item-btn,
+.small-preview-btn {
+    background: rgba(47, 107, 235, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 2px 8px;
+    margin-left: auto;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+/* 預覽按鈕 - 大尺寸（清單項目旁，推至最右側） */
+.preview-item-btn {
+    font-size: 0.85rem;
+}
+
+/* 預覽按鈕 - 小尺寸（OCG 等場景） */
+.small-preview-btn {
+    font-size: 0.8rem;
+}
+
+.preview-item-btn:hover,
+.small-preview-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    transform: scale(1.06);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+.preview-item-btn:active,
+.small-preview-btn:active {
+    transform: scale(0.95);
+}
+
+/* 選項列：checkbox + 齒輪按鈕並排 */
+.option-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-row label {
+    /* 不撐滿整行，讓按鈕緊貼在文字旁 */
+    flex: 0 0 auto;
+}
+
+/* 齒輪小按鈕 */
+.icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    line-height: 1.5;
+}
+
+.icon-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(47, 107, 235, 0.06);
+}
+
+.icon-btn:active {
+    transform: scale(0.9);
+}
+
+/* 視覺高對比膠囊徽章 (Badges) - 共用基底樣式 */
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-danger {
+    color: var(--danger);
+    background: rgba(217, 45, 32, 0.08);
+}
+
+.badge-success {
+    color: #0f973d;
+    background: rgba(15, 151, 61, 0.08);
+}
+
+/* 無註解提示卡片樣式 */
+.no-annots-card {
+    text-align: center;
+    padding: 24px;
+    width: 100%;
+    color: var(--muted);
+    background: rgba(47, 107, 235, 0.04);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.no-annots-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.no-annots-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f973d;
+}
+
+/* 動態註解選項 Checkbox 樣式 */
+.annot-checkbox-label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    width: 100%;
+    color: inherit;
+    transition: all 0.2s ease;
+    padding: 6px 12px 6px 8px;
+    /* 右邊預留 12px 的內距，讓按鈕放大時不超出 */
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.annot-checkbox-label:hover {
+    color: var(--primary);
+    background: rgba(47, 107, 235, 0.06);
+}
+
+.annot-checkbox-input {
+    cursor: pointer;
+    accent-color: var(--primary);
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* 策略選項標題列：標題 + 齒輪按鈕橫排 */
+.options-heading-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.options-heading-row h2 {
+    margin: 0;
+}

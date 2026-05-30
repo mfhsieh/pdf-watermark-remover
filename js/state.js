@@ -45,7 +45,7 @@ let ocgsToDestroy = [];
  */
 function addStatusMessage(text, type = 'info') {
     if (!statusEl) return;
-    const line = document.createElement("div");
+    const line = document.createElement('div');
     line.className = `status-line ${type}`;
     line.textContent = text;
     statusEl.appendChild(line);
@@ -62,10 +62,9 @@ function clearStatusMessages() {
     }
 }
 
-
 /**
  * 使用 qpdf-wasm 引擎解密加密的 PDF 文件
- * 
+ *
  * 此函數採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
  * 才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面加載頻寬。
  * 支援所有標準的 PDF 加密演算法（AES-256、AES-128、RC4 等），並能正確修復損壞的 XRef 與 Object Stream。
@@ -79,7 +78,8 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
     if (!window._qpdfWasmModule) {
         addStatusMessage('⏳ 首次使用加密 PDF 解密功能，正在載入 QPDF 引擎（約 1.8MB）...', 'info');
         try {
-            const { default: QPDF } = await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
+            const { default: QPDF } =
+                await import('https://cdn.jsdelivr.net/npm/qpdf-wasm-esm-embedded@1.1.1/qpdf.mjs');
             window._qpdfWasmModule = await QPDF();
             addStatusMessage('✅ QPDF 引擎載入完成！正在解密 PDF...', 'success');
         } catch (loadErr) {
@@ -114,19 +114,25 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
         const decryptedBytes = qpdf.FS.readFile(outputPath);
 
         // 主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
-        try { qpdf.FS.unlink(inputPath); } catch { }
-        try { qpdf.FS.unlink(outputPath); } catch { }
+        try {
+            qpdf.FS.unlink(inputPath);
+        } catch {}
+        try {
+            qpdf.FS.unlink(outputPath);
+        } catch {}
 
         return new Uint8Array(decryptedBytes);
-
     } catch (err) {
         // 發生任何異常時，亦必須在 catch 中進行檔案釋放與記憶體垃圾回收
-        try { qpdf.FS.unlink(inputPath); } catch { }
-        try { qpdf.FS.unlink(outputPath); } catch { }
+        try {
+            qpdf.FS.unlink(inputPath);
+        } catch {}
+        try {
+            qpdf.FS.unlink(outputPath);
+        } catch {}
         throw err;
     }
 }
-
 
 /**
  * 顯示密碼彈窗並等待使用者輸入
@@ -135,29 +141,29 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
  */
 function promptForPassword(isRetry = false) {
     return new Promise((resolve) => {
-        const modal = document.getElementById("passwordModal");
-        const input = document.getElementById("pdfPasswordInput");
-        const errorEl = document.getElementById("modalError");
-        const submitBtn = document.getElementById("modalSubmitButton");
-        const cancelBtn = document.getElementById("modalCancelButton");
+        const modal = document.getElementById('passwordModal');
+        const input = document.getElementById('pdfPasswordInput');
+        const errorEl = document.getElementById('modalError');
+        const submitBtn = document.getElementById('modalSubmitButton');
+        const cancelBtn = document.getElementById('modalCancelButton');
 
         // 重置輸入與錯誤提示
-        input.value = "";
+        input.value = '';
         if (isRetry) {
-            errorEl.classList.remove("hidden");
+            errorEl.classList.remove('hidden');
         } else {
-            errorEl.classList.add("hidden");
+            errorEl.classList.add('hidden');
         }
 
         // 顯示 Modal
-        modal.classList.add("active");
+        modal.classList.add('active');
         input.focus();
 
         function cleanup() {
-            modal.classList.remove("active");
-            submitBtn.removeEventListener("click", onSubmit);
-            cancelBtn.removeEventListener("click", onCancel);
-            input.removeEventListener("keydown", onKeyDown);
+            modal.classList.remove('active');
+            submitBtn.removeEventListener('click', onSubmit);
+            cancelBtn.removeEventListener('click', onCancel);
+            input.removeEventListener('keydown', onKeyDown);
         }
 
         function onSubmit() {
@@ -172,16 +178,16 @@ function promptForPassword(isRetry = false) {
         }
 
         function onKeyDown(e) {
-            if (e.key === "Enter") {
+            if (e.key === 'Enter') {
                 onSubmit();
-            } else if (e.key === "Escape") {
+            } else if (e.key === 'Escape') {
                 onCancel();
             }
         }
 
-        submitBtn.addEventListener("click", onSubmit);
-        cancelBtn.addEventListener("click", onCancel);
-        input.addEventListener("keydown", onKeyDown);
+        submitBtn.addEventListener('click', onSubmit);
+        cancelBtn.addEventListener('click', onCancel);
+        input.addEventListener('keydown', onKeyDown);
     });
 }
 
@@ -219,20 +225,20 @@ function resetAllState() {
     clearPreviewUrlCache(); // 釋放項目預覽 Blob URL 快取
 
     // 2. 隱藏下載按鈕並重置連結
-    downloadArea.classList.add("hidden");
-    downloadLink.href = "#";
-    downloadLink.download = "";
+    downloadArea.classList.add('hidden');
+    downloadLink.href = '#';
+    downloadLink.download = '';
 
     // 3. 隱藏並清空處理後的預覽視窗
-    processedPreviewBox.classList.add("hidden");
-    processedPreview.src = "";
+    processedPreviewBox.classList.add('hidden');
+    processedPreview.src = '';
 
     // 4. 清除密碼快取與解密後的位元組快取
     cachedPassword = null;
     cachedDecryptedBytes = null;
 
     // 5. 隱藏開始處理按鈕
-    processButton.classList.add("hidden");
+    processButton.classList.add('hidden');
 
     // 6. 重置偵測到的註解類型與刪除清單
     detectedFormXObjects.clear();
@@ -250,22 +256,30 @@ function resetAllState() {
 
     // 7. 隱藏清理策略選項區塊
     if (optionsContainer) {
-        optionsContainer.classList.add("hidden");
+        optionsContainer.classList.add('hidden');
     }
 
     // 8. 重置所有清理策略為預設不勾選
-    [chkRemoveFormXObject, chkRemoveAnnotations, chkRemoveDirectContent,
-        chkRemoveImageXObject, chkRemoveExtGState, chkRemoveOCG].forEach(el => {
-            if (el) el.checked = false;
-        });
+    [
+        chkRemoveFormXObject,
+        chkRemoveAnnotations,
+        chkRemoveDirectContent,
+        chkRemoveImageXObject,
+        chkRemoveExtGState,
+        chkRemoveOCG,
+    ].forEach((el) => {
+        if (el) el.checked = false;
+    });
 }
 
 /**
  * 釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏
  */
 function clearPreviewUrlCache() {
-    previewUrlCache.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch (e) { }
+    previewUrlCache.forEach((url) => {
+        try {
+            URL.revokeObjectURL(url);
+        } catch (e) {}
     });
     previewUrlCache = [];
 }
@@ -279,58 +293,60 @@ function clearPreviewUrlCache() {
 async function openObjectPreview(strategyType, key, entry) {
     objectPreviewTitle.textContent = `🔍 即時預覽：正在載入項目...`;
     // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
-    objectPreviewSpinner.classList.remove("hidden");
-    objectPreviewIframe.classList.add("hidden");
-    objectPreviewIframe.src = "";
-    objectPreviewModal.classList.add("active");
+    objectPreviewSpinner.classList.remove('hidden');
+    objectPreviewIframe.classList.add('hidden');
+    objectPreviewIframe.src = '';
+    objectPreviewModal.classList.add('active');
 
     try {
         if (!cachedDecryptedBytes) {
-            throw new Error("無法讀取 PDF 原始資料。");
+            throw new Error('無法讀取 PDF 原始資料。');
         }
 
-        let previewUrl = "";
+        let previewUrl = '';
 
         function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g,
-                tag => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    "'": '&#39;',
-                    '"': '&quot;'
-                }[tag])
+            return str.replace(
+                /[&<>'"]/g,
+                (tag) =>
+                    ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;',
+                    })[tag]
             );
         }
 
-        if (strategyType === "formXObjectItem") {
-            objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ""))} (第 ${entry.pages[0]} 頁)`;
+        if (strategyType === 'formXObjectItem') {
+            objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
             previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
-        } else if (strategyType === "imageXObjectItem") {
-            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ""))} (第 ${entry.page} 頁)`;
+        } else if (strategyType === 'imageXObjectItem') {
+            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.page} 頁)`;
             previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.page - 1);
-        } else if (strategyType === "directContentItem") {
+        } else if (strategyType === 'directContentItem') {
             objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：串流 (第 ${entry.page} 頁)`;
             previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
-        } else if (strategyType === "annotItem") {
+        } else if (strategyType === 'annotItem') {
             objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
             previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
-        } else if (strategyType === "ocgItem") {
+        } else if (strategyType === 'ocgItem') {
             objectPreviewTitle.innerHTML = `🔍 圖層<strong style="color: #d32f2f; background-color: #ffebee; padding: 2px 6px; border-radius: 4px; margin: 0 4px;">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
             previewUrl = await generateOCGPreviewUrl(key);
         }
 
         if (previewUrl) {
             objectPreviewIframe.src = previewUrl;
-            objectPreviewIframe.classList.remove("hidden");
+            objectPreviewIframe.classList.remove('hidden');
         } else {
-            throw new Error("不支援此物件類型的預覽。");
+            throw new Error('不支援此物件類型的預覽。');
         }
     } catch (err) {
-        console.error("預覽生成失敗", err);
+        console.error('預覽生成失敗', err);
         objectPreviewTitle.textContent = `❌ 預覽失敗：${err.message}`;
     } finally {
-        objectPreviewSpinner.classList.add("hidden");
+        objectPreviewSpinner.classList.add('hidden');
     }
 }
 
@@ -338,11 +354,11 @@ async function openObjectPreview(strategyType, key, entry) {
  * 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
  */
 function closeObjectPreview() {
-    objectPreviewModal.classList.remove("active");
+    objectPreviewModal.classList.remove('active');
 
     // 即時釋放預覽 PDF 的 Blob URL 記憶體
     const currentSrc = objectPreviewIframe.src;
-    if (currentSrc && currentSrc.startsWith("blob:")) {
+    if (currentSrc && currentSrc.startsWith('blob:')) {
         try {
             URL.revokeObjectURL(currentSrc);
             // 從快取清單中移出，避免後續重複釋放
@@ -351,12 +367,12 @@ function closeObjectPreview() {
                 previewUrlCache.splice(cacheIdx, 1);
             }
         } catch (e) {
-            console.warn("釋放即時預覽 Blob URL 失敗:", e);
+            console.warn('釋放即時預覽 Blob URL 失敗:', e);
         }
     }
-    objectPreviewIframe.src = "";
+    objectPreviewIframe.src = '';
 }
 
 // 綁定關閉預覽彈窗事件
-document.getElementById("closeObjectPreviewModalBtn").addEventListener("click", closeObjectPreview);
-document.getElementById("closeObjectPreviewBtn").addEventListener("click", closeObjectPreview);
+document.getElementById('closeObjectPreviewModalBtn').addEventListener('click', closeObjectPreview);
+document.getElementById('closeObjectPreviewBtn').addEventListener('click', closeObjectPreview);

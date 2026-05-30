@@ -1,12 +1,12 @@
 // 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
 const {
-    PDFDocument,    // 代表整個 PDF 文件物件
-    PDFName,        // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
-    PDFDict,        // 代表 PDF 的字典結構（Dictionary）
-    PDFArray,       // 代表 PDF 的陣列結構（Array）
-    PDFRawStream,   // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
-    PDFString,      // 代表 PDF 的常規字串實體
-    PDFHexString,   // 代表 PDF 的十六進制編碼字串
+    PDFDocument, // 代表整個 PDF 文件物件
+    PDFName, // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
+    PDFDict, // 代表 PDF 的字典結構（Dictionary）
+    PDFArray, // 代表 PDF 的陣列結構（Array）
+    PDFRawStream, // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
+    PDFString, // 代表 PDF 的常規字串實體
+    PDFHexString, // 代表 PDF 的十六進制編碼字串
 } = PDFLib;
 
 // ==========================================
@@ -14,36 +14,36 @@ const {
 // ==========================================
 /** @type {string[]} 預設的資源鍵名與圖層名稱關鍵字 */
 const DEFAULT_KEY_KEYWORDS = [
-    "watermark",
-    "confidential",
-    "draft",
-    "sample",
-    "internal",
-    "authorized",
-    "evaluation",
-    "wm",
-    "copy",
-    "trial",
-    "demo"
+    'watermark',
+    'confidential',
+    'draft',
+    'sample',
+    'internal',
+    'authorized',
+    'evaluation',
+    'wm',
+    'copy',
+    'trial',
+    'demo',
 ];
 /** @type {string[]} 預設的實際內容文字關鍵字 */
 const DEFAULT_CONTENT_KEYWORDS = [
-    "watermark",
-    "confidential",
-    "draft",
-    "sample",
-    "internal",
-    "authorized",
-    "evaluation",
-    "機密",
-    "內部",
-    "草稿",
-    "樣本",
-    "樣品",
-    "複製品",
-    "浮水印",
-    "水印",
-    "僅供參考"
+    'watermark',
+    'confidential',
+    'draft',
+    'sample',
+    'internal',
+    'authorized',
+    'evaluation',
+    '機密',
+    '內部',
+    '草稿',
+    '樣本',
+    '樣品',
+    '複製品',
+    '浮水印',
+    '水印',
+    '僅供參考',
 ];
 
 // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字
@@ -62,14 +62,14 @@ function compileToBig5Latin1(str) {
     try {
         const encoder = new TextEncoder('big5', { NONSTANDARD_allowLegacyEncoding: true });
         const bytes = encoder.encode(str);
-        let result = "";
+        let result = '';
         for (let i = 0; i < bytes.length; i++) {
             result += String.fromCharCode(bytes[i]);
         }
         return result;
     } catch (e) {
-        console.warn("Big5 動態編譯失敗，請確認已載入 text-encoding polyfill", e);
-        return "";
+        console.warn('Big5 動態編譯失敗，請確認已載入 text-encoding polyfill', e);
+        return '';
     }
 }
 
@@ -79,11 +79,11 @@ function compileToBig5Latin1(str) {
  * @returns {string} Latin1 格式的特徵碼
  */
 function compileToUTF16BELatin1(str) {
-    let result = "";
+    let result = '';
     for (let i = 0; i < str.length; i++) {
         const code = str.charCodeAt(i);
         const hi = code >> 8;
-        const lo = code & 0xFF;
+        const lo = code & 0xff;
         result += String.fromCharCode(hi, lo);
     }
     return result;
@@ -95,25 +95,25 @@ function compileToUTF16BELatin1(str) {
  * @returns {string} 包含已還原之十六進位內容的完整文字字串
  */
 function decodeHexStringsInText(text) {
-    if (!text) return "";
+    if (!text) return '';
     let expandedText = text;
     const hexRegex = /<([0-9a-fA-F\s]+)>/g;
     let match;
     while ((match = hexRegex.exec(text)) !== null) {
-        const hexClean = match[1].replace(/\s/g, "");
+        const hexClean = match[1].replace(/\s/g, '');
         if (hexClean.length === 0) continue;
         let paddedHex = hexClean;
         if (paddedHex.length % 2 !== 0) {
-            paddedHex += "0";
+            paddedHex += '0';
         }
         try {
-            let decodedStr = "";
+            let decodedStr = '';
             for (let i = 0; i < paddedHex.length; i += 2) {
                 const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
                 decodedStr += String.fromCharCode(byteVal);
             }
-            expandedText += " " + decodedStr;
-        } catch (e) { }
+            expandedText += ' ' + decodedStr;
+        } catch (e) {}
     }
     return expandedText;
 }
@@ -130,7 +130,7 @@ function getDecodedStreamContents(stream) {
         decoded.reset();
         return decoded.getBytes();
     } catch (err) {
-        console.error("解碼二進位串流失敗，回退至 raw 資料", err);
+        console.error('解碼二進位串流失敗，回退至 raw 資料', err);
         return stream.contents || new Uint8Array();
     }
 }
@@ -144,7 +144,7 @@ let FINAL_CONTENT_KEYWORDS = [];
  */
 function buildFinalContentKeywords() {
     const rawKeywords = [];
-    WATERMARK_CONTENT_KEYWORDS.forEach(kw => {
+    WATERMARK_CONTENT_KEYWORDS.forEach((kw) => {
         const trimmed = kw.trim();
         if (!trimmed) return;
 
@@ -189,12 +189,12 @@ function loadGlobalKeywords() {
         WATERMARK_CONTENT_KEYWORDS = savedContents ? JSON.parse(savedContents) : [...DEFAULT_CONTENT_KEYWORDS];
 
         // 確保新加入的預設關鍵字也能生效於舊使用者
-        DEFAULT_KEY_KEYWORDS.forEach(kw => {
+        DEFAULT_KEY_KEYWORDS.forEach((kw) => {
             if (!WATERMARK_KEY_KEYWORDS.includes(kw)) {
                 WATERMARK_KEY_KEYWORDS.push(kw);
             }
         });
-        DEFAULT_CONTENT_KEYWORDS.forEach(kw => {
+        DEFAULT_CONTENT_KEYWORDS.forEach((kw) => {
             if (!WATERMARK_CONTENT_KEYWORDS.includes(kw)) {
                 WATERMARK_CONTENT_KEYWORDS.push(kw);
             }
@@ -223,24 +223,24 @@ function saveGlobalKeywords(keysArray, contentsArray) {
 loadGlobalKeywords();
 
 // 綁定設定介面事件
-document.addEventListener("DOMContentLoaded", () => {
-    const modal = document.getElementById("globalKeywordsModal");
-    const keyInput = document.getElementById("keyKeywordsInput");
-    const contentInput = document.getElementById("contentKeywordsInput");
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('globalKeywordsModal');
+    const keyInput = document.getElementById('keyKeywordsInput');
+    const contentInput = document.getElementById('contentKeywordsInput');
 
     // 自動適應文字方塊高度
     function adjustTextareaHeight(el) {
-        el.style.height = "auto";
-        el.style.height = el.scrollHeight + "px";
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
     }
 
-    keyInput.addEventListener("input", () => adjustTextareaHeight(keyInput));
-    contentInput.addEventListener("input", () => adjustTextareaHeight(contentInput));
+    keyInput.addEventListener('input', () => adjustTextareaHeight(keyInput));
+    contentInput.addEventListener('input', () => adjustTextareaHeight(contentInput));
 
-    document.getElementById("openGlobalKeywordsModalBtn").addEventListener("click", () => {
-        keyInput.value = WATERMARK_KEY_KEYWORDS.join(", ");
-        contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(", ");
-        modal.classList.add("active");
+    document.getElementById('openGlobalKeywordsModalBtn').addEventListener('click', () => {
+        keyInput.value = WATERMARK_KEY_KEYWORDS.join(', ');
+        contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(', ');
+        modal.classList.add('active');
 
         // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
         setTimeout(() => {
@@ -249,27 +249,33 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 50);
     });
 
-    document.getElementById("closeGlobalKeywordsModalBtn").addEventListener("click", () => {
-        modal.classList.remove("active");
+    document.getElementById('closeGlobalKeywordsModalBtn').addEventListener('click', () => {
+        modal.classList.remove('active');
     });
 
-    document.getElementById("resetGlobalKeywordsBtn").addEventListener("click", () => {
-        if (confirm("確定要回復為預設關鍵字嗎？這將會覆寫您的自訂設定。")) {
+    document.getElementById('resetGlobalKeywordsBtn').addEventListener('click', () => {
+        if (confirm('確定要回復為預設關鍵字嗎？這將會覆寫您的自訂設定。')) {
             saveGlobalKeywords([...DEFAULT_KEY_KEYWORDS], [...DEFAULT_CONTENT_KEYWORDS]);
-            modal.classList.remove("active");
-            addStatusMessage("已回復預設關鍵字。", "success");
+            modal.classList.remove('active');
+            addStatusMessage('已回復預設關鍵字。', 'success');
         }
     });
 
-    document.getElementById("saveGlobalKeywordsBtn").addEventListener("click", () => {
-        const keysRaw = keyInput.value.split(",").map(s => s.trim()).filter(s => s);
-        const contentsRaw = contentInput.value.split(",").map(s => s.trim()).filter(s => s);
+    document.getElementById('saveGlobalKeywordsBtn').addEventListener('click', () => {
+        const keysRaw = keyInput.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s);
+        const contentsRaw = contentInput.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s);
         saveGlobalKeywords(keysRaw, contentsRaw);
-        modal.classList.remove("active");
-        addStatusMessage("已儲存自訂關鍵字設定。", "success");
+        modal.classList.remove('active');
+        addStatusMessage('已儲存自訂關鍵字設定。', 'success');
 
-        if (typeof selectedFile !== "undefined" && selectedFile) {
-            addStatusMessage("🔄 關鍵字已變更，正在以新關鍵字重新掃描 PDF...", "info");
+        if (typeof selectedFile !== 'undefined' && selectedFile) {
+            addStatusMessage('🔄 關鍵字已變更，正在以新關鍵字重新掃描 PDF...', 'info');
             showOriginalPreview(selectedFile);
         }
     });

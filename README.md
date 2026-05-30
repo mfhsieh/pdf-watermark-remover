@@ -1,5 +1,5 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 在瀏覽器端直接處理 PDF 檔案，**檔案不會上傳至伺服器**，可保護您的文件隱私。
@@ -131,7 +131,7 @@
 
 ## 📦 Release Notes
 
-- **v2.2.0 (2026-05-30)**
+- **v2.2.1 (2026-05-30)**
   * **底層重構與模組化**：大幅度拆分並重構背景掃描引擎，並為所有 JS 模組加入標準 API 文件與詳細架構說明。
 - **v2.1.0 (2026-05-28)** 
   * 微調「表單外部物件」判斷及 UI

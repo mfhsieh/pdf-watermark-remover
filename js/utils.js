@@ -10,7 +10,7 @@
 function isSuspectKeyName(text) {
     if (!text) return false;
     const lower = text.toLowerCase();
-    return WATERMARK_KEY_KEYWORDS.some(kw => lower.includes(kw));
+    return WATERMARK_KEY_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
 /**
@@ -28,7 +28,7 @@ function isSuspectContentText(text) {
     if (!text) return false;
     const expandedText = decodeHexStringsInText(text);
     const lower = expandedText.toLowerCase();
-    return FINAL_CONTENT_KEYWORDS.some(kw => {
+    return FINAL_CONTENT_KEYWORDS.some((kw) => {
         if (kw === kw.toLowerCase()) {
             return lower.includes(kw);
         }
@@ -41,7 +41,7 @@ function isSuspectContentText(text) {
  * @param {Object} entry - 表單外部物件偵測 Entry
  * @returns {boolean} 是否為疑似浮水印
  */
-function isSuspectFormXObject(entry, rawStr = "") {
+function isSuspectFormXObject(entry, rawStr = '') {
     if (!entry) return false;
     if (isSuspectKeyName(entry.keyName)) return true;
     if (rawStr && isSuspectContentText(rawStr)) return true;
@@ -55,7 +55,7 @@ function isSuspectFormXObject(entry, rawStr = "") {
  */
 function isSuspectAnnotation(entry) {
     if (!entry) return false;
-    return entry.subtype === "Watermark" || entry.subtype === "Stamp";
+    return entry.subtype === 'Watermark' || entry.subtype === 'Stamp';
 }
 
 /**
@@ -103,11 +103,11 @@ function isSuspectOCG(entry) {
 
 /**
  * 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
- * @param {Uint8Array} data 
+ * @param {Uint8Array} data
  * @returns {string}
  */
 function decodeBinaryToText(data) {
-    let str = "";
+    let str = '';
     const chunkSize = 16384;
     for (let i = 0; i < data.length; i += chunkSize) {
         str += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));

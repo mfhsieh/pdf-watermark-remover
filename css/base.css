@@ -1,0 +1,58 @@
+/* 顏色配置 */
+:root {
+    /* 頁面背景色 */
+    --bg: #f4f7fb;
+    /* 元件表面色*/
+    --surface: #ffffff;
+    /* 品牌主色調 */
+    --primary: #2f6beb;
+    /* 主色懸停與點擊效果 */
+    --primary-dark: #254f9a;
+    /* 主要文字色 */
+    --text: #1f2937;
+    /* 次要與輔助文字色 */
+    --muted: #6b7280;
+    /* 邊框與分隔線顏色 */
+    --border: #e2e8f0;
+    /* 警示與錯誤提示色 */
+    --danger: #d92d20;
+}
+
+/* 全域樣式 */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, 'Noto Sans TC', 'Segoe UI', sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%), var(--bg);
+    scrollbar-gutter: stable;
+}
+
+/* 防止 Modal 開啟時底層主畫面滾動（滾動穿透） */
+body:has(.modal-overlay.active) {
+    overflow: hidden;
+}
+
+/* 旋轉動畫定義 */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 公用隱藏樣式 */
+.hidden {
+    display: none !important;
+}

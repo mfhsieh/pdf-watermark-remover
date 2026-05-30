@@ -1,0 +1,320 @@
+/* 密碼輸入彈窗 Modal 樣式 (磨砂玻璃科技感) */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    /* Safari 相容性 */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-card.modal-lg {
+    max-width: 500px;
+}
+
+.modal-card.modal-xl {
+    max-width: 800px;
+    width: 90%;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 25px;
+}
+
+.modal-overlay.active .modal-card {
+    transform: scale(1);
+}
+
+.modal-card h3 {
+    margin: 0 0 12px;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-card p {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.modal-card p.modal-desc {
+    line-height: 1.8;
+    margin-bottom: 8px;
+}
+
+.modal-card input[type='password'] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.modal-card input[type='password']:focus {
+    border-color: var(--primary);
+}
+
+.modal-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-actions.bar {
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.modal-actions .right-group {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-actions .button {
+    width: auto;
+    min-width: 100px;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+}
+
+.modal-actions .btn-outline {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    min-width: auto;
+}
+
+.modal-actions .btn-outline:hover {
+    color: var(--text);
+    border-color: var(--muted);
+}
+
+/* 彈出設定視窗專用的統一列表容器 */
+.modal-list-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin: 15px 0;
+    width: 100%;
+    min-height: 50px;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    padding-right: 4px;
+    /* 為滾動條與按鈕預留少許呼吸空間 */
+}
+
+/* 延伸的大尺寸列表容器，供 OCG 等項目較多的彈窗使用 */
+.modal-list-container.extended-list {
+    max-height: 380px;
+    gap: 16px;
+}
+
+/* 即時預覽彈窗內部區塊 CSS 化（取代 HTML inline styles） */
+.preview-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.preview-modal-title {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text);
+}
+
+.preview-modal-close-btn {
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.preview-modal-body {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: calc(100% - 130px);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.preview-modal-spinner {
+    /* 初始狀態由 HTML class="hidden" 控制，此處只設版面 */
+    text-align: center;
+}
+
+.preview-modal-spinner-icon {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(47, 107, 235, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+.preview-modal-spinner-text {
+    color: var(--muted);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.preview-modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.preview-modal-footer {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.preview-modal-footer .button {
+    padding: 10px 24px;
+    width: auto;
+}
+
+/* 彈出設定視窗的「全選／全不選」控制列 */
+.modal-select-controls {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin: 0 0 12px 2px;
+}
+
+/* 全選 / 全不選 精美微型按鈕 */
+.modal-select-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.modal-select-btn.select-all {
+    background-color: rgba(99, 102, 241, 0.08);
+    color: var(--primary);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.modal-select-btn.select-all:hover {
+    background-color: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+.modal-select-btn.deselect-all {
+    background-color: rgba(107, 114, 128, 0.08);
+    color: var(--muted);
+    border-color: rgba(107, 114, 128, 0.15);
+}
+
+.modal-select-btn.deselect-all:hover {
+    background-color: rgba(107, 114, 128, 0.14);
+    border-color: rgba(107, 114, 128, 0.3);
+    transform: translateY(-1px);
+}
+
+/* 窄螢幕下優化 Modal 空間與內距，放置於底部確保覆蓋前面的常規樣式 */
+@media (max-width: 640px) {
+    .modal-overlay {
+        padding: 12px;
+        /* 避免卡片直接貼住螢幕邊緣，保持精緻感 */
+    }
+
+    .modal-card {
+        padding: 20px 16px;
+        /* 縮減 padding（原 32px）以增加可用空間 */
+        border-radius: 16px;
+        /* 微調圓角以維持視覺緊湊度 */
+    }
+
+    .modal-card.modal-xl {
+        padding: 16px;
+        /* 針對大版面 Modal 進行極限空間優化（原 25px） */
+    }
+
+    .modal-actions {
+        gap: 8px;
+        /* 縮減按鈕之間的間距（原 12px） */
+    }
+
+    .modal-actions .button {
+        min-width: 70px;
+        /* 縮減按鈕的最小寬度（原 100px）以增加可用空間 */
+        padding: 8px 12px;
+        /* 略微縮減按鈕內距以適應窄螢幕 */
+        font-size: 0.9rem;
+        /* 微調字型大小 */
+    }
+}

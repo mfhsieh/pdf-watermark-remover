@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。">
+    <meta name="description" content="純前端 PDF 浮水印清除工具，本地執行，無伺服器上傳，保護您的隱私。" />
     <title>PDF 浮水印清除工具</title>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"
         integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
@@ -20,7 +20,10 @@
         integrity="sha384-BTzPyRUxY7isgCNE5C8X79LqCUgMGkEvC8q+Jh3LvNIFCdDrLI1pD90gDySSEAOc"
         crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/modals.css" />
 </head>
 
 <body>
@@ -28,7 +31,7 @@
     <div class="container">
         <!-- 頁面頭部標題區 -->
         <header>
-            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.0</span></h1>
+            <h1>PDF 浮水印清除工具 <span class="version-badge">v2.2.1</span></h1>
             <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
         </header>
 
@@ -48,44 +51,58 @@
             <div class="options hidden" id="optionsContainer">
                 <div class="options-heading-row">
                     <h2>選擇清除策略</h2>
-                    <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域關鍵字設定"
-                        aria-label="全域關鍵字設定">📝</button>
+                    <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域關鍵字設定" aria-label="全域關鍵字設定">
+                        📝
+                    </button>
                 </div>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <div class="option-row" id="optionRowFormXObject">
                     <label><input type="checkbox" id="removeFormXObject" /> 清除「表單外部物件」 (Form XObject)</label>
                     <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的「表單外部物件」"
-                        aria-label="選擇欲清除的「表單外部物件」">⚙</button>
+                        aria-label="選擇欲清除的「表單外部物件」">
+                        ⚙
+                    </button>
                 </div>
                 <!-- Annotations：各種註解（印章、附註等） -->
                 <div class="option-row" id="optionRowAnnotations">
                     <label><input type="checkbox" id="removeAnnotations" /> 清除「註解」 (Annotation)</label>
-                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定「註解」清除選項"
-                        aria-label="設定「註解」清除選項">⚙</button>
+                    <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定「註解」清除選項" aria-label="設定「註解」清除選項">
+                        ⚙
+                    </button>
                 </div>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row" id="optionRowDirectContent">
-                    <label><input type="checkbox" id="removeDirectContent" /> 清除「頁面直接內容」 (Direct Content)</label>
+                    <label><input type="checkbox" id="removeDirectContent" /> 清除「頁面直接內容」 (Direct
+                        Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定「頁面直接內容」清除選項"
-                        aria-label="設定「頁面直接內容」清除選項">⚙</button>
+                        aria-label="設定「頁面直接內容」清除選項">
+                        ⚙
+                    </button>
                 </div>
                 <!-- Image XObject：影像外部物件 -->
                 <div class="option-row" id="optionRowImageXObject">
-                    <label><input type="checkbox" id="removeImageXObject" /> 清除「影像外部物件」 (Image XObject)</label>
+                    <label><input type="checkbox" id="removeImageXObject" /> 清除「影像外部物件」 (Image
+                        XObject)</label>
                     <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定「影像外部物件」清除選項"
-                        aria-label="設定「影像外部物件」清除選項">⚙</button>
+                        aria-label="設定「影像外部物件」清除選項">
+                        ⚙
+                    </button>
                 </div>
                 <!-- ExtGState：延伸圖形狀態 -->
                 <div class="option-row" id="optionRowExtGState">
                     <label><input type="checkbox" id="removeExtGState" /> 清除「延伸圖形狀態」 (ExtGState)</label>
                     <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定「延伸圖形狀態」清除選項"
-                        aria-label="設定「延伸圖形狀態」清除選項">⚙</button>
+                        aria-label="設定「延伸圖形狀態」清除選項">
+                        ⚙
+                    </button>
                 </div>
                 <!-- OCG / Optional Content Group：選擇性內容群組 -->
                 <div class="option-row" id="optionRowOCG">
                     <label><input type="checkbox" id="removeOCG" /> 清除「選擇性內容群組」 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定「選擇性內容群組」清除選項"
-                        aria-label="設定「選擇性內容群組」清除選項">⚙</button>
+                        aria-label="設定「選擇性內容群組」清除選項">
+                        ⚙
+                    </button>
                 </div>
             </div>
 
@@ -126,8 +143,12 @@
                     <ol>
                         <li><strong>上傳檔案</strong>：拖曳 PDF 至上方虛線框，系統即在背景極速掃描。</li>
                         <li><strong>關鍵字設定 (可選)</strong>：遇到特殊浮水印時，點擊「📝」手動新增自訂特徵。</li>
-                        <li><strong>確認勾選</strong>：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙️」進行細部調整。</li>
-                        <li><strong>單一預覽</strong>：有疑慮時，點擊「👁️ 預覽」查看紅框標示位置，確保不誤刪正文。</li>
+                        <li>
+                            <strong>確認勾選</strong>：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙️」進行細部調整。
+                        </li>
+                        <li>
+                            <strong>單一預覽</strong>：有疑慮時，點擊「👁️ 預覽」查看紅框標示位置，確保不誤刪正文。
+                        </li>
                         <li><strong>清除下載</strong>：點擊清除後，雙欄對照確認效果無誤，即可下載乾淨檔案。</li>
                     </ol>
                 </div>
@@ -135,22 +156,45 @@
                 <!-- 欄位二：功能說明 -->
                 <div class="info-column divider-column">
                     <h2>💡 功能說明</h2>
-                    <p>此工具在瀏覽器端直接處理 PDF 檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。</p>
+                    <p>
+                        此工具在瀏覽器端直接處理 PDF
+                        檔案，<strong>檔案不會上傳至任何伺服器</strong>，可保護您的文件隱私。
+                    </p>
                     <ul>
-                        <li><strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF 底層結構進行清除：
+                        <li>
+                            <strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF
+                            底層結構進行清除：
                             <ul class="feature-sub-list">
-                                <li><strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。</li>
-                                <li><strong>「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。</li>
-                                <li><strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
+                                <li>
+                                    <strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
                                 </li>
-                                <li><strong>「註解」 (Annotation)</strong>：PDF 的互動註解、圖示或蓋章（如浮水印標記層）。</li>
-                                <li><strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha 值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
+                                <li>
+                                    <strong>「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
                                 </li>
-                                <li><strong>「選擇性內容群組」 (OCG)</strong>：即 PDF 的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。</li>
+                                <li>
+                                    <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
+                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
+                                </li>
+                                <li>
+                                    <strong>「註解」 (Annotation)</strong>：PDF
+                                    的互動註解、圖示或蓋章（如浮水印標記層）。
+                                </li>
+                                <li>
+                                    <strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
+                                    值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
+                                </li>
+                                <li>
+                                    <strong>「選擇性內容群組」 (OCG)</strong>：即 PDF
+                                    的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。
+                                </li>
                             </ul>
                         </li>
-                        <li><strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。</li>
-                        <li><strong>權限解鎖與密碼沿用</strong>：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。</li>
+                        <li>
+                            <strong>預覽功能</strong>：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。
+                        </li>
+                        <li>
+                            <strong>權限解鎖與密碼沿用</strong>：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
+                        </li>
                     </ul>
                 </div>
 
@@ -159,11 +203,19 @@
                     <h2>⚠️ 免責聲明</h2>
                     <p>開始使用前，請詳閱以下說明：</p>
                     <ol>
-                        <li><strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF 原始碼結構，請務必保留原始檔案備份以防萬一。</li>
-                        <li><strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集 (Subset)、自訂編碼 (CMap)
-                            或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。</li>
-                        <li><strong>本地處理與法律責任</strong>：本工具採
-                            本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。</li>
+                        <li>
+                            <strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF
+                            原始碼結構，請務必保留原始檔案備份以防萬一。
+                        </li>
+                        <li>
+                            <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集
+                            (Subset)、自訂編碼 (CMap)
+                            或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。
+                        </li>
+                        <li>
+                            <strong>本地處理與法律責任</strong>：本工具採
+                            本地端處理，不會且無法收集您的文件。請確保您擁有該文件清除浮水印的合法權利（如個人學習、合理使用或已獲授權），相關版權與法律責任由使用者自行承擔。
+                        </li>
                     </ol>
                 </div>
             </div>
@@ -218,16 +270,20 @@
         aria-labelledby="globalKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 全域關鍵字設定</h3>
-            <p id="globalKeywordsModalDesc" class="modal-desc">設定會自動儲存在瀏覽器中。多個關鍵字請以「逗號」分隔：</p>
+            <p id="globalKeywordsModalDesc" class="modal-desc">
+                設定會自動儲存在瀏覽器中。多個關鍵字請以「逗號」分隔：
+            </p>
 
             <div class="modal-list-container extended-list">
                 <div>
                     <label class="keywords-field-label">1. 資源鍵名與圖層名稱關鍵字</label>
                     <textarea id="keyKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: watermark, confidential..."></textarea>
-                    <p class="keywords-hint">用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。<br>
-                        <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」
-                        (ExtGState) 與「選擇性內容群組」 (OCG)。
+                    <p class="keywords-hint">
+                        用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。<br />
+                        <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form
+                        XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」 (ExtGState)
+                        與「選擇性內容群組」 (OCG)。
                     </p>
                 </div>
                 <div>
@@ -235,9 +291,10 @@
                     <textarea id="contentKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: 機密, 內部, 草稿..."></textarea>
                     <p class="keywords-hint">
-                        用於比對內容串流（Content Stream）中實際顯示的文字。<br>
-                        <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br>
-                        <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼 (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
+                        用於比對內容串流（Content Stream）中實際顯示的文字。<br />
+                        <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br />
+                        <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼
+                        (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
                     </p>
                 </div>
             </div>
@@ -271,8 +328,9 @@
         aria-labelledby="triggerWordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「頁面直接內容」清理選項</h3>
-            <p id="triggerWordsModalDesc" class="modal-desc">請勾選想要<strong
-                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            <p id="triggerWordsModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="directContentListContainer" class="modal-list-container">
@@ -294,8 +352,9 @@
         aria-labelledby="formXObjectKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「表單外部物件」清理選項</h3>
-            <p id="formXObjectModalDesc" class="modal-desc">請勾選想要<strong
-                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            <p id="formXObjectModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="formXObjectListContainer" class="modal-list-container">
@@ -317,8 +376,9 @@
         aria-labelledby="annotsSettingsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「註解」清理選項</h3>
-            <p id="annotsModalDesc" class="modal-desc">請勾選想要<strong
-                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            <p id="annotsModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="annotsSubtypesContainer" class="modal-list-container">
@@ -340,8 +400,9 @@
         aria-labelledby="imageKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「影像外部物件」清理選項</h3>
-            <p id="imageXObjectModalDesc" class="modal-desc">請勾選想要<strong
-                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            <p id="imageXObjectModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="imageXObjectListContainer" class="modal-list-container">
@@ -363,8 +424,9 @@
         aria-labelledby="extGStateKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「延伸圖形狀態」清理選項</h3>
-            <p id="extGStateModalDesc" class="modal-desc">請勾選想要<strong
-                    class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong class="badge badge-success">保留</strong>）：
+            <p id="extGStateModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
             </p>
 
             <div id="extGStateListContainer" class="modal-list-container">
@@ -386,8 +448,10 @@
         aria-labelledby="ocgKeywordsModalTitle">
         <div class="modal-card modal-lg">
             <h3>⚙ 設定「選擇性內容群組」清理選項</h3>
-            <p id="ocgModalDesc" class="modal-desc">請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
-                    class="badge badge-success">保留</strong>）：</p>
+            <p id="ocgModalDesc" class="modal-desc">
+                請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                    class="badge badge-success">保留</strong>）：
+            </p>
 
             <div id="ocgListContainer" class="modal-list-container">
                 <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
@@ -411,7 +475,9 @@
             <div class="preview-modal-header">
                 <h3 id="objectPreviewTitle" class="preview-modal-title">🔍 即時預覽</h3>
                 <button id="closeObjectPreviewModalBtn" class="icon-btn preview-modal-close-btn" aria-label="關閉或設定"
-                    title="關閉預覽">×</button>
+                    title="關閉預覽">
+                    ×
+                </button>
             </div>
 
             <!-- 預覽本體（iframe + 載入 spinner） -->
