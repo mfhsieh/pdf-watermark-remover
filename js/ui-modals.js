@@ -1,3 +1,4 @@
+// ==========================================
 // 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
 // ==========================================
 /**
@@ -36,6 +37,9 @@ class WatermarkStrategyModal {
         this.initEvents();
     }
 
+    /**
+     * 初始化 DOM 元素事件監聽器
+     */
     initEvents() {
         // 開啟 Modal
         this.openBtn.addEventListener("click", () => {
@@ -85,6 +89,9 @@ class WatermarkStrategyModal {
         });
     }
 
+    /**
+     * 渲染彈出視窗內的選項列表
+     */
     render() {
         const map = this.getDetectedMap();
         const destroyList = this.getDestroyList();
@@ -193,6 +200,10 @@ class WatermarkStrategyModal {
 // ==========================================
 // 註解 (Annotation) 元資料定義與 Modal 初始化
 // ==========================================
+/**
+ * 註解 (Annotation) 子類型元資料設定
+ * @type {Object.<string, {label: string, defaultDestroy: boolean, color: string}>}
+ */
 const annotSubtypeMeta = {
     "Watermark": { label: "浮水印 (Watermark)", defaultDestroy: true, color: "inherit" },
     "Stamp": { label: "蓋印與圖章 (Stamp)", defaultDestroy: true, color: "inherit" },
@@ -376,6 +387,3 @@ new WatermarkStrategyModal({
     applyMsgTemplate: (len) => `已成功套用「選擇性內容群組」清理設定！共選定隱藏 ${len} 個「選擇性內容群組」實例。`,
     resetMsg: "已將當前檔案中的「選擇性內容群組」清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。"
 });
-
-
-// ==========================================

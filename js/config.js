@@ -12,13 +12,46 @@ const {
 // ==========================================
 // [Config Layer] 參數與設定 (全域浮水印判定關鍵字)
 // ==========================================
-const DEFAULT_KEY_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "authorized", "wm", "copy", "trial", "evaluation", "demo"];
-const DEFAULT_CONTENT_KEYWORDS = ["watermark", "confidential", "draft", "sample", "internal", "authorized", "機密", "內部", "草稿", "樣本", "樣品", "複製品", "浮水印", "水印", "僅供參考"];
+/** @type {string[]} 預設的資源鍵名與圖層名稱關鍵字 */
+const DEFAULT_KEY_KEYWORDS = [
+    "watermark",
+    "confidential",
+    "draft",
+    "sample",
+    "internal",
+    "authorized",
+    "evaluation",
+    "wm",
+    "copy",
+    "trial",
+    "demo"
+];
+/** @type {string[]} 預設的實際內容文字關鍵字 */
+const DEFAULT_CONTENT_KEYWORDS = [
+    "watermark",
+    "confidential",
+    "draft",
+    "sample",
+    "internal",
+    "authorized",
+    "evaluation",
+    "機密",
+    "內部",
+    "草稿",
+    "樣本",
+    "樣品",
+    "複製品",
+    "浮水印",
+    "水印",
+    "僅供參考"
+];
 
 // 1. 專門用於比對 PDF 資源鍵名 (KeyName) 與圖層名稱 (OCG Name) 的關鍵字
+/** @type {string[]} 全域資源鍵名關鍵字清單 */
 let WATERMARK_KEY_KEYWORDS = [];
 
 // 2. 專門用於比對實際呈現在畫面上的內容文字 (如 Direct Content) 的中文與英文關鍵字
+/** @type {string[]} 全域內容文字關鍵字清單 */
 let WATERMARK_CONTENT_KEYWORDS = [];
 
 /**
@@ -88,7 +121,7 @@ function decodeHexStringsInText(text) {
 /**
  * 安全地獲取並解壓縮 PDFRawStream 的二進位內容
  * @param {PDFRawStream} stream - PDF 原始二進位串流
- * @returns {Uint8Array} 解密解壓後的二進位數據
+ * @returns {Uint8Array} 解密解壓後的二進位資料
  */
 function getDecodedStreamContents(stream) {
     if (!(stream instanceof PDFRawStream)) return new Uint8Array();
@@ -97,21 +130,25 @@ function getDecodedStreamContents(stream) {
         decoded.reset();
         return decoded.getBytes();
     } catch (err) {
-        console.error("解碼二進位流失敗，回退至 raw 數據", err);
+        console.error("解碼二進位串流失敗，回退至 raw 資料", err);
         return stream.getContents();
     }
 }
 
 // === 動態編譯並整合產生最終的高精度比對字串庫 ===
+/** @type {string[]} 編譯後的最終高精度比對字串庫 */
 let FINAL_CONTENT_KEYWORDS = [];
 
+/**
+ * 根據目前的 WATERMARK_CONTENT_KEYWORDS 建立最終的多重編碼比對特徵碼陣列
+ */
 function buildFinalContentKeywords() {
     const rawKeywords = [];
     WATERMARK_CONTENT_KEYWORDS.forEach(kw => {
         const trimmed = kw.trim();
         if (!trimmed) return;
 
-        // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解元數據等已處理過的文字)
+        // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解中繼資料等已處理過的文字)
         rawKeywords.push(trimmed);
 
         // 英文或包含大小寫的字串，額外推入小寫版以進行不區分大小寫的比對
@@ -141,6 +178,9 @@ function buildFinalContentKeywords() {
 // ==========================================
 // 關鍵字設定存取邏輯
 // ==========================================
+/**
+ * 載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）
+ */
 function loadGlobalKeywords() {
     try {
         const savedKeys = localStorage.getItem('WATERMARK_KEY_KEYWORDS');
@@ -166,6 +206,11 @@ function loadGlobalKeywords() {
     buildFinalContentKeywords();
 }
 
+/**
+ * 儲存全域關鍵字設定至 localStorage
+ * @param {string[]} keysArray - 資源鍵名關鍵字陣列
+ * @param {string[]} contentsArray - 內容文字關鍵字陣列
+ */
 function saveGlobalKeywords(keysArray, contentsArray) {
     WATERMARK_KEY_KEYWORDS = keysArray;
     WATERMARK_CONTENT_KEYWORDS = contentsArray;
@@ -229,5 +274,3 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
-// ==========================================

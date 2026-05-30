@@ -1,3 +1,4 @@
+// ==========================================
 // [Event Controllers] 事件綁定與流程控制
 // ==========================================
 
@@ -164,6 +165,10 @@ function updateFileAreaDisplay() {
     fileAreaInner.appendChild(spanEl);
 }
 
+/**
+ * 取得目前畫面中 checkbox 勾選的清理選項
+ * @returns {{removeFormXObject: boolean, removeAnnotations: boolean, removeDirectContent: boolean, removeImageXObject: boolean, removeExtGState: boolean, removeOCG: boolean}} 清理選項物件
+ */
 function getOptions() {
     return {
         removeFormXObject: chkRemoveFormXObject.checked,
@@ -174,5 +179,3 @@ function getOptions() {
         removeOCG: chkRemoveOCG.checked,
     };
 }
-
-// ==========================================

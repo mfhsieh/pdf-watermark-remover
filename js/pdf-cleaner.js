@@ -1,3 +1,4 @@
+// ==========================================
 // [PDF Processor Engine] 核心清除與置換引擎
 // ==========================================
 
@@ -46,6 +47,14 @@ function createBlankXObjectStream(pdfDoc, originalStream, subtype, keepKeys = []
     return pdfDoc.context.register(stream);
 }
 
+/**
+ * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFPage} page - 頁面物件
+ * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
+ * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
+ * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ */
 function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     const contentsKey = PDFName.of("Contents");
     const contentsRef = page.node.get(contentsKey);
@@ -515,6 +524,11 @@ function removeOCGs(pdfDoc, resources) {
 
     return { count, deletedPropertiesKeys: deletedPropertiesKeys.map(k => k.value()), deletedXObjectKeys };
 }
+/**
+ * 針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @returns {number} 清除的 OCG 圖層數量
+ */
 function removeOCG(pdfDoc) {
     const catalogDict = pdfDoc.catalog;
     const ocPropertiesRef = catalogDict.get(PDFName.of("OCProperties"));

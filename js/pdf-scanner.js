@@ -1,3 +1,4 @@
+// ==========================================
 // [Preview Engine] PDF 即時預覽生成器
 // ==========================================
 
@@ -45,7 +46,13 @@ async function decompressFlateDecode(data) {
     }
 }
 
-// 【工具函數】從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
+/**
+ * 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
+ * @param {PDFDocument} srcDoc - 原始 PDF 文件物件
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @param {string} cleanKeyName - 資源鍵名 (不含前綴斜線)
+ * @returns {Promise<string|null>} 提取出的繪圖指令字串，若找不到則回傳 null
+ */
 async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
     const page = srcDoc.getPage(pageIndex);
     const contentsRef = page.node.get(PDFName.of("Contents"));
@@ -96,6 +103,12 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
     return null;
 }
 
+/**
+ * 生成 Form XObject 的即時預覽 URL
+ * @param {string} keyName - 資源鍵名
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @returns {Promise<string>} Blob URL
+ */
 async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
     const previewDoc = await PDFDocument.create();
@@ -163,6 +176,13 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     return url;
 }
 
+/**
+ * 生成 Image XObject 的即時預覽 URL
+ * @param {string} keyName - 資源鍵名
+ * @param {PDFRawStream} rawStream - 原始影像串流
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @returns {Promise<string>} Blob URL
+ */
 async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
     const previewDoc = await PDFDocument.create();
@@ -201,6 +221,11 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     return url;
 }
 
+/**
+ * 生成 OCG (圖層) 隱藏效果的即時預覽 URL
+ * @param {string} ocgRefStr - OCG 物件參照字串
+ * @returns {Promise<string>} Blob URL
+ */
 async function generateOCGPreviewUrl(ocgRefStr) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
     // srcDoc.catalog 直接回傳 PDFDict，不需再 context.lookup()
@@ -258,6 +283,13 @@ async function generateOCGPreviewUrl(ocgRefStr) {
     return url;
 }
 
+/**
+ * 生成 Annotation (註解) 的即時預覽 URL (高亮顯示所在位置)
+ * @param {string} annotRefStr - 註解物件參照字串
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @param {number} annotIndex - 註解在陣列中的索引
+ * @returns {Promise<string>} Blob URL
+ */
 async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
     try {
         const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
@@ -333,6 +365,13 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
 }
 
 
+/**
+ * 生成 Direct Content (頁面直接內容) 的即時預覽 URL
+ * @param {string} streamRefStr - 串流參照字串
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @param {number} streamIndex - 串流在 Contents 陣列中的索引
+ * @returns {Promise<string>} Blob URL
+ */
 async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
     const previewDoc = await PDFDocument.create();
@@ -784,6 +823,3 @@ async function showOriginalPreview(file) {
         processButton.classList.remove("hidden");
     }
 }
-
-
-// ==========================================
