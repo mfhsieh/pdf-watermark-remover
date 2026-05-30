@@ -364,3 +364,16 @@
 .options-heading-row h2 {
     margin: 0;
 }
+
+/* 無障礙視覺焦點 (Keyboard Focus) */
+.file-area:focus-visible,
+.button:focus-visible,
+.icon-btn:focus-visible,
+.annot-checkbox-input:focus-visible,
+.slider-input:focus-visible,
+.slider-number-input:focus-visible,
+a:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.2);
+}

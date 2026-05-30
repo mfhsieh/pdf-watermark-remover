@@ -21,6 +21,14 @@ fileInput.addEventListener('change', (event) => {
     }
 });
 
+// 監聽鍵盤事件 (無障礙支援：允許使用 Enter 或空白鍵觸發上傳)
+fileArea.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        fileInput.click();
+    }
+});
+
 // 監聽檔案拖曳滑過拖曳區事件
 fileArea.addEventListener('dragover', (event) => {
     event.preventDefault(); // 必須阻擋瀏覽器預設開啟 PDF 的行為

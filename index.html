@@ -50,10 +50,10 @@
             <!-- 主互動控制卡片 -->
             <section class="card">
                 <!-- 檔案拖曳與上傳互動區域 -->
-                <div class="file-area" id="fileArea">
+                <div class="file-area" id="fileArea" role="button" tabindex="0" aria-label="點擊或拖曳上傳 PDF 檔案">
                     <!-- 隱藏的真實 file input，透過拖曳或點擊觸發 -->
-                    <input type="file" id="fileInput" accept="application/pdf" />
-                    <div class="file-area-inner">
+                    <input type="file" id="fileInput" accept="application/pdf" aria-label="選擇 PDF 檔案上傳" />
+                    <div class="file-area-inner" aria-hidden="true">
                         <strong>點擊或拖曳 PDF 檔案到此處</strong>
                         <span>僅支援 PDF，最大建議 50MB</span>
                     </div>
@@ -150,7 +150,7 @@
                 <button id="processButton" class="button hidden">開始清除浮水印</button>
 
                 <!-- 狀態提示語與進度回饋 -->
-                <div id="status" class="status">
+                <div id="status" class="status" aria-live="polite" aria-atomic="true">
                     <div class="status-line info">請選擇 PDF 檔案後開始處理。</div>
                 </div>
 
@@ -437,6 +437,7 @@
                                 max="1"
                                 step="0.01"
                                 class="slider-input"
+                                aria-label="高透明度特徵門檻滑桿"
                             />
                             <span class="slider-label">不透明</span>
                             <div class="slider-value-wrapper">
@@ -448,6 +449,7 @@
                                     max="1"
                                     step="0.01"
                                     placeholder="例如: 0.5"
+                                    aria-label="高透明度特徵門檻數值"
                                 />
                             </div>
                         </div>
@@ -481,6 +483,7 @@
                                 max="1"
                                 step="0.01"
                                 class="slider-input"
+                                aria-label="高頻特徵門檻滑桿"
                             />
                             <span class="slider-label">100%</span>
                             <div class="slider-value-wrapper">
@@ -492,6 +495,7 @@
                                     max="1"
                                     step="0.01"
                                     placeholder="例如: 0.8"
+                                    aria-label="高頻特徵門檻數值"
                                 />
                             </div>
                         </div>
