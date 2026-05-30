@@ -2,50 +2,6 @@
 // [PDF Processor Engine] 核心清除與置換引擎
 // ==========================================
 
-/**
- * 在 PDF 中建立一個「空串流」置換浮水印物件，避免直接刪除導致結構損壞
- * 
- * @param {PDFDocument} pdfDoc - PDF 文件物件
- * @param {PDFRawStream} originalStream - 原始串流
- * @param {string} subtype - 子類型
- * @param {string[]} keepKeys - 需保留的屬性鍵值
- * @returns {PDFRef} 註冊後的空 XObject 參照
- */
-function createBlankXObjectStream(pdfDoc, originalStream, subtype, keepKeys = []) {
-    const dict = pdfDoc.context.obj({
-        Type: PDFName.of("XObject"),
-        Subtype: PDFName.of(subtype),
-    });
-
-    if (subtype === "Image") {
-        // PDF 的 Image XObject 需要實際的像素資料，若直接給空串流會導致 Acrobat Reader 報錯。
-        // 這裡改為產生一個 1x1 的透明遮罩 (ImageMask)，完全符合 PDF 規範且不顯示任何內容。
-        dict.set(PDFName.of("Width"), pdfDoc.context.obj(1));
-        dict.set(PDFName.of("Height"), pdfDoc.context.obj(1));
-        dict.set(PDFName.of("ImageMask"), pdfDoc.context.obj(true));
-        dict.set(PDFName.of("BitsPerComponent"), pdfDoc.context.obj(1));
-        dict.set(PDFName.of("IsWatermarkRemoved"), pdfDoc.context.obj(true));
-        // 1 byte 的 255 (二進位 11111111)。在 ImageMask 預設 Decode [0 1] 下，1 代表透明不繪製。
-        const stream = pdfDoc.context.stream(new Uint8Array([255]), dict);
-        return pdfDoc.context.register(stream);
-    }
-
-    // 對於 Form XObject 等其他類型，保留維持 PDF 正常顯示渲染所需的必要屬性字典（如 BBox）
-    for (const keyName of keepKeys) {
-        const key = PDFName.of(keyName);
-        const value = originalStream.dict.lookup(key);
-        if (value) {
-            dict.set(key, value);
-        }
-    }
-
-    // 寫入標記，表示此物件已完成清除以供後續進行冪等性檢查
-    dict.set(PDFName.of("IsWatermarkRemoved"), pdfDoc.context.obj(true));
-
-    // 寫入空資料 (Uint8Array) 並在上下文註冊，供 pdf-lib 重組 xref 表
-    const stream = pdfDoc.context.stream(new Uint8Array(), dict);
-    return pdfDoc.context.register(stream);
-}
 
 /**
  * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
@@ -135,8 +91,9 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
  * 核心重構清除引擎：遍歷 PDF 物件樹並執行浮水印置換
  * 
  * 為了防止直接刪除 PDF 字典物件導致內部資源樹引用斷裂（引發 PDF 檔損毀打不開），
- * 本清除引擎採用「無損置換技術」—— 將需要清除的 Form/Image 物件替換成保留必要尺寸的「空白串流」，
- * 並完全符合 PDF 1.7 規格標準。同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。
+ * 本清除引擎採用「無損清除技術」—— 將需要清除的物件從資源字典中移除，
+ * 並主動清理 Content Stream 中的參照 (如 `Do`, `gs`)，確保 PDF 結構完整，防止 Acrobat Reader 報錯。
+ * 同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。
  *
  * @param {PDFDocument} pdfDoc - pdf-lib 的 PDF 文件物件
  * @param {Object} options - 包含 6 大清理策略勾選狀態的布林值物件
@@ -229,7 +186,7 @@ function processPdf(pdfDoc, options) {
  * 策略一：清除 Form XObject 浮水印
  * Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
  * 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
- * 逐一檢視 Resources 下的所有 XObject，若 Subtype 為 /Form，則建立空串流將其置換。
+ * 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
  * 
  * @param {PDFDocument} pdfDoc - PDF 文件物件
  * @param {PDFDict} resources - 頁面資源字典
@@ -334,7 +291,7 @@ function removeAnnotations(page) {
 /**
  * 策略三：檢查並清空可疑內容流
  * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
- * 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 stream.getContents() 在記憶體中解壓縮，
+ * 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
  * 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。
  *
  * @param {PDFDocument} pdfDoc - 文件物件
@@ -588,7 +545,7 @@ function removeOCG(pdfDoc) {
  * 策略六：清除圖片型浮水印 (Image XObject)
  * 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
  * 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
- * 若符合，則建立空 Image 串流置換。
+ * 若符合，則將其從資源字典中移除。
  * 
  * @param {PDFDocument} pdfDoc - 文件物件
  * @param {PDFDict} resources - 頁面資源字典

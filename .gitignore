@@ -1,4 +1,9 @@
 .git/
+node_modules/
+package-lock.json
+package.json
 
-test-files/
+test/
 tmp/
+
+doc/doc-gen.mjs

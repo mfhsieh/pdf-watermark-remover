@@ -131,7 +131,7 @@ function getDecodedStreamContents(stream) {
         return decoded.getBytes();
     } catch (err) {
         console.error("解碼二進位串流失敗，回退至 raw 資料", err);
-        return stream.getContents();
+        return stream.contents || new Uint8Array();
     }
 }
 
