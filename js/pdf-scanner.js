@@ -154,18 +154,55 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
         }
     }
 
+    // 取得 Form XObject 的 BBox 邊界，以便繪製紅框
+    let targetRect = [0, 0, 100, 100]; // 預設尺寸
+    if (fmObj instanceof PDFRawStream) {
+        const bbox = fmObj.dict.lookup(PDFName.of('BBox'));
+        if (bbox instanceof PDFArray && bbox.size() === 4) {
+            targetRect = [bbox.get(0).value(), bbox.get(1).value(), bbox.get(2).value(), bbox.get(3).value()];
+        }
+    }
+
+    const x0 = Math.min(targetRect[0], targetRect[2]);
+    const y0 = Math.min(targetRect[1], targetRect[3]);
+    const w = Math.abs(targetRect[2] - targetRect[0]);
+    const h = Math.abs(targetRect[3] - targetRect[1]);
+
+    // 建立 ExtGState 供紅框半透明使用
+    const extGStateName = 'GsPreviewRedBox';
+    const extGStateDict = previewDoc.context.obj({
+        Type: 'ExtGState',
+        ca: 0.25,
+        CA: 0.8,
+    });
+
+    let hasExtGState = false;
+    if (pageResources instanceof PDFDict) {
+        let extGState = previewDoc.context.lookup(pageResources.get(PDFName.of('ExtGState')));
+        if (!(extGState instanceof PDFDict)) {
+            extGState = previewDoc.context.obj({});
+            pageResources.set(PDFName.of('ExtGState'), extGState);
+        }
+        extGState.set(PDFName.of(extGStateName), extGStateDict);
+        hasExtGState = true;
+    }
+
+    const gsCommand = hasExtGState ? `/${extGStateName} gs\n` : '';
+    // 繪製紅框的 PDF 原始指令：設定顏色與透明度、畫矩形、填滿並描邊 (B)
+    const boxCmd = `${gsCommand}1 0.2 0.2 rg\n1 0.2 0.2 RG\n3 w\n${x0} ${y0} ${w} ${h} re\nB`;
+
     // 4. 嘗試從原頁面 Contents Stream 中提取原始的 cm 變換矩陣（含旋轉角度）
     // 若找得到，就用原始矩陣還原浮水印的真實角度；找不到則退回 BBox 平移模式
     let drawBlock = await extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName);
 
     let drawCommand;
     if (drawBlock) {
-        // 用原始的完整繪圖區塊（cm 矩陣 + 顏色 + Do），完美還原旋轉！
-        drawCommand = `q\n${drawBlock}\n/${cleanKeyName} Do\nQ`;
+        // 用原始的完整繪圖區塊（cm 矩陣 + 顏色 + Do），完美還原旋轉！並在同一個座標系畫上紅框
+        drawCommand = `q\n${drawBlock}\n/${cleanKeyName} Do\n${boxCmd}\nQ`;
     } else {
         // Fallback：不再強制平移至 (0,0)，讓 XObject 保持在自己 BBox 的原始座標上
-        // 這樣在預覽時才不會覺得物件明顯跑到左下角（偏移）
-        drawCommand = `q /${cleanKeyName} Do Q`;
+        // 同樣補上紅框
+        drawCommand = `q /${cleanKeyName} Do \n${boxCmd}\nQ`;
     }
 
     const contentStream = previewDoc.context.stream(drawCommand);

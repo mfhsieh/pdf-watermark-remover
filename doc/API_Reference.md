@@ -19,6 +19,9 @@
 <dt><a href="#WATERMARK_CONTENT_KEYWORDS">WATERMARK_CONTENT_KEYWORDS</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>全域內容文字關鍵字清單</p>
 </dd>
+<dt><a href="#TRANSPARENCY_THRESHOLD">TRANSPARENCY_THRESHOLD</a> : <code>number</code></dt>
+<dd><p>全域高透明度特徵門檻</p>
+</dd>
 <dt><a href="#FINAL_CONTENT_KEYWORDS">FINAL_CONTENT_KEYWORDS</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>編譯後的最終高精度比對字串庫</p>
 </dd>
@@ -183,8 +186,8 @@
 <dt><a href="#loadGlobalKeywords">loadGlobalKeywords()</a></dt>
 <dd><p>載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）</p>
 </dd>
-<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray)</a></dt>
-<dd><p>儲存全域關鍵字設定至 localStorage</p>
+<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold)</a></dt>
+<dd><p>儲存全域設定至 localStorage</p>
 </dd>
 <dt><a href="#addStatusMessage">addStatusMessage(text, type)</a></dt>
 <dd><p>追加一條狀態日誌到控制台面板中，並自動滾動到最下方</p>
@@ -399,6 +402,12 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 
 ## WATERMARK\_CONTENT\_KEYWORDS : <code>Array.&lt;string&gt;</code>
 全域內容文字關鍵字清單
+
+**Kind**: global variable  
+<a name="TRANSPARENCY_THRESHOLD"></a>
+
+## TRANSPARENCY\_THRESHOLD : <code>number</code>
+全域高透明度特徵門檻
 
 **Kind**: global variable  
 <a name="FINAL_CONTENT_KEYWORDS"></a>
@@ -728,8 +737,8 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 **Kind**: global function  
 <a name="saveGlobalKeywords"></a>
 
-## saveGlobalKeywords(keysArray, contentsArray)
-儲存全域關鍵字設定至 localStorage
+## saveGlobalKeywords(keysArray, contentsArray, threshold)
+儲存全域設定至 localStorage
 
 **Kind**: global function  
 
@@ -737,6 +746,7 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 | --- | --- | --- |
 | keysArray | <code>Array.&lt;string&gt;</code> | 資源鍵名關鍵字陣列 |
 | contentsArray | <code>Array.&lt;string&gt;</code> | 內容文字關鍵字陣列 |
+| threshold | <code>number</code> | 透明度門檻值 |
 
 <a name="addStatusMessage"></a>
 

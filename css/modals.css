@@ -318,3 +318,55 @@
         /* 微調字型大小 */
     }
 }
+
+/* =========================================
+   全域關鍵字設定 Modal 專用樣式
+   ========================================= */
+
+/* 全域關鍵字設定 Modal 內的欄位標籤 */
+.keywords-field-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* 全域關鍵字設定 Modal 內的 Textarea / Input */
+.keywords-textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: monospace;
+    resize: none;
+    overflow-y: hidden;
+    box-sizing: border-box;
+    min-height: 40px;
+    color: var(--text);
+    background: var(--surface);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.keywords-textarea:focus {
+    border-color: var(--primary);
+}
+
+/* 關鍵字說明文字 */
+.keywords-hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* 說明文字中的強調色 */
+.keywords-hint .hint-primary {
+    color: var(--primary);
+}
+
+.keywords-hint .hint-danger {
+    color: var(--danger);
+    font-weight: 600;
+}

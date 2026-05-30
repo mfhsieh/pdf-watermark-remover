@@ -88,7 +88,8 @@ function isSuspectExtGState(entry) {
     if (isSuspectKeyName(entry.keyName)) return true;
     const caVal = entry.caVal !== undefined ? entry.caVal : 1.0;
     const CAVal = entry.CAVal !== undefined ? entry.CAVal : 1.0;
-    return caVal < 0.5 || CAVal < 0.5;
+    // 使用 config.js 中全域定義的透明度門檻（預設 0.5）
+    return caVal < TRANSPARENCY_THRESHOLD || CAVal < TRANSPARENCY_THRESHOLD;
 }
 
 /**

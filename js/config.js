@@ -54,6 +54,11 @@ let WATERMARK_KEY_KEYWORDS = [];
 /** @type {string[]} 全域內容文字關鍵字清單 */
 let WATERMARK_CONTENT_KEYWORDS = [];
 
+// 3. 高透明度特徵門檻 (ExtGState Alpha Threshold)
+const DEFAULT_TRANSPARENCY_THRESHOLD = 0.5;
+/** @type {number} 全域高透明度特徵門檻 */
+let TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
+
 /**
  * 將字串動態編譯為 Big5 格式的 Latin1 字串
  * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
@@ -185,8 +190,14 @@ function loadGlobalKeywords() {
     try {
         const savedKeys = localStorage.getItem('WATERMARK_KEY_KEYWORDS');
         const savedContents = localStorage.getItem('WATERMARK_CONTENT_KEYWORDS');
+        const savedThreshold = localStorage.getItem('TRANSPARENCY_THRESHOLD');
+
         WATERMARK_KEY_KEYWORDS = savedKeys ? JSON.parse(savedKeys) : [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = savedContents ? JSON.parse(savedContents) : [...DEFAULT_CONTENT_KEYWORDS];
+        TRANSPARENCY_THRESHOLD =
+            savedThreshold !== null && !isNaN(parseFloat(savedThreshold))
+                ? parseFloat(savedThreshold)
+                : DEFAULT_TRANSPARENCY_THRESHOLD;
 
         // 確保新加入的預設關鍵字也能生效於舊使用者
         DEFAULT_KEY_KEYWORDS.forEach((kw) => {
@@ -202,20 +213,26 @@ function loadGlobalKeywords() {
     } catch (e) {
         WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];
+        TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
     }
     buildFinalContentKeywords();
 }
 
 /**
- * 儲存全域關鍵字設定至 localStorage
+ * 儲存全域設定至 localStorage
  * @param {string[]} keysArray - 資源鍵名關鍵字陣列
  * @param {string[]} contentsArray - 內容文字關鍵字陣列
+ * @param {number} threshold - 透明度門檻值
  */
-function saveGlobalKeywords(keysArray, contentsArray) {
+function saveGlobalKeywords(keysArray, contentsArray, threshold = DEFAULT_TRANSPARENCY_THRESHOLD) {
     WATERMARK_KEY_KEYWORDS = keysArray;
     WATERMARK_CONTENT_KEYWORDS = contentsArray;
+    TRANSPARENCY_THRESHOLD = threshold;
+
     localStorage.setItem('WATERMARK_KEY_KEYWORDS', JSON.stringify(keysArray));
     localStorage.setItem('WATERMARK_CONTENT_KEYWORDS', JSON.stringify(contentsArray));
+    localStorage.setItem('TRANSPARENCY_THRESHOLD', TRANSPARENCY_THRESHOLD.toString());
+
     buildFinalContentKeywords();
 }
 
@@ -227,6 +244,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('globalKeywordsModal');
     const keyInput = document.getElementById('keyKeywordsInput');
     const contentInput = document.getElementById('contentKeywordsInput');
+    const transparencyInput = document.getElementById('transparencyThresholdInput');
+    const transparencySlider = document.getElementById('transparencyThresholdSlider');
+
+    // 雙向綁定：透明度滑桿與輸入框
+    if (transparencySlider && transparencyInput) {
+        transparencySlider.addEventListener('input', (e) => {
+            transparencyInput.value = e.target.value;
+        });
+        transparencyInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                transparencySlider.value = val;
+            }
+        });
+    }
 
     // 自動適應文字方塊高度
     function adjustTextareaHeight(el) {
@@ -240,6 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openGlobalKeywordsModalBtn').addEventListener('click', () => {
         keyInput.value = WATERMARK_KEY_KEYWORDS.join(', ');
         contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(', ');
+        transparencyInput.value = TRANSPARENCY_THRESHOLD;
+        if (transparencySlider) transparencySlider.value = TRANSPARENCY_THRESHOLD;
         modal.classList.add('active');
 
         // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
@@ -253,11 +289,24 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('active');
     });
 
-    document.getElementById('resetGlobalKeywordsBtn').addEventListener('click', () => {
-        if (confirm('確定要回復為預設關鍵字嗎？這將會覆寫您的自訂設定。')) {
-            saveGlobalKeywords([...DEFAULT_KEY_KEYWORDS], [...DEFAULT_CONTENT_KEYWORDS]);
-            modal.classList.remove('active');
-            addStatusMessage('已回復預設關鍵字。', 'success');
+    document.getElementById('resetKeyKeywordsBtn').addEventListener('click', () => {
+        if (confirm('確定要將「資源鍵名與圖層名稱關鍵字」回復為預設值嗎？')) {
+            keyInput.value = DEFAULT_KEY_KEYWORDS.join(', ');
+            adjustTextareaHeight(keyInput);
+        }
+    });
+
+    document.getElementById('resetContentKeywordsBtn').addEventListener('click', () => {
+        if (confirm('確定要將「頁面直接內容關鍵字」回復為預設值嗎？')) {
+            contentInput.value = DEFAULT_CONTENT_KEYWORDS.join(', ');
+            adjustTextareaHeight(contentInput);
+        }
+    });
+
+    document.getElementById('resetTransparencyBtn').addEventListener('click', () => {
+        if (confirm('確定要將「高透明度特徵門檻」回復為預設值嗎？')) {
+            transparencyInput.value = DEFAULT_TRANSPARENCY_THRESHOLD;
+            if (transparencySlider) transparencySlider.value = DEFAULT_TRANSPARENCY_THRESHOLD;
         }
     });
 
@@ -270,12 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .split(',')
             .map((s) => s.trim())
             .filter((s) => s);
-        saveGlobalKeywords(keysRaw, contentsRaw);
+        const thresholdRaw = parseFloat(transparencyInput.value);
+        const finalThreshold = isNaN(thresholdRaw) ? DEFAULT_TRANSPARENCY_THRESHOLD : thresholdRaw;
+
+        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold);
         modal.classList.remove('active');
-        addStatusMessage('已儲存自訂關鍵字設定。', 'success');
+        addStatusMessage('已儲存自訂設定。', 'success');
 
         if (typeof selectedFile !== 'undefined' && selectedFile) {
-            addStatusMessage('🔄 關鍵字已變更，正在以新關鍵字重新掃描 PDF...', 'info');
+            addStatusMessage('🔄 設定已變更，正在重新掃描 PDF...', 'info');
             showOriginalPreview(selectedFile);
         }
     });
