@@ -197,8 +197,8 @@
 </dd>
 <dt><a href="#decryptWithQpdfWasm">decryptWithQpdfWasm(pdfBytes, password)</a> ⇒ <code>Promise.&lt;Uint8Array&gt;</code></dt>
 <dd><p>使用 qpdf-wasm 引擎解密加密的 PDF 文件</p>
-<p>此函數採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
-才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面加載頻寬。
+<p>此函式採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
+才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面載入頻寬。
 支援所有標準的 PDF 加密演算法（AES-256、AES-128、RC4 等），並能正確修復損壞的 XRef 與 Object Stream。</p>
 </dd>
 <dt><a href="#promptForPassword">promptForPassword([isRetry])</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
@@ -250,7 +250,7 @@
 <dd><p>將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）</p>
 </dd>
 <dt><a href="#decompressFlateDecode">decompressFlateDecode(data)</a> ⇒ <code>Promise.&lt;Uint8Array&gt;</code></dt>
-<dd><p>輔助函數：將 Uint8Array 以 zlib/deflate 解壓縮
+<dd><p>輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
 PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 &quot;deflate&quot;。
 若失敗則嘗試 &quot;deflate-raw&quot;（無 zlib header 的 raw deflate）。</p>
 </dd>
@@ -345,7 +345,7 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 若符合，則將其從資源字典中移除。</p>
 </dd>
 <dt><a href="#formatBytes">formatBytes(bytes)</a> ⇒ <code>string</code></dt>
-<dd><p>輔助函數：格式化檔案大小單位</p>
+<dd><p>輔助函式：格式化檔案大小單位</p>
 </dd>
 <dt><a href="#updateFileAreaDisplay">updateFileAreaDisplay()</a></dt>
 <dd><p>依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。</p>
@@ -373,7 +373,7 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 <a name="new_WatermarkStrategyModal_new"></a>
 
 ### new WatermarkStrategyModal(config)
-構造函數：初始化 Modal 實例並選取關聯的 DOM 元素
+構造函式：初始化 Modal 實例並選取關聯的 DOM 元素
 
 
 | Param | Type | Description |
@@ -771,8 +771,8 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 ## decryptWithQpdfWasm(pdfBytes, password) ⇒ <code>Promise.&lt;Uint8Array&gt;</code>
 使用 qpdf-wasm 引擎解密加密的 PDF 文件
 
-此函數採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
-才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面加載頻寬。
+此函式採用「延遲載入 (Lazy Load)」策略，僅在遇到有開啟密碼或編輯限制的 PDF 時，
+才會從高速 CDN 載入約 1.8MB 的 QPDF WebAssembly 模組，節省初始頁面載入頻寬。
 支援所有標準的 PDF 加密演算法（AES-256、AES-128、RC4 等），並能正確修復損壞的 XRef 與 Object Stream。
 
 **Kind**: global function  
@@ -939,7 +939,7 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 <a name="decompressFlateDecode"></a>
 
 ## decompressFlateDecode(data) ⇒ <code>Promise.&lt;Uint8Array&gt;</code>
-輔助函數：將 Uint8Array 以 zlib/deflate 解壓縮
+輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
 PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 "deflate"。
 若失敗則嘗試 "deflate-raw"（無 zlib header 的 raw deflate）。
 
@@ -1278,7 +1278,7 @@ OCG 圖層控制的浮水印定義在 PDF Document Catalog 的 /OCProperties 中
 <a name="formatBytes"></a>
 
 ## formatBytes(bytes) ⇒ <code>string</code>
-輔助函數：格式化檔案大小單位
+輔助函式：格式化檔案大小單位
 
 **Kind**: global function  
 **Returns**: <code>string</code> - 可讀性佳的格式化檔案大小 (如 1.25 MB)  

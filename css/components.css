@@ -4,7 +4,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 22px;
-    box-shadow: 0 26px 60px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 26px 60px rgba(var(--shadow-base-rgb), 0.08);
     padding: 28px;
     margin-bottom: 24px;
 }
@@ -24,21 +24,21 @@
         background 0.2s ease,
         border-color 0.2s ease;
     margin-bottom: 24px;
-    background: rgba(47, 107, 235, 0.04);
+    background: rgba(var(--primary-rgb), 0.04);
     padding: 12px 24px;
 }
 
 /* 檔案拖曳滑過時的動態 hover 視覺回饋 */
 .file-area:hover {
-    background: rgba(47, 107, 235, 0.08);
+    background: rgba(var(--primary-rgb), 0.08);
     border-color: var(--primary-dark);
 }
 
 /* 拖曳檔案懸停於上方時的視覺回饋 */
 .file-area.dragging {
-    background: rgba(47, 107, 235, 0.14);
+    background: rgba(var(--primary-rgb), 0.14);
     border-color: var(--primary-dark);
-    box-shadow: 0 0 0 4px rgba(47, 107, 235, 0.12);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 /* 隱藏原生 input file，使其完全透明並鋪滿整個拖曳區 */
@@ -162,7 +162,7 @@
 }
 
 .status-line.success {
-    color: #0f973d;
+    color: var(--success);
     font-weight: 500;
 }
 
@@ -195,7 +195,7 @@
            .preview-item-btn 用於清單項目旁；.small-preview-btn 僅縮小尺寸供 OCG 等場景使用 */
 .preview-item-btn,
 .small-preview-btn {
-    background: rgba(47, 107, 235, 0.04);
+    background: rgba(var(--primary-rgb), 0.04);
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--muted);
@@ -244,8 +244,8 @@
 }
 
 .option-row label {
-    /* 不撐滿整行，讓按鈕緊貼在文字旁 */
-    flex: 0 0 auto;
+    /* 允許縮小以防止窄螢幕下把按鈕推到邊界外 */
+    flex: 0 1 auto;
 }
 
 /* 齒輪小按鈕 */
@@ -259,12 +259,13 @@
     color: var(--muted);
     transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
     line-height: 1.5;
+    flex-shrink: 0;
 }
 
 .icon-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
-    background: rgba(47, 107, 235, 0.06);
+    background: rgba(var(--primary-rgb), 0.06);
 }
 
 .icon-btn:active {
@@ -281,12 +282,12 @@
 
 .badge-danger {
     color: var(--danger);
-    background: rgba(217, 45, 32, 0.08);
+    background: rgba(var(--danger-rgb), 0.08);
 }
 
 .badge-success {
-    color: #0f973d;
-    background: rgba(15, 151, 61, 0.08);
+    color: var(--success);
+    background: rgba(var(--success-rgb), 0.08);
 }
 
 /* 無註解提示卡片樣式 */
@@ -295,7 +296,7 @@
     padding: 24px;
     width: 100%;
     color: var(--muted);
-    background: rgba(47, 107, 235, 0.04);
+    background: rgba(var(--primary-rgb), 0.04);
     border-radius: 12px;
     border: 1px solid var(--border);
 }
@@ -309,7 +310,7 @@
     margin: 0;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #0f973d;
+    color: var(--success);
 }
 
 /* 動態註解選項 Checkbox 樣式 */
@@ -330,7 +331,7 @@
 
 .annot-checkbox-label:hover {
     color: var(--primary);
-    background: rgba(47, 107, 235, 0.06);
+    background: rgba(var(--primary-rgb), 0.06);
 }
 
 .annot-checkbox-input {

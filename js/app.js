@@ -136,7 +136,7 @@ processButton.addEventListener('click', async () => {
 });
 
 /**
- * 輔助函數：格式化檔案大小單位
+ * 輔助函式：格式化檔案大小單位
  * @param {number} bytes - 檔案位元組大小
  * @returns {string} 可讀性佳的格式化檔案大小 (如 1.25 MB)
  */

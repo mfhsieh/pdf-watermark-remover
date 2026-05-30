@@ -21,8 +21,8 @@
         crossorigin="anonymous"></script>
 
     <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/modals.css" />
 </head>
 
@@ -57,7 +57,7 @@
                 </div>
                 <!-- Form XObject：最常見的封裝圖形/文字浮水印型態 -->
                 <div class="option-row" id="optionRowFormXObject">
-                    <label><input type="checkbox" id="removeFormXObject" /> 清除「表單外部物件」 (Form XObject)</label>
+                    <label><input type="checkbox" id="removeFormXObject" /> 表單外部物件 (Form XObject)</label>
                     <button id="openFormXObjectKeywordsModalBtn" class="icon-btn" title="選擇欲清除的「表單外部物件」"
                         aria-label="選擇欲清除的「表單外部物件」">
                         ⚙
@@ -65,15 +65,14 @@
                 </div>
                 <!-- Annotations：各種註解（印章、附註等） -->
                 <div class="option-row" id="optionRowAnnotations">
-                    <label><input type="checkbox" id="removeAnnotations" /> 清除「註解」 (Annotation)</label>
+                    <label><input type="checkbox" id="removeAnnotations" /> 註解 (Annotation)</label>
                     <button id="openAnnotsSettingsModalBtn" class="icon-btn" title="設定「註解」清除選項" aria-label="設定「註解」清除選項">
                         ⚙
                     </button>
                 </div>
                 <!-- Direct Content：頁面核心內容流中的字串特徵標記 -->
                 <div class="option-row" id="optionRowDirectContent">
-                    <label><input type="checkbox" id="removeDirectContent" /> 清除「頁面直接內容」 (Direct
-                        Content)</label>
+                    <label><input type="checkbox" id="removeDirectContent" /> 頁面直接內容 (Direct Content)</label>
                     <button id="openTriggerWordsModalBtn" class="icon-btn" title="設定「頁面直接內容」清除選項"
                         aria-label="設定「頁面直接內容」清除選項">
                         ⚙
@@ -81,8 +80,7 @@
                 </div>
                 <!-- Image XObject：影像外部物件 -->
                 <div class="option-row" id="optionRowImageXObject">
-                    <label><input type="checkbox" id="removeImageXObject" /> 清除「影像外部物件」 (Image
-                        XObject)</label>
+                    <label><input type="checkbox" id="removeImageXObject" /> 影像外部物件 (Image XObject)</label>
                     <button id="openImageKeywordsModalBtn" class="icon-btn" title="設定「影像外部物件」清除選項"
                         aria-label="設定「影像外部物件」清除選項">
                         ⚙
@@ -90,7 +88,7 @@
                 </div>
                 <!-- ExtGState：延伸圖形狀態 -->
                 <div class="option-row" id="optionRowExtGState">
-                    <label><input type="checkbox" id="removeExtGState" /> 清除「延伸圖形狀態」 (ExtGState)</label>
+                    <label><input type="checkbox" id="removeExtGState" /> 延伸圖形狀態 (ExtGState)</label>
                     <button id="openExtGStateKeywordsModalBtn" class="icon-btn" title="設定「延伸圖形狀態」清除選項"
                         aria-label="設定「延伸圖形狀態」清除選項">
                         ⚙
@@ -98,7 +96,7 @@
                 </div>
                 <!-- OCG / Optional Content Group：選擇性內容群組 -->
                 <div class="option-row" id="optionRowOCG">
-                    <label><input type="checkbox" id="removeOCG" /> 清除「選擇性內容群組」 (OCG)</label>
+                    <label><input type="checkbox" id="removeOCG" /> 選擇性內容群組 (OCG)</label>
                     <button id="openOCGKeywordsModalBtn" class="icon-btn" title="設定「選擇性內容群組」清除選項"
                         aria-label="設定「選擇性內容群組」清除選項">
                         ⚙
@@ -147,7 +145,7 @@
                             <strong>確認勾選</strong>：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙️」進行細部調整。
                         </li>
                         <li>
-                            <strong>單一預覽</strong>：有疑慮時，點擊「👁️ 預覽」查看紅框標示位置，確保不誤刪正文。
+                            <strong>單一預覽</strong>：有疑慮時，點擊「👁️」預覽並查看紅框標示位置，確保不誤刪正文。
                         </li>
                         <li><strong>清除下載</strong>：點擊清除後，雙欄對照確認效果無誤，即可下載乾淨檔案。</li>
                     </ol>
@@ -162,22 +160,22 @@
                     </p>
                     <ul>
                         <li>
-                            <strong>六種清除策略與個體勾選</strong>：支援個別偵測、預覽與勾選，針對 PDF
-                            底層結構進行清除：
+                            <strong>六種清除策略與個體勾選</strong>：支援個別偵測與勾選，多數項目支援即時預覽，針對
+                            PDF 底層結構進行清除：
                             <ul class="feature-sub-list">
-                                <li>
-                                    <strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
-                                </li>
                                 <li>
                                     <strong>「表單外部物件」 (Form XObject)</strong>：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
                                 </li>
                                 <li>
-                                    <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
-                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
-                                </li>
-                                <li>
                                     <strong>「註解」 (Annotation)</strong>：PDF
                                     的互動註解、圖示或蓋章（如浮水印標記層）。
+                                </li>
+                                <li>
+                                    <strong>「頁面直接內容」 (Direct Content)</strong>：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
+                                </li>
+                                <li>
+                                    <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
+                                    JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
                                 </li>
                                 <li>
                                     <strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
@@ -205,7 +203,7 @@
                     <ol>
                         <li>
                             <strong>重要文件請務必備份</strong>：雖然預覽功能可大幅降低誤刪風險，但清除浮水印涉及修改 PDF
-                            原始碼結構，請務必保留原始檔案備份以防萬一。
+                            原始結構，請務必保留原始檔案備份以防萬一。
                         </li>
                         <li>
                             <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集
@@ -275,22 +273,15 @@
             </p>
 
             <div class="modal-list-container extended-list">
-                <div style="position: relative">
-                    <div style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            ">
-                        <label class="keywords-field-label" style="margin-bottom: 0">1. 資源鍵名與圖層名稱關鍵字</label>
+                <div class="keywords-field-group">
+                    <div class="keywords-field-header">
+                        <label class="keywords-field-label">1. 資源鍵名與圖層名稱關鍵字</label>
                         <button id="resetKeyKeywordsBtn" class="modal-select-btn deselect-all"
                             title="回復資源鍵名與圖層名稱關鍵字的預設值">
                             ↺ 回復預設
                         </button>
                     </div>
-                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
-                        用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。
-                    </p>
+                    <p class="keywords-hint intro">用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。</p>
                     <textarea id="keyKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: watermark, confidential..."></textarea>
                     <p class="keywords-hint">
@@ -299,22 +290,15 @@
                         與「選擇性內容群組」 (OCG)。
                     </p>
                 </div>
-                <div style="position: relative">
-                    <div style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            ">
-                        <label class="keywords-field-label" style="margin-bottom: 0">2. 「頁面直接內容」關鍵字</label>
+                <div class="keywords-field-group">
+                    <div class="keywords-field-header">
+                        <label class="keywords-field-label">2. 「頁面直接內容」關鍵字</label>
                         <button id="resetContentKeywordsBtn" class="modal-select-btn deselect-all"
                             title="回復頁面直接內容關鍵字的預設值">
                             ↺ 回復預設
                         </button>
                     </div>
-                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
-                        用於比對內容串流（Content Stream）中實際顯示的文字。
-                    </p>
+                    <p class="keywords-hint intro">用於比對內容串流（Content Stream）中實際顯示的文字。</p>
                     <textarea id="contentKeywordsInput" class="keywords-textarea" rows="1"
                         placeholder="例如: 機密, 內部, 草稿..."></textarea>
                     <p class="keywords-hint">
@@ -323,44 +307,26 @@
                         (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
                     </p>
                 </div>
-                <div style="position: relative">
-                    <div style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            ">
-                        <label class="keywords-field-label" style="margin-bottom: 0">3. 高透明度特徵門檻</label>
+                <div class="keywords-field-group">
+                    <div class="keywords-field-header">
+                        <label class="keywords-field-label">3. 高透明度特徵門檻</label>
                         <button id="resetTransparencyBtn" class="modal-select-btn deselect-all" title="回復高透明度特徵門檻的預設值">
                             ↺ 回復預設
                         </button>
                     </div>
-                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                    <p class="keywords-hint intro">
                         設定透明度的判定門檻。當圖形狀態的透明度 (Alpha)
                         <strong>低於或等於</strong>此數值時（即更透明），將會被自動預選為疑似浮水印。
                     </p>
 
-                    <div style="
-                                display: flex;
-                                align-items: center;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 10px;
-                                background: rgba(47, 107, 235, 0.04);
-                                padding: 12px 10px;
-                                border-radius: 8px;
-                                border: 1px solid var(--border);
-                            ">
-                        <span
-                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">透明</span>
+                    <div class="slider-control-group">
+                        <span class="slider-label">透明</span>
                         <input type="range" id="transparencyThresholdSlider" min="0" max="1" step="0.01"
-                            style="flex: 1; min-width: 60px; cursor: pointer; accent-color: var(--primary)" />
-                        <span
-                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">不透明</span>
-                        <div style="display: flex; align-items: center; margin-left: auto">
+                            class="slider-input" />
+                        <span class="slider-label">不透明</span>
+                        <div class="slider-value-wrapper">
                             <input type="number" id="transparencyThresholdInput" class="keywords-textarea" min="0"
-                                max="1" step="0.01" placeholder="例如: 0.5"
-                                style="width: 75px; padding: 6px; text-align: center; min-height: auto" />
+                                max="1" step="0.01" placeholder="例如: 0.5" class="slider-number-input" />
                         </div>
                     </div>
 
@@ -369,43 +335,25 @@
                     </p>
                 </div>
 
-                <div style="position: relative">
-                    <div style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            ">
-                        <label class="keywords-field-label" style="margin-bottom: 0">4. 高頻率特徵門檻</label>
+                <div class="keywords-field-group">
+                    <div class="keywords-field-header">
+                        <label class="keywords-field-label">4. 高頻特徵門檻</label>
                         <button id="resetHeuristicBtn" class="modal-select-btn deselect-all" title="回復特徵門檻的預設值">
                             ↺ 回復預設
                         </button>
                     </div>
-                    <p class="keywords-hint" style="margin-top: 0; margin-bottom: 8px">
+                    <p class="keywords-hint intro">
                         設定自動預選重複物件的觸發門檻。當影像或圖形的出現頻率<strong>大於或等於</strong>此比例時，會被標記為高度可疑的浮水印。
                     </p>
 
-                    <div style="
-                                display: flex;
-                                align-items: center;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                margin-bottom: 10px;
-                                background: rgba(47, 107, 235, 0.04);
-                                padding: 12px 10px;
-                                border-radius: 8px;
-                                border: 1px solid var(--border);
-                            ">
-                        <span
-                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">0%</span>
+                    <div class="slider-control-group">
+                        <span class="slider-label">0%</span>
                         <input type="range" id="heuristicThresholdSlider" min="0" max="1" step="0.01"
-                            style="flex: 1; min-width: 60px; cursor: pointer; accent-color: var(--primary)" />
-                        <span
-                            style="font-size: 0.85rem; font-weight: 600; color: var(--muted); white-space: nowrap">100%</span>
-                        <div style="display: flex; align-items: center; margin-left: auto">
+                            class="slider-input" />
+                        <span class="slider-label">100%</span>
+                        <div class="slider-value-wrapper">
                             <input type="number" id="heuristicThresholdInput" class="keywords-textarea" min="0" max="1"
-                                step="0.01" placeholder="例如: 0.8"
-                                style="width: 75px; padding: 6px; text-align: center; min-height: auto" />
+                                step="0.01" placeholder="例如: 0.8" class="slider-number-input" />
                         </div>
                     </div>
 
@@ -444,11 +392,11 @@
     <div id="triggerWordsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="triggerWordsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「頁面直接內容」清理選項</h3>
+            <h3>⚙ 「頁面直接內容」清理選項</h3>
             <p id="triggerWordsModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：<br />
-                <small style="color: var(--muted); display: block; margin-top: 6px;">💡 註：預覽以隔離其它內容方式呈現。</small>
+                <small class="modal-list-hint">💡 註：預覽以隔離其它內容方式呈現。</small>
             </p>
 
             <div id="directContentListContainer" class="modal-list-container">
@@ -469,7 +417,7 @@
     <div id="formXObjectKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="formXObjectKeywordsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「表單外部物件」清理選項</h3>
+            <h3>⚙ 「表單外部物件」清理選項</h3>
             <p id="formXObjectModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：
@@ -493,7 +441,7 @@
     <div id="annotsSettingsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="annotsSettingsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「註解」清理選項</h3>
+            <h3>⚙ 「註解」清理選項</h3>
             <p id="annotsModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：
@@ -517,7 +465,7 @@
     <div id="imageKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="imageKeywordsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「影像外部物件」清理選項</h3>
+            <h3>⚙ 「影像外部物件」清理選項</h3>
             <p id="imageXObjectModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：
@@ -541,12 +489,11 @@
     <div id="extGStateKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="extGStateKeywordsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「延伸圖形狀態」清理選項</h3>
+            <h3>⚙ 「延伸圖形狀態」清理選項</h3>
             <p id="extGStateModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：<br />
-                <small style="color: var(--muted); display: block; margin-top: 6px;">💡
-                    註：此項為屬性狀態而非實體物件，因此不提供預覽。</small>
+                <small class="modal-list-hint">💡 註：此項為屬性狀態而非實體物件，因此不提供預覽。</small>
             </p>
 
             <div id="extGStateListContainer" class="modal-list-container">
@@ -567,12 +514,11 @@
     <div id="ocgKeywordsModal" class="modal-overlay" role="dialog" aria-modal="true"
         aria-labelledby="ocgKeywordsModalTitle">
         <div class="modal-card modal-lg">
-            <h3>⚙ 設定「選擇性內容群組」清理選項</h3>
+            <h3>⚙ 「選擇性內容群組」清理選項</h3>
             <p id="ocgModalDesc" class="modal-desc">
                 請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
                     class="badge badge-success">保留</strong>）：<br />
-                <small style="color: var(--muted); display: block; margin-top: 6px;">💡
-                    註：此項無單一特定位置，預覽以關閉該圖層方式呈現。</small>
+                <small class="modal-list-hint">💡 註：此項無單一特定位置，預覽以關閉該圖層方式呈現。</small>
             </p>
 
             <div id="ocgListContainer" class="modal-list-container">
@@ -621,8 +567,8 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/state.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/ui-modals.js"></script>

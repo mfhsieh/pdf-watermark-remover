@@ -2,7 +2,7 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(var(--shadow-base-rgb), 0.6);
     backdrop-filter: blur(8px);
     /* Safari 相容性 */
     -webkit-backdrop-filter: blur(8px);
@@ -27,7 +27,7 @@
     padding: 32px;
     width: 100%;
     max-width: 440px;
-    box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+    box-shadow: 0 30px 70px rgba(var(--shadow-base-rgb), 0.25);
     transform: scale(0.95);
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -145,8 +145,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
-    padding-right: 4px;
-    /* 為滾動條與按鈕預留少許呼吸空間 */
+    padding: 2px 4px 2px 2px;
+    /* 為滾動條與按鈕 hover 位移預留呼吸空間，防止被 overflow 切斷 */
 }
 
 /* 延伸的大尺寸列表容器，供 OCG 等項目較多的彈窗使用 */
@@ -165,10 +165,12 @@
     margin-bottom: 15px;
 }
 
-.preview-modal-title {
+.modal-card .preview-modal-title {
+    display: block; /* 覆蓋 .modal-card h3 的 display: flex，避免文字與標籤混排時被切成 flex items 導致排版破裂 */
     margin: 0;
     font-size: 1.3rem;
     color: var(--text);
+    line-height: 1.4;
 }
 
 .preview-modal-close-btn {
@@ -207,7 +209,7 @@
 .preview-modal-spinner-icon {
     width: 50px;
     height: 50px;
-    border: 4px solid rgba(47, 107, 235, 0.1);
+    border: 4px solid rgba(var(--primary-rgb), 0.1);
     border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -274,14 +276,14 @@
 }
 
 .modal-select-btn.deselect-all {
-    background-color: rgba(107, 114, 128, 0.08);
+    background-color: rgba(var(--muted-rgb), 0.08);
     color: var(--muted);
-    border-color: rgba(107, 114, 128, 0.15);
+    border-color: rgba(var(--muted-rgb), 0.15);
 }
 
 .modal-select-btn.deselect-all:hover {
-    background-color: rgba(107, 114, 128, 0.14);
-    border-color: rgba(107, 114, 128, 0.3);
+    background-color: rgba(var(--muted-rgb), 0.14);
+    border-color: rgba(var(--muted-rgb), 0.3);
     transform: translateY(-1px);
 }
 
@@ -327,6 +329,17 @@
 .keywords-field-label {
     display: block;
     font-weight: 600;
+    margin-bottom: 0;
+}
+
+.keywords-field-group {
+    position: relative;
+}
+
+.keywords-field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 8px;
 }
 
@@ -359,6 +372,58 @@
     color: var(--muted);
     margin-top: 4px;
     line-height: 1.4;
+}
+
+.keywords-hint.intro {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+/* 滑桿控制群組 */
+.slider-control-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    background: rgba(var(--primary-rgb), 0.04);
+    padding: 12px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.slider-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.slider-input {
+    flex: 1;
+    min-width: 60px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.slider-value-wrapper {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.slider-number-input {
+    width: 75px;
+    padding: 6px;
+    text-align: center;
+    min-height: auto;
+}
+
+/* 列表下方的提示小字 */
+.modal-list-hint {
+    color: var(--muted);
+    display: block;
+    margin-top: 6px;
 }
 
 /* 說明文字中的強調色 */

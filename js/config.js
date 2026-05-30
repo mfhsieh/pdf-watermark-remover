@@ -1,14 +1,3 @@
-// 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
-const {
-    PDFDocument, // 代表整個 PDF 文件物件
-    PDFName, // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
-    PDFDict, // 代表 PDF 的字典結構（Dictionary）
-    PDFArray, // 代表 PDF 的陣列結構（Array）
-    PDFRawStream, // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
-    PDFString, // 代表 PDF 的常規字串實體
-    PDFHexString, // 代表 PDF 的十六進制編碼字串
-} = PDFLib;
-
 // ==========================================
 // [Config Layer] 參數與設定 (全域浮水印判定關鍵字)
 // ==========================================
@@ -54,108 +43,27 @@ let WATERMARK_KEY_KEYWORDS = [];
 /** @type {string[]} 全域內容文字關鍵字清單 */
 let WATERMARK_CONTENT_KEYWORDS = [];
 
-// 3. 高透明度特徵門檻 (ExtGState Alpha Threshold)
+// 3. 動態編譯並整合產生最終的高精度比對字串庫
+/** @type {string[]} 編譯後的最終高精度比對字串庫 */
+let FINAL_CONTENT_KEYWORDS = [];
+
+// 4. 高透明度特徵門檻 (ExtGState Alpha Threshold)
 const DEFAULT_TRANSPARENCY_THRESHOLD = 0.5;
 /** @type {number} 全域高透明度特徵門檻 */
 let TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
 
-// 4. 高頻率特徵門檻 (Heuristic Repetition Threshold)
+// 5. 高頻率特徵門檻 (Heuristic Repetition Threshold)
 const DEFAULT_HEURISTIC_THRESHOLD = 0.8;
 /** @type {number} 高頻率出現門檻 (0~1) */
 let HEURISTIC_THRESHOLD = DEFAULT_HEURISTIC_THRESHOLD;
 
-// 5. 預覽標示紅框外觀設定 (Form XObject, Image XObject, Annotation 共用)
+// 6. 預覽標示紅框外觀設定 (Form XObject, Image XObject, Annotation 共用)
 const PREVIEW_HIGHLIGHT_CONFIG = {
     color: [1, 0.2, 0.2], // RGB 顏色比例 (0~1)，紅色
-    borderWidth: 3,       // 邊框寬度
-    fillOpacity: 0.25,    // 底色半透明度
-    borderOpacity: 0.8,   // 邊框半透明度
+    borderWidth: 3, // 邊框寬度
+    fillOpacity: 0.25, // 底色半透明度
+    borderOpacity: 0.8, // 邊框半透明度
 };
-
-/**
- * 將字串動態編譯為 Big5 格式的 Latin1 字串
- * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
- */
-function compileToBig5Latin1(str) {
-    try {
-        const encoder = new TextEncoder('big5', { NONSTANDARD_allowLegacyEncoding: true });
-        const bytes = encoder.encode(str);
-        let result = '';
-        for (let i = 0; i < bytes.length; i++) {
-            result += String.fromCharCode(bytes[i]);
-        }
-        return result;
-    } catch (e) {
-        console.warn('Big5 動態編譯失敗，請確認已載入 text-encoding polyfill', e);
-        return '';
-    }
-}
-
-/**
- * 將正規 UTF-8 字串動態編譯為 PDF 標準中文字型 UTF-16BE 在 Latin1 解碼流下的二進位特徵碼
- * @param {string} str - 輸入中文
- * @returns {string} Latin1 格式的特徵碼
- */
-function compileToUTF16BELatin1(str) {
-    let result = '';
-    for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
-        const hi = code >> 8;
-        const lo = code & 0xff;
-        result += String.fromCharCode(hi, lo);
-    }
-    return result;
-}
-
-/**
- * 將內容文字流中可能含有的 PDF 十六進位字串 <...> 萃取並還原為 Latin1 字串
- * @param {string} text - 原始內容文字流
- * @returns {string} 包含已還原之十六進位內容的完整文字字串
- */
-function decodeHexStringsInText(text) {
-    if (!text) return '';
-    let expandedText = text;
-    const hexRegex = /<([0-9a-fA-F\s]+)>/g;
-    let match;
-    while ((match = hexRegex.exec(text)) !== null) {
-        const hexClean = match[1].replace(/\s/g, '');
-        if (hexClean.length === 0) continue;
-        let paddedHex = hexClean;
-        if (paddedHex.length % 2 !== 0) {
-            paddedHex += '0';
-        }
-        try {
-            let decodedStr = '';
-            for (let i = 0; i < paddedHex.length; i += 2) {
-                const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
-                decodedStr += String.fromCharCode(byteVal);
-            }
-            expandedText += ' ' + decodedStr;
-        } catch (e) {}
-    }
-    return expandedText;
-}
-
-/**
- * 安全地獲取並解壓縮 PDFRawStream 的二進位內容
- * @param {PDFRawStream} stream - PDF 原始二進位串流
- * @returns {Uint8Array} 解密解壓後的二進位資料
- */
-function getDecodedStreamContents(stream) {
-    if (!(stream instanceof PDFRawStream)) return new Uint8Array();
-    try {
-        const decoded = PDFLib.decodePDFRawStream(stream);
-        decoded.reset();
-        return decoded.getBytes();
-    } catch (err) {
-        console.error('解碼二進位串流失敗，回退至 raw 資料', err);
-        return stream.contents || new Uint8Array();
-    }
-}
-
-// === 動態編譯並整合產生最終的高精度比對字串庫 ===
-/** @type {string[]} 編譯後的最終高精度比對字串庫 */
-let FINAL_CONTENT_KEYWORDS = [];
 
 /**
  * 根據目前的 WATERMARK_CONTENT_KEYWORDS 建立最終的多重編碼比對特徵碼陣列
@@ -265,132 +173,3 @@ function saveGlobalKeywords(
 
 // 初始載入
 loadGlobalKeywords();
-
-// 綁定設定介面事件
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('globalKeywordsModal');
-    const keyInput = document.getElementById('keyKeywordsInput');
-    const contentInput = document.getElementById('contentKeywordsInput');
-    const transparencyInput = document.getElementById('transparencyThresholdInput');
-    const transparencySlider = document.getElementById('transparencyThresholdSlider');
-    const heuristicInput = document.getElementById('heuristicThresholdInput');
-    const heuristicSlider = document.getElementById('heuristicThresholdSlider');
-
-    // 雙向綁定：透明度滑桿與輸入框
-    if (transparencySlider && transparencyInput) {
-        transparencySlider.addEventListener('input', (e) => {
-            transparencyInput.value = e.target.value;
-        });
-        transparencyInput.addEventListener('input', (e) => {
-            let val = parseFloat(e.target.value);
-            if (!isNaN(val)) {
-                if (val < 0) val = 0;
-                if (val > 1) val = 1;
-                transparencySlider.value = val;
-            }
-        });
-    }
-
-    // 雙向綁定：智慧偵測滑桿與輸入框
-    if (heuristicSlider && heuristicInput) {
-        heuristicSlider.addEventListener('input', (e) => {
-            heuristicInput.value = e.target.value;
-        });
-        heuristicInput.addEventListener('input', (e) => {
-            let val = parseFloat(e.target.value);
-            if (!isNaN(val)) {
-                if (val < 0) val = 0;
-                if (val > 1) val = 1;
-                heuristicSlider.value = val;
-            }
-        });
-    }
-
-    // 自動適應文字方塊高度
-    function adjustTextareaHeight(el) {
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
-    }
-
-    keyInput.addEventListener('input', () => adjustTextareaHeight(keyInput));
-    contentInput.addEventListener('input', () => adjustTextareaHeight(contentInput));
-
-    document.getElementById('openGlobalKeywordsModalBtn').addEventListener('click', () => {
-        keyInput.value = WATERMARK_KEY_KEYWORDS.join(', ');
-        contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(', ');
-        transparencyInput.value = TRANSPARENCY_THRESHOLD;
-        if (transparencySlider) transparencySlider.value = TRANSPARENCY_THRESHOLD;
-        if (heuristicInput) heuristicInput.value = HEURISTIC_THRESHOLD;
-        if (heuristicSlider) heuristicSlider.value = HEURISTIC_THRESHOLD;
-        modal.classList.add('active');
-
-        // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
-        setTimeout(() => {
-            adjustTextareaHeight(keyInput);
-            adjustTextareaHeight(contentInput);
-        }, 50);
-    });
-
-    document.getElementById('closeGlobalKeywordsModalBtn').addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-
-    document.getElementById('resetKeyKeywordsBtn').addEventListener('click', () => {
-        if (confirm('確定要將「資源鍵名與圖層名稱關鍵字」回復為預設值嗎？')) {
-            keyInput.value = DEFAULT_KEY_KEYWORDS.join(', ');
-            adjustTextareaHeight(keyInput);
-        }
-    });
-
-    document.getElementById('resetContentKeywordsBtn').addEventListener('click', () => {
-        if (confirm('確定要將「頁面直接內容關鍵字」回復為預設值嗎？')) {
-            contentInput.value = DEFAULT_CONTENT_KEYWORDS.join(', ');
-            adjustTextareaHeight(contentInput);
-        }
-    });
-
-    document.getElementById('resetTransparencyBtn').addEventListener('click', () => {
-        if (confirm('確定要將「高透明度特徵門檻」回復為預設值嗎？')) {
-            transparencyInput.value = DEFAULT_TRANSPARENCY_THRESHOLD;
-            if (transparencySlider) transparencySlider.value = DEFAULT_TRANSPARENCY_THRESHOLD;
-        }
-    });
-
-    const resetHeuristicBtn = document.getElementById('resetHeuristicBtn');
-    if (resetHeuristicBtn) {
-        resetHeuristicBtn.addEventListener('click', () => {
-            if (confirm('確定要將「高頻率出現智慧偵測門檻」回復為預設值嗎？')) {
-                heuristicInput.value = DEFAULT_HEURISTIC_THRESHOLD;
-                if (heuristicSlider) heuristicSlider.value = DEFAULT_HEURISTIC_THRESHOLD;
-            }
-        });
-    }
-
-    document.getElementById('saveGlobalKeywordsBtn').addEventListener('click', () => {
-        const keysRaw = keyInput.value
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s);
-        const contentsRaw = contentInput.value
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s);
-        const thresholdRaw = parseFloat(transparencyInput.value);
-        const finalThreshold = isNaN(thresholdRaw) ? DEFAULT_TRANSPARENCY_THRESHOLD : thresholdRaw;
-
-        let finalHeuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD;
-        if (heuristicInput) {
-            const hRaw = parseFloat(heuristicInput.value);
-            finalHeuristicThreshold = isNaN(hRaw) ? DEFAULT_HEURISTIC_THRESHOLD : hRaw;
-        }
-
-        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold, finalHeuristicThreshold);
-        modal.classList.remove('active');
-        addStatusMessage('已儲存自訂設定。', 'success');
-
-        if (typeof selectedFile !== 'undefined' && selectedFile) {
-            addStatusMessage('🔄 設定已變更，正在重新掃描 PDF...', 'info');
-            showOriginalPreview(selectedFile);
-        }
-    });
-});

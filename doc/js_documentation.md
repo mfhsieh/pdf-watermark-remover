@@ -14,7 +14,7 @@
 
 ## 2. 檔案分工與說明
 
-模組之間透過全域變數與函數進行依賴，主要檔案列表如下：
+模組之間透過全域變數與函式進行依賴，主要檔案列表如下：
 
 | 檔案名稱 | 核心職責 | 說明 |
 | :--- | :--- | :--- |
@@ -46,7 +46,7 @@
 
 ### `config.js`
 負責管理使用者的全域設定，特別是浮水印比對用的關鍵字。
-- **重要函數：**
+- **重要函式：**
   - `buildFinalContentKeywords()`: 將使用者輸入的關鍵字轉換為小寫、以及各種編碼（如 Big5、UTF-16BE）的 Latin1 特徵碼陣列，儲存於 `FINAL_CONTENT_KEYWORDS`，以應對不同編碼形式的 PDF。
   - `loadGlobalKeywords()` / `saveGlobalKeywords()`: 從 localStorage 讀寫設定。
 
@@ -56,13 +56,13 @@
   - `detectedFormXObjects` 等：儲存背景掃描引擎抓出的物件 Map。
   - `formXObjectsToDestroy` 等：儲存使用者目前「勾選準備要刪除」的物件清單。
   - `cachedDecryptedBytes`: 儲存剛解密後的 PDF 原始資料（免去重複解密耗時）。
-- **重要函數：**
+- **重要函式：**
   - `decryptWithQpdfWasm(pdfBytes, password)`: 呼叫 qpdf-wasm 引擎進行非同步解密。
   - `openObjectPreview(strategyType, key, entry)`: 開啟彈出視窗並載入對應物件的即時預覽 iframe。
 
 ### `utils.js`
-所有與「判定是否為浮水印」相關的純函數 (Pure functions)。
-- **判定函數：** `isSuspectKeyName(text)`, `isSuspectContentText(text)` 等，這兩個是底層比對。
+所有與「判定是否為浮水印」相關的純函式 (Pure functions)。
+- **判定函式：** `isSuspectKeyName(text)`, `isSuspectContentText(text)` 等，這兩個是底層比對。
 - **策略判定：** `isSuspectFormXObject()`, `isSuspectAnnotation()` 等，供掃描引擎呼叫以決定是否要「預設勾選」該物件。
 
 ### `pdf-scanner.js`
@@ -72,14 +72,14 @@
   2. 嘗試讀取 PDF，若失敗則呼叫 `decryptWithQpdfWasm` 處理密碼邏輯。
   3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。
   4. 產生原始 PDF 的 Blob URL 以供預覽。
-- **預覽生成器：** `generateFormXObjectPreviewUrl` 等，這些函數會利用 PDF-lib 動態抽取出單一物件，將周遭干擾隱藏後轉出成獨立的 PDF 供 iframe 檢視。
+- **預覽生成器：** `generateFormXObjectPreviewUrl` 等，這些函式會利用 PDF-lib 動態抽取出單一物件，將周遭干擾隱藏後轉出成獨立的 PDF 供 iframe 檢視。
 
 ### `pdf-cleaner.js`
 真正修改 PDF 位元組的引擎，遵循「無損置換」原則。
 - **核心流程 `processPdf(pdfDoc, options)`：**
   根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。
 - **空串流置換 `createBlankXObjectStream()`：**
-  對於需要移除的資源，不能物理刪除字典鍵值，否則可能導致 PDF 工具（如 Acrobat Reader）報錯。此函數會註冊一個完全透明的物件將其覆蓋。
+  對於需要移除的資源，不能物理刪除字典鍵值，否則可能導致 PDF 工具（如 Acrobat Reader）報錯。此函式會註冊一個完全透明的物件將其覆蓋。
 - **安全參照清理 `cleanContentStreams()`：**
   若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do`）若繼續存在，也會導致報錯。此函式負責使用 RegExp 在明文內容流中徹底抹除這些呼叫。
 

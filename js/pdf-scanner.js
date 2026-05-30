@@ -3,7 +3,7 @@
 // ==========================================
 
 /**
- * 輔助函數：將 Uint8Array 以 zlib/deflate 解壓縮
+ * 輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
  * PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 "deflate"。
  * 若失敗則嘗試 "deflate-raw"（無 zlib header 的 raw deflate）。
  * @param {Uint8Array} data - 壓縮後的原始位元組
@@ -76,7 +76,7 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
         if (!(stream instanceof PDFRawStream)) continue;
 
         let data = stream.contents;
-        // 嘗試解壓縮（FlateDecode），統一由輔助函數處理
+        // 嘗試解壓縮（FlateDecode），統一由輔助函式處理
         const filter = stream.dict.get(PDFName.of('Filter'));
         if (filter && filter.toString() === '/FlateDecode') {
             data = await decompressFlateDecode(stream.contents);
@@ -108,17 +108,18 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
 
 /**
  * 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
- * @param {PDFDocument} previewDoc 
- * @param {PDFPage} page 
- * @param {number} x 
- * @param {number} y 
- * @param {number} width 
- * @param {number} height 
+ * @param {PDFDocument} previewDoc
+ * @param {PDFPage} page
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
  */
 function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
-    const config = typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
-        ? PREVIEW_HIGHLIGHT_CONFIG
-        : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+    const config =
+        typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
+            ? PREVIEW_HIGHLIGHT_CONFIG
+            : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
 
     const extGStateName = 'GsPreviewHighlight';
     const extGStateDict = previewDoc.context.obj({
@@ -267,7 +268,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
 
     // 由於複製頁面已經連帶複製了 Resources 字典，該圖片物件依然以原 keyName 存在於該頁面的 XObject 中
     const cleanKeyName = keyName.replace(/^\//, '');
-    
+
     // 取得共用的紅框描繪指令
     const highlightCmd = getPreviewHighlightRawCommand(previewDoc, page, xOffset, yOffset, finalW, finalH);
 
@@ -405,9 +406,10 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
             const w = Math.abs(targetRect[2] - targetRect[0]);
             const h = Math.abs(targetRect[3] - targetRect[1]);
 
-            const config = typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
-                ? PREVIEW_HIGHLIGHT_CONFIG
-                : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
+            const config =
+                typeof PREVIEW_HIGHLIGHT_CONFIG !== 'undefined'
+                    ? PREVIEW_HIGHLIGHT_CONFIG
+                    : { color: [1, 0.2, 0.2], borderWidth: 3, fillOpacity: 0.25, borderOpacity: 0.8 };
 
             page.drawRectangle({
                 x: x0,

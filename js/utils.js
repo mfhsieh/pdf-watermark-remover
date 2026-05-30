@@ -2,6 +2,17 @@
 // [Core Utilities] 核心工具與輔助函式
 // ==========================================
 
+// 從全域載入的 PDFLib 程式庫解構出所需的低階/高階 PDF 資料型態
+const {
+    PDFDocument, // 代表整個 PDF 文件物件
+    PDFName, // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
+    PDFDict, // 代表 PDF 的字典結構（Dictionary）
+    PDFArray, // 代表 PDF 的陣列結構（Array）
+    PDFRawStream, // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
+    PDFString, // 代表 PDF 的常規字串實體
+    PDFHexString, // 代表 PDF 的十六進制編碼字串
+} = PDFLib;
+
 /**
  * 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
  * @param {string} text - 鍵名或圖層名稱
@@ -114,4 +125,88 @@ function decodeBinaryToText(data) {
         str += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));
     }
     return str;
+}
+
+// ==========================================
+// [Binary & String Utils] 二進位與編碼輔助函式
+// ==========================================
+/**
+ * 將字串動態編譯為 Big5 格式的 Latin1 字串
+ * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
+ */
+function compileToBig5Latin1(str) {
+    try {
+        const encoder = new TextEncoder('big5', { NONSTANDARD_allowLegacyEncoding: true });
+        const bytes = encoder.encode(str);
+        let result = '';
+        for (let i = 0; i < bytes.length; i++) {
+            result += String.fromCharCode(bytes[i]);
+        }
+        return result;
+    } catch (e) {
+        console.warn('Big5 動態編譯失敗，請確認已載入 text-encoding polyfill', e);
+        return '';
+    }
+}
+
+/**
+ * 將正規 UTF-8 字串動態編譯為 PDF 標準中文字型 UTF-16BE 在 Latin1 解碼流下的二進位特徵碼
+ * @param {string} str - 輸入中文
+ * @returns {string} Latin1 格式的特徵碼
+ */
+function compileToUTF16BELatin1(str) {
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        const hi = code >> 8;
+        const lo = code & 0xff;
+        result += String.fromCharCode(hi, lo);
+    }
+    return result;
+}
+
+/**
+ * 將內容文字流中可能含有的 PDF 十六進位字串 <...> 萃取並還原為 Latin1 字串
+ * @param {string} text - 原始內容文字流
+ * @returns {string} 包含已還原之十六進位內容的完整文字字串
+ */
+function decodeHexStringsInText(text) {
+    if (!text) return '';
+    let expandedText = text;
+    const hexRegex = /<([0-9a-fA-F\s]+)>/g;
+    let match;
+    while ((match = hexRegex.exec(text)) !== null) {
+        const hexClean = match[1].replace(/\s/g, '');
+        if (hexClean.length === 0) continue;
+        let paddedHex = hexClean;
+        if (paddedHex.length % 2 !== 0) {
+            paddedHex += '0';
+        }
+        try {
+            let decodedStr = '';
+            for (let i = 0; i < paddedHex.length; i += 2) {
+                const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
+                decodedStr += String.fromCharCode(byteVal);
+            }
+            expandedText += ' ' + decodedStr;
+        } catch (e) {}
+    }
+    return expandedText;
+}
+
+/**
+ * 安全地獲取並解壓縮 PDFRawStream 的二進位內容
+ * @param {PDFRawStream} stream - PDF 原始二進位串流
+ * @returns {Uint8Array} 解密解壓後的二進位資料
+ */
+function getDecodedStreamContents(stream) {
+    if (!(stream instanceof PDFRawStream)) return new Uint8Array();
+    try {
+        const decoded = PDFLib.decodePDFRawStream(stream);
+        decoded.reset();
+        return decoded.getBytes();
+    } catch (err) {
+        console.error('解碼二進位串流失敗，回退至 raw 資料', err);
+        return stream.contents || new Uint8Array();
+    }
 }

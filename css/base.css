@@ -6,16 +6,24 @@
     --surface: #ffffff;
     /* 品牌主色調 */
     --primary: #2f6beb;
+    --primary-rgb: 47, 107, 235;
     /* 主色懸停與點擊效果 */
     --primary-dark: #254f9a;
+    /* 狀態與輔助色 */
+    --success: var(--success);
+    --success-rgb: 15, 151, 61;
+    --warning: var(--warning);
+    --danger: #d92d20;
+    --danger-rgb: 217, 45, 32;
     /* 主要文字色 */
     --text: #1f2937;
+    /* 陰影與深色疊加基底色 (#0f172a) */
+    --shadow-base-rgb: 15, 23, 42;
     /* 次要與輔助文字色 */
     --muted: #6b7280;
+    --muted-rgb: 107, 114, 128;
     /* 邊框與分隔線顏色 */
     --border: #e2e8f0;
-    /* 警示與錯誤提示色 */
-    --danger: #d92d20;
 }
 
 /* 全域樣式 */
@@ -31,8 +39,8 @@ body {
     font-family: Inter, 'Noto Sans TC', 'Segoe UI', sans-serif;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(47, 107, 235, 0.12), transparent 25%),
-        radial-gradient(circle at bottom right, rgba(47, 107, 235, 0.08), transparent 20%), var(--bg);
+        radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.12), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(var(--primary-rgb), 0.08), transparent 20%), var(--bg);
     scrollbar-gutter: stable;
 }
 

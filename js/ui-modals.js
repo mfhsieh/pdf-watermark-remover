@@ -9,8 +9,8 @@
  */
 class WatermarkStrategyModal {
     /**
-     * 構造函數：初始化 Modal 實例並選取關聯的 DOM 元素
-     * @param {Object} config - 設定物件
+     * 建構式：初始化 Modal 實例並選取關聯的 DOM 元素
+     * @param {Object} config - Modal 設定物件
      */
     constructor(config) {
         this.modal = document.getElementById(config.modalId);
@@ -252,10 +252,10 @@ new WatermarkStrategyModal({
     renderLabel: (labelEl, key, entry) => {
         const pageLabel = ` (第 ${entry.pages.join(', ')} 頁)`;
         const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
-        
+
         const textSpan = document.createElement('span');
         textSpan.appendChild(document.createTextNode(`${displayName}${pageLabel} [實體: ${key}]`));
-        
+
         if (entry.isHeuristic) {
             const highlight = document.createElement('span');
             highlight.style.color = '#dc3545';
@@ -263,7 +263,7 @@ new WatermarkStrategyModal({
             highlight.textContent = ' [高頻偵測]';
             textSpan.appendChild(highlight);
         }
-        
+
         labelEl.appendChild(textSpan);
     },
     applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個「表單外部物件」。`,
@@ -364,12 +364,12 @@ new WatermarkStrategyModal({
     renderLabel: (labelEl, key, entry) => {
         const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
         const pageLabel = entry.pages && entry.pages.length > 0 ? ` (第 ${entry.pages.join(', ')} 頁)` : '';
-        
+
         const textSpan = document.createElement('span');
         textSpan.appendChild(
             document.createTextNode(`${displayName} (${entry.width}x${entry.height}, ${entry.filterStr})${pageLabel}`)
         );
-        
+
         if (entry.isHeuristic) {
             const highlight = document.createElement('span');
             highlight.style.color = '#dc3545';
@@ -377,7 +377,7 @@ new WatermarkStrategyModal({
             highlight.textContent = ' [高頻偵測]';
             textSpan.appendChild(highlight);
         }
-        
+
         labelEl.appendChild(textSpan);
     },
     applyMsgTemplate: (len) => `已成功套用「影像外部物件」清理設定！共選定清除 ${len} 個影像實例。`,
@@ -436,4 +436,234 @@ new WatermarkStrategyModal({
     },
     applyMsgTemplate: (len) => `已成功套用「選擇性內容群組」清理設定！共選定隱藏 ${len} 個「選擇性內容群組」實例。`,
     resetMsg: '已將當前檔案中的「選擇性內容群組」清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。',
+});
+
+// ==========================================
+// [Global Settings] 全域設定彈出視窗 (Modal) UI 綁定邏輯
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('globalKeywordsModal');
+    const keyInput = document.getElementById('keyKeywordsInput');
+    const contentInput = document.getElementById('contentKeywordsInput');
+    const transparencyInput = document.getElementById('transparencyThresholdInput');
+    const transparencySlider = document.getElementById('transparencyThresholdSlider');
+    const heuristicInput = document.getElementById('heuristicThresholdInput');
+    const heuristicSlider = document.getElementById('heuristicThresholdSlider');
+
+    // 雙向綁定：透明度滑桿與輸入框
+    if (transparencySlider && transparencyInput) {
+        transparencySlider.addEventListener('input', (e) => {
+            transparencyInput.value = e.target.value;
+        });
+        transparencyInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                transparencySlider.value = val;
+            }
+        });
+    }
+
+    // 雙向綁定：智慧偵測滑桿與輸入框
+    if (heuristicSlider && heuristicInput) {
+        heuristicSlider.addEventListener('input', (e) => {
+            heuristicInput.value = e.target.value;
+        });
+        heuristicInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) val = 0;
+                if (val > 1) val = 1;
+                heuristicSlider.value = val;
+            }
+        });
+    }
+
+    // 自動適應文字方塊高度
+    function adjustTextareaHeight(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    keyInput.addEventListener('input', () => adjustTextareaHeight(keyInput));
+    contentInput.addEventListener('input', () => adjustTextareaHeight(contentInput));
+
+    document.getElementById('openGlobalKeywordsModalBtn').addEventListener('click', () => {
+        keyInput.value = WATERMARK_KEY_KEYWORDS.join(', ');
+        contentInput.value = WATERMARK_CONTENT_KEYWORDS.join(', ');
+        transparencyInput.value = TRANSPARENCY_THRESHOLD;
+        if (transparencySlider) transparencySlider.value = TRANSPARENCY_THRESHOLD;
+        if (heuristicInput) heuristicInput.value = HEURISTIC_THRESHOLD;
+        if (heuristicSlider) heuristicSlider.value = HEURISTIC_THRESHOLD;
+        modal.classList.add('active');
+
+        // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
+        setTimeout(() => {
+            adjustTextareaHeight(keyInput);
+            adjustTextareaHeight(contentInput);
+        }, 50);
+    });
+
+    document.getElementById('closeGlobalKeywordsModalBtn').addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    document.getElementById('resetKeyKeywordsBtn').addEventListener('click', () => {
+        if (confirm('確定要將「資源鍵名與圖層名稱關鍵字」回復為預設值嗎？')) {
+            keyInput.value = DEFAULT_KEY_KEYWORDS.join(', ');
+            adjustTextareaHeight(keyInput);
+        }
+    });
+
+    document.getElementById('resetContentKeywordsBtn').addEventListener('click', () => {
+        if (confirm('確定要將「頁面直接內容關鍵字」回復為預設值嗎？')) {
+            contentInput.value = DEFAULT_CONTENT_KEYWORDS.join(', ');
+            adjustTextareaHeight(contentInput);
+        }
+    });
+
+    document.getElementById('resetTransparencyBtn').addEventListener('click', () => {
+        if (confirm('確定要將「高透明度特徵門檻」回復為預設值嗎？')) {
+            transparencyInput.value = DEFAULT_TRANSPARENCY_THRESHOLD;
+            if (transparencySlider) transparencySlider.value = DEFAULT_TRANSPARENCY_THRESHOLD;
+        }
+    });
+
+    const resetHeuristicBtn = document.getElementById('resetHeuristicBtn');
+    if (resetHeuristicBtn) {
+        resetHeuristicBtn.addEventListener('click', () => {
+            if (confirm('確定要將「高頻率出現智慧偵測門檻」回復為預設值嗎？')) {
+                heuristicInput.value = DEFAULT_HEURISTIC_THRESHOLD;
+                if (heuristicSlider) heuristicSlider.value = DEFAULT_HEURISTIC_THRESHOLD;
+            }
+        });
+    }
+
+    document.getElementById('saveGlobalKeywordsBtn').addEventListener('click', () => {
+        const keysRaw = keyInput.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s);
+        const contentsRaw = contentInput.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s);
+        const thresholdRaw = parseFloat(transparencyInput.value);
+        const finalThreshold = isNaN(thresholdRaw) ? DEFAULT_TRANSPARENCY_THRESHOLD : thresholdRaw;
+
+        let finalHeuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD;
+        if (heuristicInput) {
+            const hRaw = parseFloat(heuristicInput.value);
+            finalHeuristicThreshold = isNaN(hRaw) ? DEFAULT_HEURISTIC_THRESHOLD : hRaw;
+        }
+
+        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold, finalHeuristicThreshold);
+        modal.classList.remove('active');
+        addStatusMessage('已儲存自訂設定。', 'success');
+
+        if (typeof selectedFile !== 'undefined' && selectedFile) {
+            addStatusMessage('🔄 設定已變更，正在重新掃描 PDF...', 'info');
+            showOriginalPreview(selectedFile);
+        }
+    });
+});
+
+// ==========================================
+// [Object Preview] 物件即時預覽彈窗 UI 邏輯
+// ==========================================
+
+/**
+ * 開啟物件即時預覽彈窗
+ * @param {string} strategyType - 策略類型 (如 'formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem')
+ * @param {string} key - 物件鍵值或識別碼
+ * @param {Object} entry - 物件資料實體
+ */
+async function openObjectPreview(strategyType, key, entry) {
+    objectPreviewTitle.textContent = `🔍 即時預覽：正在載入項目...`;
+    // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
+    objectPreviewSpinner.classList.remove('hidden');
+    objectPreviewIframe.classList.add('hidden');
+    objectPreviewIframe.src = '';
+    objectPreviewModal.classList.add('active');
+
+    try {
+        if (!cachedDecryptedBytes) {
+            throw new Error('無法讀取 PDF 原始資料。');
+        }
+
+        let previewUrl = '';
+
+        function escapeHTML(str) {
+            return str.replace(
+                /[&<>'"]/g,
+                (tag) =>
+                    ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;',
+                    })[tag]
+            );
+        }
+
+        if (strategyType === 'formXObjectItem') {
+            objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
+            previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
+        } else if (strategyType === 'imageXObjectItem') {
+            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
+            previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.pages[0] - 1);
+        } else if (strategyType === 'directContentItem') {
+            objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：串流 (第 ${entry.page} 頁)`;
+            previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
+        } else if (strategyType === 'annotItem') {
+            objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
+            previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
+        } else if (strategyType === 'ocgItem') {
+            objectPreviewTitle.innerHTML = `🔍 圖層<strong style="color: #d32f2f; background-color: #ffebee; padding: 2px 6px; border-radius: 4px; margin: 0 4px;">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
+            previewUrl = await generateOCGPreviewUrl(key);
+        }
+
+        if (previewUrl) {
+            objectPreviewIframe.src = previewUrl;
+            objectPreviewIframe.classList.remove('hidden');
+        } else {
+            throw new Error('不支援此物件類型的預覽。');
+        }
+    } catch (err) {
+        console.error('預覽生成失敗', err);
+        objectPreviewTitle.textContent = `❌ 預覽失敗：${err.message}`;
+    } finally {
+        objectPreviewSpinner.classList.add('hidden');
+    }
+}
+
+/**
+ * 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
+ */
+function closeObjectPreview() {
+    objectPreviewModal.classList.remove('active');
+
+    // 即時釋放預覽 PDF 的 Blob URL 記憶體
+    const currentSrc = objectPreviewIframe.src;
+    if (currentSrc && currentSrc.startsWith('blob:')) {
+        try {
+            URL.revokeObjectURL(currentSrc);
+            // 從快取清單中移出，避免後續重複釋放
+            const cacheIdx = previewUrlCache.indexOf(currentSrc);
+            if (cacheIdx > -1) {
+                previewUrlCache.splice(cacheIdx, 1);
+            }
+        } catch (e) {
+            console.warn('釋放即時預覽 Blob URL 失敗:', e);
+        }
+    }
+    objectPreviewIframe.src = '';
+}
+
+// 綁定關閉預覽彈窗事件
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('closeObjectPreviewModalBtn').addEventListener('click', closeObjectPreview);
+    document.getElementById('closeObjectPreviewBtn').addEventListener('click', closeObjectPreview);
 });
