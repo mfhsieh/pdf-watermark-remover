@@ -4,7 +4,7 @@
 
 ## 1. 架構總覽
 
-整個前端應用程式被劃分為八個職責單一的模組檔案，以便於維護與擴充。系統的運作流程可概分為：
+整個前端應用程式被劃分為九個職責單一的模組檔案，以便於維護與擴充。系統的運作流程可概分為：
 1. **設定與狀態初始化：** 載入全域關鍵字與暫存變數。
 2. **檔案讀取與掃描：** 讀取 PDF（必要時解密），並於背景掃描可能的浮水印物件。
 3. **預覽與互動：** 顯示雙欄預覽窗格，並提供策略選項的即時預覽。
@@ -22,10 +22,11 @@
 | `state.js` | 狀態管理 | 集中管理記憶體暫存（如 PDF 解密快取）、清除策略的待刪除清單，以及共用的日誌與預覽彈窗狀態。 |
 | `utils.js` | 核心判定工具 | 提供六大浮水印策略的判定邏輯（`isSuspect...`）與二進位字串轉換工具。 |
 | `ui.js` | DOM 元素選取 | 集中宣告介面上所有用到的 DOM 元素常數。 |
-| `ui-modals.js` | 彈窗管理類別 | 將清除策略的選項視窗封裝為 `WatermarkStrategyModal` 類別，負責動態渲染清單與連動狀態。 |
+| `ui-modals.js` | 彈窗管理類別 | 將清除策略的選項視窗封裝為 `WatermarkStrategyModal` 類別，並包含物件即時預覽 (`openObjectPreview`) 的載入與清理邏輯。 |
 | `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
-| `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」技術來移除浮水印，防止 PDF 損毀。 |
-| `app.js` | 流程控制與事件綁定 | 程式的進入點。負責綁定拖曳、點擊等事件，並串接上述模組完成清除浮水印的完整流程。 |
+| `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」與正則防禦技術來移除浮水印，防止 PDF 損毀。 |
+| `app.js` | 流程控制與事件綁定 | 程式的進入點。負責綁定拖曳、點擊等事件，統一檔案處理流程 (`handleFileSelected`)，並串接上述模組完成完整流程。 |
+| `polyfill-config.js` | 相容性補丁 | 定義 `window.TEXT_ENCODING_NO_POLYFILL` 等環境變數，確保 `text-encoding` 函式庫在現代瀏覽器中正常運作。 |
 
 ---
 
@@ -57,8 +58,8 @@
   - `formXObjectsToDestroy` 等：儲存使用者目前「勾選準備要刪除」的物件清單。
   - `cachedDecryptedBytes`: 儲存剛解密後的 PDF 原始資料（免去重複解密耗時）。
 - **重要函式：**
-  - `decryptWithQpdfWasm(pdfBytes, password)`: 呼叫 qpdf-wasm 引擎進行非同步解密。
-  - `openObjectPreview(strategyType, key, entry)`: 開啟彈出視窗並載入對應物件的即時預覽 iframe。
+  - `decryptWithQpdfWasm(pdfBytes, password)`: 呼叫 qpdf-wasm 引擎進行非同步解密。包含虛擬記憶體清理（`FS.unlink`）的防禦性除錯邏輯。
+  - `resetAllState()`: 負責清空快取變數並安全釋放所有儲存於 `previewUrlCache` 的 Blob URL，防止記憶體洩漏。
 
 ### `utils.js`
 所有與「判定是否為浮水印」相關的純函式 (Pure functions)。
@@ -81,17 +82,20 @@
 - **空串流置換 `createBlankXObjectStream()`：**
   對於需要移除的資源，不能物理刪除字典鍵值，否則可能導致 PDF 工具（如 Acrobat Reader）報錯。此函式會註冊一個完全透明的物件將其覆蓋。
 - **安全參照清理 `cleanContentStreams()`：**
-  若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do`）若繼續存在，也會導致報錯。此函式負責使用 RegExp 在明文內容流中徹底抹除這些呼叫。
+  若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do`）若繼續存在，也會導致報錯。此函式負責使用 RegExp 在明文內容流中徹底抹除這些呼叫。過程中會呼叫 `escapeRegex()` 以防止特殊字元導致正則引擎報錯 (ReDoS 風險)。
 
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。
 - **`WatermarkStrategyModal` 類別：** 
-  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 物件將六大策略的資料綁定在同一套 UI 上。
+  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 物件將六大策略的資料綁定在同一套 UI 上。底層渲染改用安全的 `replaceChildren()` 避免 `innerHTML` 風險。
+- **即時預覽系統 (`openObjectPreview` & `closeObjectPreview`)：**
+  根據不同的浮水印策略類型動態載入預覽 iframe，並在關閉視窗時即時呼叫 `URL.revokeObjectURL()` 釋放記憶體。
 
 ### `ui.js`
 非常單純，僅使用 `document.getElementById` 宣告所有固定存在的 DOM 元素。
 
 ### `app.js`
 系統的生命週期進入點。
-- **事件綁定：** `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
+- **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。
+- **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
 - **處理流程：** 當使用者點擊「開始清除浮水印」按鈕時，取出 `cachedDecryptedBytes`，呼叫 `processPdf`，然後將重構完成的文件轉成 Blob 並掛載到右側結果預覽區及下載按鈕。
