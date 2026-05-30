@@ -2497,20 +2497,32 @@
 
                 let previewUrl = "";
 
+                function escapeHTML(str) {
+                    return str.replace(/[&<>'"]/g, 
+                        tag => ({
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            "'": '&#39;',
+                            '"': '&quot;'
+                        }[tag])
+                    );
+                }
+
                 if (strategyType === "formXObjectItem") {
-                    objectPreviewTitle.textContent = `🔍 表單外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.pages[0]} 頁)`;
+                    objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ""))} (第 ${entry.pages[0]} 頁)`;
                     previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
                 } else if (strategyType === "imageXObjectItem") {
-                    objectPreviewTitle.textContent = `🔍 影像外部物件預覽：/${entry.keyName.replace(/^\//, "")} (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ""))} (第 ${entry.page} 頁)`;
                     previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.page - 1);
                 } else if (strategyType === "directContentItem") {
-                    objectPreviewTitle.textContent = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：流 (第 ${entry.page} 頁)`;
                     previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
                 } else if (strategyType === "annotItem") {
-                    objectPreviewTitle.textContent = `🔍 註解預覽：${entry.subtype} (第 ${entry.page} 頁)`;
+                    objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
                     previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
                 } else if (strategyType === "ocgItem") {
-                    objectPreviewTitle.textContent = `🔍 圖層移除效果預覽：${entry.name} (全份文件)`;
+                    objectPreviewTitle.innerHTML = `🔍 圖層<strong style="color: #d32f2f; background-color: #ffebee; padding: 2px 6px; border-radius: 4px; margin: 0 4px;">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
                     previewUrl = await generateOCGPreviewUrl(key);
                 }
 
