@@ -275,6 +275,18 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 <dt><a href="#loadAndDecryptPdf">loadAndDecryptPdf(file)</a> ⇒ <code>Promise.&lt;{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}&gt;</code></dt>
 <dd><p>讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密</p>
 </dd>
+<dt><a href="#scanOCG">scanOCG(scanDoc)</a></dt>
+<dd><p>掃描並記錄 PDF 中的選擇性內容群組 (OCG)</p>
+</dd>
+<dt><a href="#scanAnnotations">scanAnnotations(scanDoc, page, pageIndex)</a></dt>
+<dd><p>掃描並記錄指定頁面中的註解 (Annotations)</p>
+</dd>
+<dt><a href="#scanResources">scanResources(scanDoc, page, pageIndex)</a></dt>
+<dd><p>掃描並記錄指定頁面中的資源 (Resources)，包含 XObject 與 ExtGState</p>
+</dd>
+<dt><a href="#scanDirectContent">scanDirectContent(scanDoc, page, pageIndex)</a></dt>
+<dd><p>掃描並記錄指定頁面中的直接內容 (Direct Content)</p>
+</dd>
 <dt><a href="#performBackgroundScan">performBackgroundScan(scanDoc)</a></dt>
 <dd><p>進行背景高速掃描以找出 PDF 中可能包含浮水印的物件</p>
 </dd>
@@ -1041,6 +1053,56 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | Param | Type |
 | --- | --- |
 | file | <code>File</code> | 
+
+<a name="scanOCG"></a>
+
+## scanOCG(scanDoc)
+掃描並記錄 PDF 中的選擇性內容群組 (OCG)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
+
+<a name="scanAnnotations"></a>
+
+## scanAnnotations(scanDoc, page, pageIndex)
+掃描並記錄指定頁面中的註解 (Annotations)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
+| page | <code>PDFPage</code> | 目標頁面物件 |
+| pageIndex | <code>number</code> | 頁面索引 (0-based) |
+
+<a name="scanResources"></a>
+
+## scanResources(scanDoc, page, pageIndex)
+掃描並記錄指定頁面中的資源 (Resources)，包含 XObject 與 ExtGState
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
+| page | <code>PDFPage</code> | 目標頁面物件 |
+| pageIndex | <code>number</code> | 頁面索引 (0-based) |
+
+<a name="scanDirectContent"></a>
+
+## scanDirectContent(scanDoc, page, pageIndex)
+掃描並記錄指定頁面中的直接內容 (Direct Content)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
+| page | <code>PDFPage</code> | 目標頁面物件 |
+| pageIndex | <code>number</code> | 頁面索引 (0-based) |
 
 <a name="performBackgroundScan"></a>
 

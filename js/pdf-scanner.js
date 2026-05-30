@@ -520,6 +520,10 @@ async function loadAndDecryptPdf(file) {
     return { previewBytes, needsPassword, decryptedSuccessfully };
 }
 
+/**
+ * 掃描並記錄 PDF 中的選擇性內容群組 (OCG)
+ * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
+ */
 function scanOCG(scanDoc) {
     const catalogDict = scanDoc.catalog;
     if (!catalogDict.has(PDFName.of("OCProperties"))) return;
@@ -553,6 +557,12 @@ function scanOCG(scanDoc) {
     }
 }
 
+/**
+ * 掃描並記錄指定頁面中的註解 (Annotations)
+ * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
+ * @param {PDFPage} page - 目標頁面物件
+ * @param {number} pageIndex - 頁面索引 (0-based)
+ */
 function scanAnnotations(scanDoc, page, pageIndex) {
     const annots = page.node.lookup(PDFName.of("Annots"));
     if (!(annots instanceof PDFArray)) return;
@@ -582,6 +592,12 @@ function scanAnnotations(scanDoc, page, pageIndex) {
     }
 }
 
+/**
+ * 掃描並記錄指定頁面中的資源 (Resources)，包含 XObject 與 ExtGState
+ * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
+ * @param {PDFPage} page - 目標頁面物件
+ * @param {number} pageIndex - 頁面索引 (0-based)
+ */
 function scanResources(scanDoc, page, pageIndex) {
     const resourcesNode = page.node.lookup(PDFName.of("Resources"));
     if (!resourcesNode) return;
@@ -679,6 +695,12 @@ function scanResources(scanDoc, page, pageIndex) {
     }
 }
 
+/**
+ * 掃描並記錄指定頁面中的直接內容 (Direct Content)
+ * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
+ * @param {PDFPage} page - 目標頁面物件
+ * @param {number} pageIndex - 頁面索引 (0-based)
+ */
 function scanDirectContent(scanDoc, page, pageIndex) {
     const contents = scanDoc.context.lookup(page.node.lookup(PDFName.of("Contents")));
     if (!contents) return;
