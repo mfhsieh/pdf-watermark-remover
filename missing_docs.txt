@@ -1,4 +1,0 @@
-js/pdf-scanner.js:523 function scanOCG(scanDoc) {
-js/pdf-scanner.js:556 function scanAnnotations(scanDoc, page, pageIndex) {
-js/pdf-scanner.js:585 function scanResources(scanDoc, page, pageIndex) {
-js/pdf-scanner.js:682 function scanDirectContent(scanDoc, page, pageIndex) {
