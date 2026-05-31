@@ -205,6 +205,12 @@
 並主動清理 Content Stream 中的參照 (如 <code>Do</code>, <code>gs</code>)，確保 PDF 結構完整，防止 Acrobat Reader 報錯。
 同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。</p>
 </dd>
+<dt><a href="#cleanResourcesRecursively">cleanResourcesRecursively()</a></dt>
+<dd><p>遞迴清理 Resources (支援巢狀 Form XObject)</p>
+</dd>
+<dt><a href="#cleanFormXObjectStream">cleanFormXObjectStream()</a></dt>
+<dd><p>專門用於清理 Form XObject 內部 Content Stream 的函式</p>
+</dd>
 <dt><a href="#removeFormXObjects">removeFormXObjects(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
 <dd><p>策略一：清除 Form XObject 浮水印
  Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
@@ -818,6 +824,18 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | pdfDoc | <code>PDFDocument</code> | pdf-lib 的 PDF 文件物件 |
 | options | <code>Object</code> | 包含 6 大清理策略勾選狀態的布林值物件 |
 
+<a name="cleanResourcesRecursively"></a>
+
+## cleanResourcesRecursively()
+遞迴清理 Resources (支援巢狀 Form XObject)
+
+**Kind**: global function  
+<a name="cleanFormXObjectStream"></a>
+
+## cleanFormXObjectStream()
+專門用於清理 Form XObject 內部 Content Stream 的函式
+
+**Kind**: global function  
 <a name="removeFormXObjects"></a>
 
 ## removeFormXObjects(pdfDoc, resources) ⇒ <code>Object</code>

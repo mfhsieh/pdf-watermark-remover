@@ -64,29 +64,35 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 let modified = false;
                 for (const key of deletedXObjKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
-                    const newText = text.replace(regex, '');
-                    if (newText !== text) {
-                        text = newText;
-                        modified = true;
+                    if (text.includes('/' + cleanKey)) {
+                        const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
+                        const newText = text.replace(regex, '');
+                        if (newText !== text) {
+                            text = newText;
+                            modified = true;
+                        }
                     }
                 }
                 for (const key of deletedExtGStateKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
-                    const newText = text.replace(regex, '');
-                    if (newText !== text) {
-                        text = newText;
-                        modified = true;
+                    if (text.includes('/' + cleanKey)) {
+                        const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
+                        const newText = text.replace(regex, '');
+                        if (newText !== text) {
+                            text = newText;
+                            modified = true;
+                        }
                     }
                 }
                 for (const key of deletedOcgKeys || []) {
                     const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
-                    const newText = text.replace(regex, '');
-                    if (newText !== text) {
-                        text = newText;
-                        modified = true;
+                    if (text.includes('/' + cleanKey)) {
+                        const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
+                        const newText = text.replace(regex, '');
+                        if (newText !== text) {
+                            text = newText;
+                            modified = true;
+                        }
                     }
                 }
                 if (modified) {
@@ -160,13 +166,6 @@ function processPdf(pdfDoc, options) {
             page.node.set(PDFName.of('Resources'), resources);
         }
 
-        // 策略一：清除 Form XObject 浮水印
-        if (options.removeFormXObject) {
-            const res = removeFormXObjects(pdfDoc, resources);
-            modifiedObjects += res.count;
-            if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
-        }
-
         // 策略二：清除註解 (Annotation)
         if (options.removeAnnotations) {
             modifiedObjects += removeAnnotations(page);
@@ -177,29 +176,19 @@ function processPdf(pdfDoc, options) {
             modifiedObjects += removeDirectContent(pdfDoc, page);
         }
 
-        // 策略四：清除影像外部物件 (Image XObject)
-        if (options.removeImageXObject) {
-            const res = removeImageXObjects(pdfDoc, resources, pageIndex);
-            modifiedObjects += res.count;
-            if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
-        }
-
-        // 策略五：清除延伸圖形狀態 (ExtGState)
         let allDeletedExtGStateKeys = [];
-        if (options.removeExtGState) {
-            const resExt = removeExtGState(pdfDoc, resources, pageIndex);
-            modifiedObjects += resExt.count;
-            if (resExt.deletedKeys) allDeletedExtGStateKeys.push(...resExt.deletedKeys);
-        }
-
-        // 策略六：清除 OCG 圖層
         let allDeletedOcgKeys = [];
-        if (options.removeOCG) {
-            const resOcg = removeOCGs(pdfDoc, resources);
-            modifiedObjects += resOcg.count;
-            if (resOcg.deletedPropertiesKeys) allDeletedOcgKeys.push(...resOcg.deletedPropertiesKeys);
-            if (resOcg.deletedXObjectKeys) allDeletedXObjectKeys.push(...resOcg.deletedXObjectKeys);
-        }
+
+        // 遞迴清理 Resources (含 XObject, Image, ExtGState, OCG)
+        modifiedObjects += cleanResourcesRecursively(
+            pdfDoc,
+            resources,
+            pageIndex,
+            options,
+            allDeletedXObjectKeys,
+            allDeletedExtGStateKeys,
+            allDeletedOcgKeys
+        );
 
         // 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
         if (allDeletedXObjectKeys.length > 0 || allDeletedExtGStateKeys.length > 0 || allDeletedOcgKeys.length > 0) {
@@ -208,6 +197,153 @@ function processPdf(pdfDoc, options) {
     }
 
     return { modifiedObjects };
+}
+
+/**
+ * 遞迴清理 Resources (支援巢狀 Form XObject)
+ */
+function cleanResourcesRecursively(
+    pdfDoc,
+    resources,
+    pageIndex,
+    options,
+    allDeletedXObjectKeys,
+    allDeletedExtGStateKeys,
+    allDeletedOcgKeys
+) {
+    let count = 0;
+
+    if (options.removeFormXObject) {
+        const res = removeFormXObjects(pdfDoc, resources);
+        count += res.count;
+        if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
+    }
+    if (options.removeImageXObject) {
+        const res = removeImageXObjects(pdfDoc, resources, pageIndex);
+        count += res.count;
+        if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
+    }
+    if (options.removeExtGState) {
+        const resExt = removeExtGState(pdfDoc, resources, pageIndex);
+        count += resExt.count;
+        if (resExt.deletedKeys) allDeletedExtGStateKeys.push(...resExt.deletedKeys);
+    }
+    if (options.removeOCG) {
+        const resOcg = removeOCGs(pdfDoc, resources);
+        count += resOcg.count;
+        if (resOcg.deletedPropertiesKeys) allDeletedOcgKeys.push(...resOcg.deletedPropertiesKeys);
+        if (resOcg.deletedXObjectKeys) allDeletedXObjectKeys.push(...resOcg.deletedXObjectKeys);
+    }
+
+    // 遞迴進入殘留的 Form XObject 內部 Resources
+    const xObjectsRef = resources.get(PDFName.of('XObject'));
+    if (xObjectsRef) {
+        const xObjects = pdfDoc.context.lookup(xObjectsRef);
+        if (xObjects instanceof PDFDict) {
+            for (const key of xObjects.keys()) {
+                const xObjRef = xObjects.get(key);
+                const xObj = pdfDoc.context.lookup(xObjRef);
+                if (xObj instanceof PDFRawStream) {
+                    const subtype = pdfDoc.context.lookup(xObj.dict.get(PDFName.of('Subtype')));
+                    if (subtype instanceof PDFName && subtype.toString() === '/Form') {
+                        const nestedResNode = xObj.dict.get(PDFName.of('Resources'));
+                        if (nestedResNode) {
+                            const nestedRes = pdfDoc.context.lookup(nestedResNode);
+                            if (nestedRes instanceof PDFDict) {
+                                // 準備獨立的刪除清單，給這個 Form 的串流使用
+                                const nestedDeletedXObj = [];
+                                const nestedDeletedExtGState = [];
+                                const nestedDeletedOcg = [];
+
+                                count += cleanResourcesRecursively(
+                                    pdfDoc,
+                                    nestedRes,
+                                    pageIndex,
+                                    options,
+                                    nestedDeletedXObj,
+                                    nestedDeletedExtGState,
+                                    nestedDeletedOcg
+                                );
+
+                                // 若內部有刪除，必須清理這個 Form XObject 的 Content Stream
+                                if (
+                                    nestedDeletedXObj.length > 0 ||
+                                    nestedDeletedExtGState.length > 0 ||
+                                    nestedDeletedOcg.length > 0
+                                ) {
+                                    cleanFormXObjectStream(
+                                        pdfDoc,
+                                        xObjRef,
+                                        nestedDeletedXObj,
+                                        nestedDeletedExtGState,
+                                        nestedDeletedOcg
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return count;
+}
+
+/**
+ * 專門用於清理 Form XObject 內部 Content Stream 的函式
+ */
+function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+    const stream = pdfDoc.context.lookup(xObjRef);
+    if (!(stream instanceof PDFRawStream)) return;
+    try {
+        const decoded = PDFLib.decodePDFRawStream(stream);
+        decoded.reset();
+        const bytes = decoded.getBytes();
+        let text = decodeBinaryToText(bytes);
+        let modified = false;
+
+        for (const key of deletedXObjKeys || []) {
+            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+            if (text.includes('/' + cleanKey)) {
+                const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
+                const newText = text.replace(regex, '');
+                if (newText !== text) {
+                    text = newText;
+                    modified = true;
+                }
+            }
+        }
+        for (const key of deletedExtGStateKeys || []) {
+            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+            if (text.includes('/' + cleanKey)) {
+                const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
+                const newText = text.replace(regex, '');
+                if (newText !== text) {
+                    text = newText;
+                    modified = true;
+                }
+            }
+        }
+        for (const key of deletedOcgKeys || []) {
+            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+            if (text.includes('/' + cleanKey)) {
+                const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
+                const newText = text.replace(regex, '');
+                if (newText !== text) {
+                    text = newText;
+                    modified = true;
+                }
+            }
+        }
+
+        if (modified) {
+            const arr = encodeTextToBinary(text);
+            const newStream = pdfDoc.context.stream(arr, stream.dict.clone(pdfDoc.context));
+            pdfDoc.context.assign(xObjRef, newStream); // 替換原始參照
+        }
+    } catch (e) {
+        console.error('Failed to clean Form XObject stream', e);
+    }
 }
 
 /**
