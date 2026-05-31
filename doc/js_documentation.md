@@ -20,8 +20,8 @@
 | :--- | :--- | :--- |
 | `config.js` | 全域設定與關鍵字 | 處理浮水印判定關鍵字的動態編譯（支援 UTF-16BE、Big5），並管理 localStorage 存取。 |
 | `state.js` | 狀態管理 | 集中管理記憶體暫存（如 PDF 解密快取）、清除策略的待刪除清單，以及共用的日誌與預覽彈窗狀態。 |
-| `utils.js` | 核心判定工具 | 提供六大浮水印策略的判定邏輯（`isSuspect...`）與二進位字串轉換工具。 |
-| `ui.js` | DOM 元素選取 | 集中宣告介面上所有用到的 DOM 元素常數。 |
+| `utils.js` | 核心判定工具 | 提供六大浮水印策略的判定邏輯（`isSuspect...`）、二進位字串轉換，以及高頻與高透明度等「智慧門檻偵測」。 |
+| `ui.js` | DOM 選取與無障礙 | 集中宣告介面上的 DOM 元素常數，並負責全域的無障礙 (a11y) 控制（如 Escape 鍵監聽與 Modal 焦點陷阱）。 |
 | `ui-modals.js` | 彈窗管理類別 | 將清除策略的選項視窗封裝為 `WatermarkStrategyModal` 類別，並包含物件即時預覽 (`openObjectPreview`) 的載入與清理邏輯。 |
 | `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
 | `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」與正則防禦技術來移除浮水印，防止 PDF 損毀。 |
@@ -63,8 +63,8 @@
 
 ### `utils.js`
 所有與「判定是否為浮水印」相關的純函式 (Pure functions)。
-- **判定函式：** `isSuspectKeyName(text)`, `isSuspectContentText(text)` 等，這兩個是底層比對。
-- **策略判定：** `isSuspectFormXObject()`, `isSuspectAnnotation()` 等，供掃描引擎呼叫以決定是否要「預設勾選」該物件。
+- **判定函式：** `isSuspectKeyName(text)`, `isSuspectContentText(text)` 等，這兩個是底層文字特徵比對。
+- **策略判定與智慧門檻：** `isSuspectFormXObject()`, `isSuspectAnnotation()`, `isSuspectExtGState()` 等。其中實作了「高頻特徵門檻」（針對出現次數異常高的物件）與「高透明度特徵門檻」（針對 Alpha 值 < 0.3 的圖形狀態），供掃描引擎呼叫以決定是否要「預設勾選」該物件。
 
 ### `pdf-scanner.js`
 極其核心的非同步掃描器，職責包含「安全載入」與「預覽生成」。
@@ -92,10 +92,16 @@
   根據不同的浮水印策略類型動態載入預覽 iframe，並在關閉視窗時即時呼叫 `URL.revokeObjectURL()` 釋放記憶體。
 
 ### `ui.js`
-非常單純，僅使用 `document.getElementById` 宣告所有固定存在的 DOM 元素。
+不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
+- **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
+- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤 (Tab 鍵) 焦點穿透到後方元件，符合 WCAG AA 無障礙標準。
 
 ### `app.js`
 系統的生命週期進入點。
 - **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。
 - **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
 - **處理流程：** 當使用者點擊「開始清除浮水印」按鈕時，取出 `cachedDecryptedBytes`，呼叫 `processPdf`，然後將重構完成的文件轉成 Blob 並掛載到右側結果預覽區及下載按鈕。
+
+### `polyfill-config.js`
+處理外部依賴套件相容性的補丁檔案。
+- **環境設定：** 定義 `window.TEXT_ENCODING_NO_POLYFILL` 等環境變數。主要是為了解決 `text-encoding` 函式庫在現代瀏覽器環境中執行時可能產生的衝突或錯誤，確保其 Big5 字元編解碼功能能穩定運作。
