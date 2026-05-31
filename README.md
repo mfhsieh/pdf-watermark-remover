@@ -4,7 +4,7 @@
 
 在瀏覽器端直接處理 PDF 檔案，**檔案不會上傳至伺服器**，可保護您的文件隱私。
 
-[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover.zip)
+[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.2.2.zip)
 
 ## 📌 專案簡介
 
