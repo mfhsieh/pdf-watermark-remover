@@ -258,8 +258,7 @@ new WatermarkStrategyModal({
 
         if (entry.isHeuristic) {
             const highlight = document.createElement('span');
-            highlight.style.color = '#dc3545';
-            highlight.style.fontWeight = 'bold';
+            highlight.className = 'heuristic-badge';
             highlight.textContent = ' [高頻偵測]';
             textSpan.appendChild(highlight);
         }
@@ -372,8 +371,7 @@ new WatermarkStrategyModal({
 
         if (entry.isHeuristic) {
             const highlight = document.createElement('span');
-            highlight.style.color = '#dc3545';
-            highlight.style.fontWeight = 'bold';
+            highlight.className = 'heuristic-badge';
             highlight.textContent = ' [高頻偵測]';
             textSpan.appendChild(highlight);
         }

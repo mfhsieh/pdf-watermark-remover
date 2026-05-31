@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.." || exit 1
 mkdir -p dist
 
 # 嘗試從 package.json 讀取版本號，若無法讀取則使用預設名稱
-VERSION=$(grep '"version"' package.json | sed -E 's/.*"version": "(.*)".*/\1/')
+VERSION=$(node -p "require('./package.json').version" 2>/dev/null)
 if [ -n "$VERSION" ]; then
     ZIP_NAME="pdf-watermark-remover-v${VERSION}.zip"
 else

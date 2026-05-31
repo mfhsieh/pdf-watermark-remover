@@ -31,11 +31,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 const decoded = PDFLib.decodePDFRawStream(stream);
                 decoded.reset();
                 const bytes = decoded.getBytes();
-                let text = '';
-                const chunkSize = 16384;
-                for (let i = 0; i < bytes.length; i += chunkSize) {
-                    text += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-                }
+                let text = decodeBinaryToText(bytes);
 
                 let modified = false;
                 for (const key of deletedXObjKeys || []) {
@@ -66,10 +62,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                     }
                 }
                 if (modified) {
-                    const arr = new Uint8Array(text.length);
-                    for (let i = 0; i < text.length; i++) {
-                        arr[i] = text.charCodeAt(i) & 0xff;
-                    }
+                    const arr = encodeTextToBinary(text);
                     const emptyDict = pdfDoc.context.obj({});
                     const newStream = pdfDoc.context.stream(arr, emptyDict);
                     const newRef = pdfDoc.context.register(newStream);

@@ -159,9 +159,6 @@
 <dt><a href="#chkRemoveImageXObject">chkRemoveImageXObject</a> : <code>HTMLInputElement</code></dt>
 <dd><p>是否移除影像外部物件 (Image XObject) 的核取方塊</p>
 </dd>
-<dt><a href="#chkRemoveExtGState">chkRemoveExtGState</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除延伸圖形狀態 (ExtGState) 的核取方塊</p>
-</dd>
 <dt><a href="#chkRemoveOCG">chkRemoveOCG</a> : <code>HTMLInputElement</code></dt>
 <dd><p>是否移除選擇性內容群組 (OCG) 的核取方塊</p>
 </dd>
@@ -349,6 +346,9 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 </dd>
 <dt><a href="#decodeBinaryToText">decodeBinaryToText(data)</a> ⇒ <code>string</code></dt>
 <dd><p>將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）</p>
+</dd>
+<dt><a href="#encodeTextToBinary">encodeTextToBinary(text)</a> ⇒ <code>Uint8Array</code></dt>
+<dd><p>將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列</p>
 </dd>
 <dt><a href="#compileToBig5Latin1">compileToBig5Latin1()</a></dt>
 <dd><p>將字串動態編譯為 Big5 格式的 Latin1 字串
@@ -682,12 +682,6 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 
 ## chkRemoveImageXObject : <code>HTMLInputElement</code>
 是否移除影像外部物件 (Image XObject) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveExtGState"></a>
-
-## chkRemoveExtGState : <code>HTMLInputElement</code>
-是否移除延伸圖形狀態 (ExtGState) 的核取方塊
 
 **Kind**: global constant  
 <a name="chkRemoveOCG"></a>
@@ -1312,6 +1306,17 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | Param | Type |
 | --- | --- |
 | data | <code>Uint8Array</code> | 
+
+<a name="encodeTextToBinary"></a>
+
+## encodeTextToBinary(text) ⇒ <code>Uint8Array</code>
+將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| text | <code>string</code> | 
 
 <a name="compileToBig5Latin1"></a>
 

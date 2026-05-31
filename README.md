@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.2.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 在瀏覽器端直接處理 PDF 檔案，**檔案不會上傳至伺服器**，可保護您的文件隱私。
 
-[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.2.2.zip)
+[→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.3.0.zip)
 
 ## 📌 專案簡介
 
@@ -146,9 +146,12 @@
 
 ## 📦 Release Notes
 
+- **v2.3.0 (2026-05-31)**
+  * **無障礙體驗 (a11y)**：UI 符合 WCAG AA 級標準。
+  * **發佈自動化**：升級發佈腳本及相關技能。
 - **v2.2.2 (2026-05-30)**
-  * **智慧門檻偵測**：新增「高頻特徵門檻」與「高透明度特徵門檻」，以自動抓出浮水印。
-  * **資安防護升級**：實作 CSP、移除所有不安全的 Inline Scripts 與 `innerHTML` 操作，並加入 `escapeRegex` 防禦 ReDoS 攻擊。
+  * **智慧門檻偵測**：新增「高頻」與「高透明度」特徵門檻，用來自動抓出浮水印。
+  * **資安防護升級**：實作 CSP、移除不安全的 Inline Scripts 與 `innerHTML` 操作，並加入 `escapeRegex` 防禦 ReDoS 攻擊。
   * **架構優化與穩定性**：CSS 全面模組化、統一拖曳與點擊上傳的處理邏輯，並修正 Modal 的無障礙標籤。
 - **v2.2.1 (2026-05-29)**
   * **底層重構與模組化**：大幅度拆分並重構背景掃描引擎，並為所有 JS 模組加入標準 API 文件與詳細架構說明。

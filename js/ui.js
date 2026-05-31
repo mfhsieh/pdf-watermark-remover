@@ -48,7 +48,74 @@ const chkRemoveAnnotations = document.getElementById('removeAnnotations');
 const chkRemoveDirectContent = document.getElementById('removeDirectContent');
 /** @type {HTMLInputElement} 是否移除影像外部物件 (Image XObject) 的核取方塊 */
 const chkRemoveImageXObject = document.getElementById('removeImageXObject');
-/** @type {HTMLInputElement} 是否移除延伸圖形狀態 (ExtGState) 的核取方塊 */
 const chkRemoveExtGState = document.getElementById('removeExtGState');
 /** @type {HTMLInputElement} 是否移除選擇性內容群組 (OCG) 的核取方塊 */
 const chkRemoveOCG = document.getElementById('removeOCG');
+
+// ==========================================
+// [A11y] 全域 Modal Focus Trap (焦點陷阱) 與 Escape 鍵支援
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const mainContainer = document.querySelector('.container');
+    const modals = document.querySelectorAll('.modal-overlay');
+    let lastActiveElement = null;
+    let currentlyHasActiveModal = false;
+
+    // 透過 MutationObserver 統一監聽所有 Modal 的 class 變化，並自動處理焦點與 inert
+    const observer = new MutationObserver(() => {
+        const hasActiveModal = Array.from(modals).some((m) => m.classList.contains('active'));
+
+        if (hasActiveModal !== currentlyHasActiveModal) {
+            if (hasActiveModal) {
+                // 狀態從無到有：記錄開啟前的焦點
+                lastActiveElement = document.activeElement;
+                if (mainContainer) {
+                    mainContainer.inert = true;
+                    mainContainer.setAttribute('aria-hidden', 'true');
+                }
+                // 將焦點移入 Modal
+                const activeModal = document.querySelector('.modal-overlay.active');
+                if (activeModal && !activeModal.contains(document.activeElement)) {
+                    // 優先 focus 第一個 input，否則 focus 第一個可互動按鈕
+                    const focusable =
+                        activeModal.querySelector('input:not([type="hidden"])') ||
+                        activeModal.querySelector('button, [href], select, textarea, [tabindex]:not([tabindex="-1"])');
+                    if (focusable) focusable.focus();
+                }
+            } else {
+                // 狀態從有到無：解開 inert 並還原焦點
+                if (mainContainer) {
+                    mainContainer.inert = false;
+                    mainContainer.setAttribute('aria-hidden', 'false');
+                }
+                if (lastActiveElement && document.body.contains(lastActiveElement)) {
+                    lastActiveElement.focus();
+                }
+                lastActiveElement = null;
+            }
+            currentlyHasActiveModal = hasActiveModal;
+        }
+    });
+
+    modals.forEach((modal) => {
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    });
+
+    // 支援 Escape 鍵全局關閉
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const activeModal = document.querySelector('.modal-overlay.active');
+            if (activeModal) {
+                // 尋找取消或關閉按鈕並觸發點擊，確保對應的清理邏輯 (如 Blob 釋放) 正常執行
+                const closeBtn = activeModal.querySelector(
+                    '.preview-modal-close-btn, #modalCancelButton, .button:not(.button-primary)'
+                );
+                if (closeBtn) {
+                    closeBtn.click();
+                } else {
+                    activeModal.classList.remove('active');
+                }
+            }
+        }
+    });
+});

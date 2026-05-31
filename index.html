@@ -375,7 +375,7 @@
                                 ↺ 回復預設
                             </button>
                         </div>
-                        <p class="keywords-hint intro">用於比對 PDF 底層資源鍵名與圖層名稱，建議輸入英文或簡寫。</p>
+                        <p class="keywords-hint intro">用於比對資源鍵名與圖層名稱，建議輸入英文或簡寫。</p>
                         <textarea
                             id="keyKeywordsInput"
                             class="keywords-textarea"
@@ -383,9 +383,8 @@
                             placeholder="例如: watermark, confidential..."
                         ></textarea>
                         <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form
-                            XObject)、「影像外部物件」 (Image XObject)、「延伸圖形狀態」 (ExtGState)
-                            與「選擇性內容群組」 (OCG)。
+                            <span class="hint-primary">適用策略：</span>表單外部物件 (Form XObject)、影像外部物件 (Image
+                            XObject)、延伸圖形狀態 (ExtGState) 與選擇性內容群組 (OCG)。
                         </p>
                     </div>
                     <div class="keywords-field-group">
@@ -407,7 +406,7 @@
                             placeholder="例如: 機密, 內部, 草稿..."
                         ></textarea>
                         <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「頁面直接內容」 (Direct Content)。<br />
+                            <span class="hint-primary">適用策略：</span>頁面直接內容 (Direct Content)。<br />
                             <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼
                             (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「 預覽」功能，眼見為憑。
                         </p>
@@ -424,8 +423,8 @@
                             </button>
                         </div>
                         <p class="keywords-hint intro">
-                            設定透明度的判定門檻。當圖形狀態的透明度 (Alpha)
-                            <strong>低於或等於</strong>此數值時（即更透明），將會被自動預選為疑似浮水印。
+                            當圖形狀態的透明度 (Alpha)
+                            <strong>低於或等於</strong>此數值時（即更透明），會被預選為浮水印。
                         </p>
 
                         <div class="slider-control-group">
@@ -455,7 +454,7 @@
                         </div>
 
                         <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「延伸圖形狀態」 (ExtGState)。
+                            <span class="hint-primary">適用策略：</span>延伸圖形狀態 (ExtGState)。
                         </p>
                     </div>
 
@@ -471,7 +470,7 @@
                             </button>
                         </div>
                         <p class="keywords-hint intro">
-                            設定自動預選重複物件的觸發門檻。當影像或圖形的出現頻率<strong>大於或等於</strong>此比例時，會被標記為高度可疑的浮水印。
+                            當表單或影像的出現頻率<strong>大於或等於</strong>此數值時，會被預選為浮水印。
                         </p>
 
                         <div class="slider-control-group">
@@ -501,8 +500,8 @@
                         </div>
 
                         <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>「表單外部物件」 (Form XObject)
-                            與「影像外部物件」 (Image XObject)。
+                            <span class="hint-primary">適用策略：</span>表單外部物件 (Form XObject) 與影像外部物件
+                            (Image XObject)。
                         </p>
                     </div>
                 </div>

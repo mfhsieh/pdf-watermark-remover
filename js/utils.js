@@ -129,6 +129,19 @@ function decodeBinaryToText(data) {
     return str;
 }
 
+/**
+ * 將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列
+ * @param {string} text
+ * @returns {Uint8Array}
+ */
+function encodeTextToBinary(text) {
+    const arr = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) {
+        arr[i] = text.charCodeAt(i) & 0xff;
+    }
+    return arr;
+}
+
 // ==========================================
 // [Binary & String Utils] 二進位與編碼輔助函式
 // ==========================================
