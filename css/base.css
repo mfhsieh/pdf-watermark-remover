@@ -54,7 +54,7 @@ body {
 }
 
 /* 防止 Modal 開啟時底層主畫面滾動（滾動穿透） */
-body:has(.modal-overlay.active) {
+body.modal-open {
     overflow: hidden;
 }
 

@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainContainer.inert = true;
                     mainContainer.setAttribute('aria-hidden', 'true');
                 }
+                document.body.classList.add('modal-open');
                 // 將焦點移入 Modal
                 const activeModal = document.querySelector('.modal-overlay.active');
                 if (activeModal && !activeModal.contains(document.activeElement)) {
@@ -88,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainContainer.inert = false;
                     mainContainer.setAttribute('aria-hidden', 'false');
                 }
+                document.body.classList.remove('modal-open');
                 if (lastActiveElement && document.body.contains(lastActiveElement)) {
                     lastActiveElement.focus();
                 }

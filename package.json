@@ -1,7 +1,7 @@
 {
   "name": "pdf-watermark-remover",
   "version": "2.3.1",
-  "description": "[![Version](https://img.shields.io/badge/version-2.2.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/) [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)",
+  "description": "PDF 浮水印清除工具，純前端執行，無伺服器上傳，保護您的隱私。",
   "main": "index.js",
   "directories": {
     "doc": "doc",
@@ -9,8 +9,8 @@
   },
   "scripts": {
     "test": "node test/e2e.mjs",
-    "lint": "eslint js/ test/",
-    "format": "prettier --write \"js/**/*.js\" \"test/**/*.mjs\" \"css/**/*.css\" \"*.html\"",
+    "lint": "eslint js/ test/ doc/",
+    "format": "prettier --write \"js/**/*.js\" \"test/**/*.mjs\" \"doc/**/*.mjs\" \"css/**/*.css\" \"*.html\"",
     "docs": "node doc/doc-gen.mjs"
   },
   "repository": {

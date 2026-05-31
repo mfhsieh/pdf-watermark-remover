@@ -547,7 +547,7 @@ async function loadAndDecryptPdf(file) {
         const testDoc = await PDFDocument.load(rawBytes, { updateMetadata: false });
         testDoc.getPageCount(); // 觸發 lazy-parsing
         cachedDecryptedBytes = rawBytes;
-    } catch (e) {
+    } catch {
         try {
             const decrypted = await decryptWithQpdfWasm(rawBytes, '');
             cachedDecryptedBytes = decrypted;
@@ -571,7 +571,7 @@ async function loadAndDecryptPdf(file) {
                 previewBytes = decrypted;
                 decryptedSuccessfully = true;
                 addStatusMessage('🔓 已自動套用前次使用的密碼並解密成功！', 'success');
-            } catch (e) {
+            } catch {
                 addStatusMessage('⚠️ 前次密碼不適用於此檔案，請重新輸入密碼。', 'info');
             }
         }

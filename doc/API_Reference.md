@@ -191,6 +191,10 @@
 <dt><a href="#escapeRegex">escapeRegex(str)</a> ⇒ <code>string</code></dt>
 <dd><p>將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式</p>
 </dd>
+<dt><a href="#safeRemoveFromDictionary">safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)</a></dt>
+<dd><p>安全地從 PDFDict 資源字典中移除指定鍵值
+若原字典已被多頁共用，會先進行 clone 以隔離修改。</p>
+</dd>
 <dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
 </dd>
@@ -230,7 +234,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#removeOCG">removeOCG(pdfDoc)</a> ⇒ <code>number</code></dt>
 <dd><p>策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）</p>
 </dd>
-<dt><a href="#removeImageXObjects">removeImageXObjects(pdfDoc, resources, pageIndex)</a> ⇒ <code>Object</code></dt>
+<dt><a href="#removeImageXObjects">removeImageXObjects(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
 <dd><p>策略四：清除圖片型浮水印 (Image XObject)
  當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
@@ -764,6 +768,23 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | --- | --- | --- |
 | str | <code>string</code> | 需要跳脫的原始字串 |
 
+<a name="safeRemoveFromDictionary"></a>
+
+## safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)
+安全地從 PDFDict 資源字典中移除指定鍵值
+若原字典已被多頁共用，會先進行 clone 以隔離修改。
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| resources | <code>PDFDict</code> | 頁面的 Resources 字典 |
+| dictKey | <code>PDFName</code> | 目標字典在 Resources 中的鍵名 (如 PDFName.of('XObject')) |
+| targetDict | <code>PDFDict</code> | 目標字典 |
+| targetRef | <code>PDFRef</code> \| <code>null</code> | 目標字典的參照物件 (如果有) |
+| keysToRemove | <code>Array.&lt;PDFName&gt;</code> | 準備移除的鍵名陣列 |
+
 <a name="cleanContentStreams"></a>
 
 ## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)
@@ -887,7 +908,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="removeImageXObjects"></a>
 
-## removeImageXObjects(pdfDoc, resources, pageIndex) ⇒ <code>Object</code>
+## removeImageXObjects(pdfDoc, resources) ⇒ <code>Object</code>
 策略四：清除圖片型浮水印 (Image XObject)
  當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
@@ -900,7 +921,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | 文件物件 |
 | resources | <code>PDFDict</code> | 頁面資源字典 |
-| pageIndex | <code>number</code> | 當前處理頁面的 0-indexed 索引 |
 
 <a name="decompressFlateDecode"></a>
 

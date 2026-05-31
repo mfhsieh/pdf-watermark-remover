@@ -12,6 +12,34 @@ function escapeRegex(str) {
 }
 
 /**
+ * 安全地從 PDFDict 資源字典中移除指定鍵值
+ * 若原字典已被多頁共用，會先進行 clone 以隔離修改。
+ *
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFDict} resources - 頁面的 Resources 字典
+ * @param {PDFName} dictKey - 目標字典在 Resources 中的鍵名 (如 PDFName.of('XObject'))
+ * @param {PDFDict} targetDict - 目標字典
+ * @param {PDFRef|null} targetRef - 目標字典的參照物件 (如果有)
+ * @param {PDFName[]} keysToRemove - 準備移除的鍵名陣列
+ */
+function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove) {
+    if (keysToRemove.length === 0) return;
+
+    let dictToModify = targetDict;
+    if (dictToModify.clone) {
+        dictToModify = dictToModify.clone(pdfDoc.context);
+        if (targetRef && typeof targetRef.clone === 'function' && !resources.has(dictKey)) {
+            resources.set(dictKey, dictToModify);
+        } else {
+            resources.set(dictKey, pdfDoc.context.register(dictToModify));
+        }
+    }
+    for (const key of keysToRemove) {
+        dictToModify.delete(key);
+    }
+}
+
+/**
  * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
  * @param {PDFDocument} pdfDoc - PDF 文件物件
  * @param {PDFPage} page - 頁面物件
@@ -226,18 +254,7 @@ function removeFormXObjects(pdfDoc, resources) {
     }
 
     if (deletedKeys.length > 0) {
-        // 若有需要刪除的，將 XObject 字典拷貝一份，避免影響其他頁面
-        if (xObjects.clone) {
-            xObjects = xObjects.clone(pdfDoc.context);
-            if (xObjectsRef && typeof xObjectsRef.clone === 'function' && !resources.has(xObjectsKey)) {
-                resources.set(xObjectsKey, xObjects);
-            } else {
-                resources.set(xObjectsKey, pdfDoc.context.register(xObjects));
-            }
-        }
-        for (const key of deletedKeys) {
-            xObjects.delete(key);
-        }
+        safeRemoveFromDictionary(pdfDoc, resources, xObjectsKey, xObjects, xObjectsRef, deletedKeys);
         count = deletedKeys.length;
     }
     return { count, deletedKeys: deletedKeys.map((k) => k.value()) };
@@ -359,17 +376,7 @@ function removeExtGState(pdfDoc, resources, pageIndex) {
     }
 
     if (deletedKeys.length > 0) {
-        if (extGState.clone) {
-            extGState = extGState.clone(pdfDoc.context);
-            if (extGStateRef && typeof extGStateRef.clone === 'function' && !resources.has(extGStateKey)) {
-                resources.set(extGStateKey, extGState);
-            } else {
-                resources.set(extGStateKey, pdfDoc.context.register(extGState));
-            }
-        }
-        for (const key of deletedKeys) {
-            extGState.delete(key);
-        }
+        safeRemoveFromDictionary(pdfDoc, resources, extGStateKey, extGState, extGStateRef, deletedKeys);
         count = deletedKeys.length;
     }
     return { count, deletedKeys: deletedKeys.map((k) => k.value()) };
@@ -404,17 +411,14 @@ function removeOCGs(pdfDoc, resources) {
             }
 
             if (deletedPropertiesKeys.length > 0) {
-                if (properties.clone) {
-                    properties = properties.clone(pdfDoc.context);
-                    if (typeof propertiesRef.clone === 'function' && !resources.has(propertiesKey)) {
-                        resources.set(propertiesKey, properties);
-                    } else {
-                        resources.set(propertiesKey, pdfDoc.context.register(properties));
-                    }
-                }
-                for (const key of deletedPropertiesKeys) {
-                    properties.delete(key);
-                }
+                safeRemoveFromDictionary(
+                    pdfDoc,
+                    resources,
+                    propertiesKey,
+                    properties,
+                    propertiesRef,
+                    deletedPropertiesKeys
+                );
                 count += deletedPropertiesKeys.length;
             }
         }
@@ -462,16 +466,8 @@ function removeOCGs(pdfDoc, resources) {
             }
 
             if (keysToDelete.length > 0) {
-                if (xobjects.clone) {
-                    xobjects = xobjects.clone(pdfDoc.context);
-                    if (typeof xobjRef.clone === 'function' && !resources.has(xobjKey)) {
-                        resources.set(xobjKey, xobjects);
-                    } else {
-                        resources.set(xobjKey, pdfDoc.context.register(xobjects));
-                    }
-                }
+                safeRemoveFromDictionary(pdfDoc, resources, xobjKey, xobjects, xobjRef, keysToDelete);
                 for (const key of keysToDelete) {
-                    xobjects.delete(key);
                     deletedXObjectKeys.push(key.value());
                 }
                 count += keysToDelete.length;
@@ -549,10 +545,9 @@ function removeOCG(pdfDoc) {
  *
  *  @param {PDFDocument} pdfDoc - 文件物件
  *  @param {PDFDict} resources - 頁面資源字典
- *  @param {number} pageIndex - 當前處理頁面的 0-indexed 索引
  *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
-function removeImageXObjects(pdfDoc, resources, pageIndex) {
+function removeImageXObjects(pdfDoc, resources) {
     let xObjects = pdfDoc.context.lookup(resources.get(PDFName.of('XObject')));
     if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
 
@@ -574,18 +569,7 @@ function removeImageXObjects(pdfDoc, resources, pageIndex) {
     if (deletedKeys.length > 0) {
         const xObjectsKey = PDFName.of('XObject');
         const xObjectsRef = resources.get(xObjectsKey);
-
-        if (xObjects.clone) {
-            xObjects = xObjects.clone(pdfDoc.context);
-            if (xObjectsRef && typeof xObjectsRef.clone === 'function' && !resources.has(xObjectsKey)) {
-                resources.set(xObjectsKey, xObjects);
-            } else {
-                resources.set(xObjectsKey, pdfDoc.context.register(xObjects));
-            }
-        }
-        for (const key of deletedKeys) {
-            xObjects.delete(key);
-        }
+        safeRemoveFromDictionary(pdfDoc, resources, xObjectsKey, xObjects, xObjectsRef, deletedKeys);
         count = deletedKeys.length;
     }
     return { count, deletedKeys: deletedKeys.map((k) => k.value()) };

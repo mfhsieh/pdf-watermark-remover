@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # 切換到專案根目錄，確保相對路徑正確無誤
 cd "$(dirname "$0")/.." || exit 1
 

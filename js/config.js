@@ -136,7 +136,7 @@ function loadGlobalKeywords() {
                 WATERMARK_CONTENT_KEYWORDS.push(kw);
             }
         });
-    } catch (e) {
+    } catch {
         WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];
         TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
