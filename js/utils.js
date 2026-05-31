@@ -188,15 +188,25 @@ function compileToUTF16BELatin1(str) {
 function decodeHexStringsInText(text) {
     if (!text) return '';
     let expandedText = text;
-    const hexRegex = /<([0-9a-fA-F\s]+)>/g;
-    let match;
-    while ((match = hexRegex.exec(text)) !== null) {
-        const hexClean = match[1].replace(/\s/g, '');
+    let start = 0;
+    while (true) {
+        const openIdx = text.indexOf('<', start);
+        if (openIdx === -1) break;
+        const closeIdx = text.indexOf('>', openIdx);
+        if (closeIdx === -1) break;
+
+        const hexClean = text.substring(openIdx + 1, closeIdx).replace(/\s/g, '');
+        start = closeIdx + 1;
+
         if (hexClean.length === 0) continue;
         let paddedHex = hexClean;
         if (paddedHex.length % 2 !== 0) {
             paddedHex += '0';
         }
+
+        // 驗證是否為純十六進制字元
+        if (!/^[0-9a-fA-F]+$/.test(paddedHex)) continue;
+
         try {
             let decodedStr = '';
             for (let i = 0; i < paddedHex.length; i += 2) {

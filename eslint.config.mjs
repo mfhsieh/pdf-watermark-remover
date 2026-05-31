@@ -12,7 +12,7 @@ export default [
                 State: "writable",
                 Utils: "readonly"
             },
-            ecmaVersion: 2021,
+            ecmaVersion: 2022,
             sourceType: "module",
         },
         rules: {

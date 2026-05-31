@@ -73,16 +73,17 @@ async function countFeatures(pdfBytes) {
 }
 
 /**
- * 執行端到端 (E2E) 測試主程式
+ * 執行端到端 (E2E) 測試主程式 (利用 ESM Top-level Await 頂層執行)
  */
-async function runTests() {
-    console.log('🚀 開始執行 PDF 浮水印清除工具 E2E 測試...');
+// 確保下載目錄存在，若無則建立
+if (!fs.existsSync(removedDir)) fs.mkdirSync(removedDir, { recursive: true });
 
-    // 確保下載目錄存在，若無則建立
-    if (!fs.existsSync(removedDir)) fs.mkdirSync(removedDir, { recursive: true });
+console.log('🚀 開始執行 PDF 浮水印清除工具 E2E 測試...');
+let browser;
 
+try {
     // 啟動 Puppeteer 無頭瀏覽器 (Headless Browser)
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
         executablePath: '/usr/bin/google-chrome',
         headless: 'new',
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -226,51 +227,46 @@ async function runTests() {
         }
     };
 
-    try {
-        // 測試案例 1：sample1.pdf - 使用預設選項清除表單外部物件 (Form XObject)
-        await processFile('sample1.pdf', null, { forms: true });
+    // 測試案例 1：sample1.pdf - 使用預設選項清除表單外部物件 (Form XObject)
+    await processFile('sample1.pdf', null, { forms: true });
 
-        // 測試案例 2：sample2.pdf - 模擬使用者打開設定，勾選所有「延伸圖形狀態 (ExtGState)」
-        await processFile(
-            'sample2.pdf',
-            () => {
-                document.getElementById('openExtGStateKeywordsModalBtn').click();
-                const selectAllExt = document.querySelector('#extGStateKeywordsModal .select-all');
-                if (selectAllExt) selectAllExt.click();
-                document.getElementById('applyExtGStateKeywordsBtn').click();
-            },
-            { forms: true, extgs: true }
-        );
+    // 測試案例 2：sample2.pdf - 模擬使用者打開設定，勾選所有「延伸圖形狀態 (ExtGState)」
+    await processFile(
+        'sample2.pdf',
+        () => {
+            document.getElementById('openExtGStateKeywordsModalBtn').click();
+            const selectAllExt = document.querySelector('#extGStateKeywordsModal .select-all');
+            if (selectAllExt) selectAllExt.click();
+            document.getElementById('applyExtGStateKeywordsBtn').click();
+        },
+        { forms: true, extgs: true }
+    );
 
-        // 測試案例 3：sample3.pdf - 模擬使用者打開設定，勾選所有「註解 (Annotation)」與「影像 (Image)」
-        await processFile(
-            'sample3.pdf',
-            () => {
-                document.getElementById('openAnnotsSettingsModalBtn').click();
-                const selectAllAnnots = document.querySelector('#annotsSettingsModal .select-all');
-                if (selectAllAnnots) selectAllAnnots.click();
-                document.getElementById('applyAnnotsSettingsBtn').click();
+    // 測試案例 3：sample3.pdf - 模擬使用者打開設定，勾選所有「註解 (Annotation)」與「影像 (Image)」
+    await processFile(
+        'sample3.pdf',
+        () => {
+            document.getElementById('openAnnotsSettingsModalBtn').click();
+            const selectAllAnnots = document.querySelector('#annotsSettingsModal .select-all');
+            if (selectAllAnnots) selectAllAnnots.click();
+            document.getElementById('applyAnnotsSettingsBtn').click();
 
-                document.getElementById('openImageKeywordsModalBtn').click();
-                const selectAllImg = document.querySelector('#imageKeywordsModal .select-all');
-                if (selectAllImg) selectAllImg.click();
-                document.getElementById('applyImageKeywordsBtn').click();
-            },
-            { annots: true, images: true }
-        );
+            document.getElementById('openImageKeywordsModalBtn').click();
+            const selectAllImg = document.querySelector('#imageKeywordsModal .select-all');
+            if (selectAllImg) selectAllImg.click();
+            document.getElementById('applyImageKeywordsBtn').click();
+        },
+        { annots: true, images: true }
+    );
 
-        // 測試案例 4：sample4.pdf - 使用預設選項
-        // 假設預設邏輯會自動偵測並至少減少一些物件，這裡我們只驗證腳本能否順利跑完不報錯。
-        await processFile('sample4.pdf', null, {});
+    // 測試案例 4：sample4.pdf - 使用預設選項
+    // 假設預設邏輯會自動偵測並至少減少一些物件，這裡我們只驗證腳本能否順利跑完不報錯。
+    await processFile('sample4.pdf', null, {});
 
-        console.log('\n🎉 所有 E2E 測試與驗證均順利通過！');
-    } catch (e) {
-        console.error('\n❌ E2E 測試失敗:', e);
-    } finally {
-        // 測試結束，關閉瀏覽器
-        await browser.close();
-    }
+    console.log('\n🎉 所有 E2E 測試與驗證均順利通過！');
+} catch (e) {
+    console.error('\n❌ E2E 測試失敗:', e);
+} finally {
+    // 測試結束，關閉瀏覽器
+    if (browser) await browser.close();
 }
-
-// 執行主程式
-runTests();

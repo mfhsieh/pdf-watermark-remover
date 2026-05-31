@@ -1,6 +1,6 @@
 {
   "name": "pdf-watermark-remover",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "[![Version](https://img.shields.io/badge/version-2.2.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/) [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)",
   "main": "index.js",
   "directories": {
