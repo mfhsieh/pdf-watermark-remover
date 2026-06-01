@@ -24,6 +24,9 @@ let detectedFormXObjects = new Map();
 /** @type {string[]} 儲存使用者勾選要刪除的 raw stream text */
 let formXObjectsToDestroy = [];
 
+/** @type {Map<string, boolean>} 標記哪些 Form XObject 是「頁面內容流唯一的 Do 呼叫」（危險的樣式） */
+let dangerousFormXObjects = new Map();
+
 // 3. 註解 (Annotation) 狀態管理
 /** @type {Map<string, any>} 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr） */
 let detectedAnnotations = new Map();
@@ -249,6 +252,7 @@ function resetAllState() {
     // 6. 重置偵測到的註解類型與刪除清單
     detectedFormXObjects.clear();
     formXObjectsToDestroy = [];
+        dangerousFormXObjects.clear();
     detectedAnnotations.clear();
     annotsToDestroy = [];
     detectedDirectContents.clear();

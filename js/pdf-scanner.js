@@ -50,6 +50,69 @@ async function decompressFlateDecode(data) {
 }
 
 /**
+ * 安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
+ * 此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。
+ *
+ * 套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
+ * 若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。
+ *
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @param {string} keyName - Form XObject 的資源鍵名
+ * @returns {Promise<boolean>} 是否為唯一的 Do 呼叫
+ */
+async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
+    try {
+        const page = pdfDoc.getPage(pageIndex);
+        const contentsRef = page.node.get(PDFName.of('Contents'));
+        const contents = pdfDoc.context.lookup(contentsRef);
+
+        const streams = [];
+        if (contents instanceof PDFArray) {
+            for (let i = 0; i < contents.size(); i++) {
+                streams.push(pdfDoc.context.lookup(contents.get(i)));
+            }
+        } else if (contents) {
+            streams.push(contents);
+        }
+
+        for (const stream of streams) {
+            if (!(stream instanceof PDFRawStream)) continue;
+
+            let data = stream.contents;
+            const filter = stream.dict.get(PDFName.of('Filter'));
+            if (filter && filter.toString() === '/FlateDecode') {
+                data = await decompressFlateDecode(stream.contents);
+            }
+
+            // 轉為字串搜尋
+            const text = new TextDecoder('latin1').decode(data);
+
+            // 統計此頁面中所有 Do 呼叫的數量
+            // Do 指令格式：/ResourceName Do（ResourceName 前面必須有 /，後面必須是空白字符或換行）
+            const doPattern = /\/\w+\s+Do\b/g;
+            const allDos = text.match(doPattern) || [];
+
+            // 統計該特定 XObject 的 Do 呼叫
+            const targetDo = `/${keyName} Do`;
+            const targetCount = (
+                text.match(new RegExp('/' + keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+Do\\b', 'g')) || []
+            ).length;
+
+            // 若此頁面只有一個 Do 呼叫，且正好是目標 XObject，則回傳 true
+            if (allDos.length === 1 && targetCount === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    } catch (e) {
+        console.warn('isOnlyChildDo 檢查失敗', e);
+        return false;
+    }
+}
+
+/**
  * 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
  * @param {PDFDocument} srcDoc - 原始 PDF 文件物件
  * @param {number} pageIndex - 頁面索引 (0-indexed)
@@ -107,6 +170,54 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
 }
 
 /**
+ * 在指定 Resources 中遞迴搜尋目標 Form XObject
+ * @param {PDFObject|PDFDict} resourcesNode
+ * @param {string} cleanKeyName
+ * @param {PDFDocument} ownerDoc
+ * @param {Set<string>} [visited]
+ * @returns {{ref: any, obj: any}|null}
+ */
+function findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, visited = new Set()) {
+    if (!resourcesNode) return null;
+
+    const resources = ownerDoc.context.lookup(resourcesNode);
+    if (!(resources instanceof PDFDict)) return null;
+
+    const xObjectsNode = resources.get(PDFName.of('XObject'));
+    if (!xObjectsNode) return null;
+
+    const xObjects = ownerDoc.context.lookup(xObjectsNode);
+    if (!(xObjects instanceof PDFDict)) return null;
+
+    const targetKey = PDFName.of(cleanKeyName);
+    if (xObjects.has(targetKey)) {
+        const ref = xObjects.get(targetKey);
+        return { ref, obj: ownerDoc.context.lookup(ref) };
+    }
+
+    for (const key of xObjects.keys()) {
+        const xObjRef = xObjects.get(key);
+        if (!xObjRef) continue;
+
+        const refStr = xObjRef.toString();
+        if (visited.has(refStr)) continue;
+        visited.add(refStr);
+
+        const xObj = ownerDoc.context.lookup(xObjRef);
+        if (!(xObj instanceof PDFRawStream)) continue;
+
+        const subtype = ownerDoc.context.lookup(xObj.dict.get(PDFName.of('Subtype')));
+        if (subtype instanceof PDFName && subtype.toString() === '/Form') {
+            const nestedResourcesNode = xObj.dict.get(PDFName.of('Resources'));
+            const nestedResult = findFormXObjectInResources(nestedResourcesNode, cleanKeyName, ownerDoc, visited);
+            if (nestedResult) return nestedResult;
+        }
+    }
+
+    return null;
+}
+
+/**
  * 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
  * @param {PDFDocument} previewDoc
  * @param {PDFPage} page
@@ -153,40 +264,41 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     const previewDoc = await PDFDocument.create();
 
     const srcPage = srcDoc.getPage(pageIndex);
-    const originalResources = srcPage.node.lookup(PDFName.of('Resources'));
 
     // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
     const cleanKeyName = keyName.replace(/^\//, '');
 
-    // 1. 深入尋找該 Form XObject 的物件參照
-    let fmObj = null;
-
-    if (originalResources instanceof PDFDict) {
-        const xObjects = srcDoc.context.lookup(originalResources.get(PDFName.of('XObject')));
-        if (xObjects instanceof PDFDict && xObjects.has(PDFName.of(cleanKeyName))) {
-            fmObj = srcDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
-        }
-    }
-
-    if (!fmObj) {
+    // 1. 深入尋找該 Form XObject 的物件參照，支援 page Resource 與巢狀 Form Resource
+    const foundForm = findFormXObjectInResources(srcPage.node.lookup(PDFName.of('Resources')), cleanKeyName, srcDoc);
+    if (!foundForm || !foundForm.obj) {
         throw new Error('找不到該 Form 物件，無法產生預覽。');
     }
+    const fmObj = foundForm.obj;
 
     // 2. 直接「拷貝原頁面」，從而完美繼承原頁面中所有的字型資源、編碼、CMap 與環境上下文！
     const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
     const page = previewDoc.addPage(copiedPage);
     // 保留原頁面尺寸，讓浮水印顯示在原始位置（含旋轉角度）
 
-    // 3. 解決 OCG 圖層遮罩導致預覽空白的致命 Bug：
-    // 在拷貝出來的頁面中，直接找到 /XObject 中的該 Form 物件，將其 /OC 屬性刪除，強制讓它 100% 渲染！
+    // 如果目標 XObject 是巢狀定義在另一個 Form 內，先把它補回頂層 page Resources 中
     const pageResources = page.node.lookup(PDFName.of('Resources'));
     if (pageResources instanceof PDFDict) {
-        const xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
-        if (xObjects instanceof PDFDict && xObjects.has(PDFName.of(cleanKeyName))) {
-            const clonedFm = previewDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
-            if (clonedFm instanceof PDFRawStream) {
-                clonedFm.dict.delete(PDFName.of('OC'));
+        let xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
+        if (!(xObjects instanceof PDFDict)) {
+            xObjects = previewDoc.context.obj({});
+            pageResources.set(PDFName.of('XObject'), xObjects);
+        }
+
+        if (!xObjects.has(PDFName.of(cleanKeyName))) {
+            const nestedRef = findFormXObjectInResources(pageResources, cleanKeyName, previewDoc);
+            if (nestedRef && nestedRef.ref) {
+                xObjects.set(PDFName.of(cleanKeyName), nestedRef.ref);
             }
+        }
+
+        const clonedFm = previewDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
+        if (clonedFm instanceof PDFRawStream) {
+            clonedFm.dict.delete(PDFName.of('OC'));
         }
     }
 
@@ -891,6 +1003,9 @@ async function performBackgroundScan(scanDoc) {
     detectedOCGs.clear();
     detectedImages.clear();
 
+    // 重置危險標記 Map
+    dangerousFormXObjects.clear();
+
     scanOCG(scanDoc);
 
     const pageCount = scanDoc.getPageCount();
@@ -899,6 +1014,22 @@ async function performBackgroundScan(scanDoc) {
         scanAnnotations(scanDoc, page, i);
         scanResources(scanDoc, page, i);
         scanDirectContent(scanDoc, page, i);
+    }
+
+    // --- 安全性檢查：標記危險的 Form XObject（頁面內容流唯一的 Do 呼叫） ---
+    for (const [refStr, entry] of detectedFormXObjects.entries()) {
+        // 檢查該物件在每一頁是否為唯一的 Do 呼叫
+        for (const pageNum of entry.pages) {
+            const pageIndex = pageNum - 1;
+            try {
+                if (await isOnlyChildDo(scanDoc, pageIndex, entry.keyName)) {
+                    dangerousFormXObjects.set(refStr, true);
+                    break; // 只要在任意一頁是危險模式，就標記為危險
+                }
+            } catch (e) {
+                console.debug(`檢查頁面 ${pageNum} 的 Form XObject ${entry.keyName} 時出錯`, e);
+            }
+        }
     }
 
     // --- 啟發式高頻率出現智慧偵測 (Heuristic Auto-Detect) ---

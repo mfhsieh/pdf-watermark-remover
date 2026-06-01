@@ -101,6 +101,31 @@ processButton.addEventListener('click', async () => {
         addStatusMessage('載入浮水印清除選項設定...', 'info');
         const options = getOptions();
 
+        // 2.5 安全檢查：若使用者勾選了危險的 Form XObject，則彈出確認對話
+        if (options.removeFormXObject) {
+            const dangerousSelected = [];
+            for (const refStr of formXObjectsToDestroy) {
+                if (dangerousFormXObjects.has(refStr)) {
+                    const entry = detectedFormXObjects.get(refStr);
+                    if (entry) {
+                        dangerousSelected.push(`${entry.keyName || refStr} (第 ${entry.pages.join(', ')} 頁)`);
+                    }
+                }
+            }
+            
+            if (dangerousSelected.length > 0) {
+                const msg = `⚠️ 警告：下列「表單外部物件」是該頁面內容流中唯一的繪圖呼叫，刪除它們可能導致頁面內容消失：\n\n${dangerousSelected.join('\n')}\n\n您確定要繼續刪除嗎？請務必在清除前備份 PDF 檔案。`;
+                const confirmed = confirm(msg);
+                if (!confirmed) {
+                    addStatusMessage('❌ 已取消清除。請重新檢查選擇的物件。', 'info');
+                    processButton.disabled = false;
+                    processButton.textContent = '開始清除浮水印';
+                    return;
+                }
+                addStatusMessage('✅ 使用者已確認繼續清除（已確認危險物件）。', 'info');
+            }
+        }
+
         // 3. 開始重構 PDF 物件樹
         addStatusMessage('開始掃描並重構 PDF 物件樹，套用清除策略...', 'info');
         const result = processPdf(pdfDoc, options);
