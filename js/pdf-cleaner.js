@@ -338,7 +338,12 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
 
         if (modified) {
             const arr = encodeTextToBinary(text);
-            const newStream = pdfDoc.context.stream(arr, stream.dict.clone(pdfDoc.context));
+            const newDict = stream.dict.clone(pdfDoc.context);
+            // 移除原本的 Filter 與 Length，讓 pdf-lib 重新儲存時能正確處理壓縮與長度，避免 Acrobat 報錯損毀
+            newDict.delete(PDFLib.PDFName.of('Filter'));
+            newDict.delete(PDFLib.PDFName.of('Length'));
+
+            const newStream = pdfDoc.context.stream(arr, newDict);
             pdfDoc.context.assign(xObjRef, newStream); // 替換原始參照
         }
     } catch (e) {
