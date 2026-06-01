@@ -159,6 +159,9 @@
 <dt><a href="#chkRemoveImageXObject">chkRemoveImageXObject</a> : <code>HTMLInputElement</code></dt>
 <dd><p>是否移除影像外部物件 (Image XObject) 的核取方塊</p>
 </dd>
+<dt><a href="#chkRemoveExtGState">chkRemoveExtGState</a> : <code>HTMLInputElement</code></dt>
+<dd><p>是否移除延伸圖形狀態 (ExtGState) 的核取方塊</p>
+</dd>
 <dt><a href="#chkRemoveOCG">chkRemoveOCG</a> : <code>HTMLInputElement</code></dt>
 <dd><p>是否移除選擇性內容群組 (OCG) 的核取方塊</p>
 </dd>
@@ -187,9 +190,6 @@
 </dd>
 <dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold)</a></dt>
 <dd><p>儲存全域設定至 localStorage</p>
-</dd>
-<dt><a href="#escapeRegex">escapeRegex(str)</a> ⇒ <code>string</code></dt>
-<dd><p>將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式</p>
 </dd>
 <dt><a href="#safeRemoveFromDictionary">safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)</a></dt>
 <dd><p>安全地從 PDFDict 資源字典中移除指定鍵值
@@ -324,6 +324,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 </dd>
 <dt><a href="#closeObjectPreview">closeObjectPreview()</a></dt>
 <dd><p>關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏</p>
+</dd>
+<dt><a href="#escapeRegex">escapeRegex(str)</a> ⇒ <code>string</code></dt>
+<dd><p>將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式</p>
 </dd>
 <dt><a href="#isSuspectKeyName">isSuspectKeyName(text)</a> ⇒ <code>boolean</code></dt>
 <dd><p>判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵</p>
@@ -497,7 +500,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 儲存使用者勾選要刪除的 raw stream text
 
 **Kind**: global variable  
-<a name="dangerousFormXObjects"></a>
+<a name="detectedAnnotations"></a>
 
 ## detectedAnnotations : <code>Map.&lt;string, any&gt;</code>
 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）
@@ -695,6 +698,12 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 是否移除影像外部物件 (Image XObject) 的核取方塊
 
 **Kind**: global constant  
+<a name="chkRemoveExtGState"></a>
+
+## chkRemoveExtGState : <code>HTMLInputElement</code>
+是否移除延伸圖形狀態 (ExtGState) 的核取方塊
+
+**Kind**: global constant  
 <a name="chkRemoveOCG"></a>
 
 ## chkRemoveOCG : <code>HTMLInputElement</code>
@@ -762,18 +771,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | contentsArray | <code>Array.&lt;string&gt;</code> | 內容文字關鍵字陣列 |
 | threshold | <code>number</code> | 透明度門檻值 |
 | heuristicThreshold | <code>number</code> | 智慧偵測高頻率門檻 |
-
-<a name="escapeRegex"></a>
-
-## escapeRegex(str) ⇒ <code>string</code>
-將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
-
-**Kind**: global function  
-**Returns**: <code>string</code> - 跳脫後的字串  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| str | <code>string</code> | 需要跳脫的原始字串 |
 
 <a name="safeRemoveFromDictionary"></a>
 
@@ -947,7 +944,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | pdfDoc | <code>PDFDocument</code> | 文件物件 |
 | resources | <code>PDFDict</code> | 頁面資源字典 |
 
-<a name="isOnlyChildDo"></a>
+<a name="extractXObjectDrawBlock"></a>
 
 ## extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) ⇒ <code>Promise.&lt;(string\|null)&gt;</code>
 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
@@ -1231,6 +1228,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
 
 **Kind**: global function  
+<a name="escapeRegex"></a>
+
+## escapeRegex(str) ⇒ <code>string</code>
+將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
+
+**Kind**: global function  
+**Returns**: <code>string</code> - 跳脫後的字串  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| str | <code>string</code> | 需要跳脫的原始字串 |
+
 <a name="isSuspectKeyName"></a>
 
 ## isSuspectKeyName(text) ⇒ <code>boolean</code>
@@ -1394,3 +1403,4 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Description |
 | --- | --- | --- |
 | stream | <code>PDFRawStream</code> | PDF 原始二進位串流 |
+

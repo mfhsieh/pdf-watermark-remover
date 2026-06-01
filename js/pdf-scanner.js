@@ -31,7 +31,7 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
         const data = getDecodedStreamContents(stream);
 
         // 轉為字串搜尋
-            const text = decodeBinaryToText(data);
+        const text = decodeBinaryToText(data);
         const doIdx = text.indexOf(doToken);
         if (doIdx === -1) continue;
 
@@ -897,7 +897,6 @@ function scanDirectContent(scanDoc, page, pageIndex) {
  * @param {PDFDocument} scanDoc
  */
 async function performBackgroundScan(scanDoc) {
-
     scanOCG(scanDoc);
 
     const pageCount = scanDoc.getPageCount();

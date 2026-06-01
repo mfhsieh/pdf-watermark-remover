@@ -84,6 +84,7 @@
   以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。
 - **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
   若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do` 或 `/gs`）若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式會透過共用的 `removeDeletedReferencesFromText` 以正則表達式在明文內容流中徹底抹除這些殘留的呼叫，並透過 `escapeRegex()` 防止特殊字元造成正則引擎報錯 (ReDoS 風險)。
+  > **Trade-off (效能/穩定性取捨)**：為了確保修改後的 Content Stream 結構穩定性並避免 Acrobat 報錯，重新寫入的內容流會捨棄原有的壓縮演算法 (如 `FlateDecode` Filter)。這會使得處理後的 PDF 體積微幅增加，但大幅提升了檔案的相容性與修復成功率。
 
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。
@@ -95,11 +96,11 @@
 ### `ui.js`
 不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
 - **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
-- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤 (Tab 鍵) 焦點穿透到後方元件，符合 WCAG AA 無障礙標準。
+- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤焦點穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈，作為不支援 `inert` 屬性的舊版瀏覽器之安全相容 Fallback，確保完全符合 WCAG AA 無障礙標準。
 
 ### `app.js`
 系統的生命週期進入點。
-- **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。
+- **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。加入了針對非同步預覽的錯誤捕捉 (`catch`) 防護，避免發生 Unhandled Promise Rejection 引發的隱性崩潰。同時在拖曳上傳中增加了附檔名檢查，作為跨作業系統拖曳時可能遺失 MIME Type (`file.type`) 的後備方案。
 - **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
 - **處理流程：** 當使用者點擊「開始清除浮水印」按鈕時，取出 `cachedDecryptedBytes`，呼叫 `processPdf`，然後將重構完成的文件轉成 Blob 並掛載到右側結果預覽區及下載按鈕。
 

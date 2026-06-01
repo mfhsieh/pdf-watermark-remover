@@ -12,7 +12,11 @@ function handleFileSelected(file) {
     clearStatusMessages();
     addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
     downloadArea.classList.add('hidden');
-    showOriginalPreview(selectedFile); // async，不 await，讓 UI 不卡頓
+    // 捕捉非同步背景處理時可能發生的未預期錯誤，避免 Unhandled Promise Rejection
+    showOriginalPreview(selectedFile).catch((err) => {
+        console.error('預覽載入失敗:', err);
+        addStatusMessage(`預覽載入失敗: ${err.message}`, 'error');
+    });
 }
 // 監聽傳統點擊選擇檔案事件
 fileInput.addEventListener('change', (event) => {
@@ -46,7 +50,8 @@ fileArea.addEventListener('drop', (event) => {
     fileArea.classList.remove('dragging');
 
     const file = event.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') {
+    // 加入副檔名判斷 Fallback，避免部分 OS 拖曳時遺失 MIME Type
+    if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
         // 嘗試將拖曳檔案與 input 同步（相容性處理，部分舊瀏覽器 input.files 為唯讀）
         try {
             fileInput.files = event.dataTransfer.files;
