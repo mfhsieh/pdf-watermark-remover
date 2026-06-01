@@ -3,66 +3,6 @@
 // ==========================================
 
 /**
- * 安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
- * 此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。
- *
- * 套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
- * 若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。
- *
- * @param {PDFDocument} pdfDoc - PDF 文件物件
- * @param {number} pageIndex - 頁面索引 (0-indexed)
- * @param {string} keyName - Form XObject 的資源鍵名
- * @returns {Promise<boolean>} 是否為唯一的 Do 呼叫
- */
-async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
-    try {
-        const page = pdfDoc.getPage(pageIndex);
-        const contentsRef = page.node.get(PDFName.of('Contents'));
-        const contents = pdfDoc.context.lookup(contentsRef);
-
-        const streams = [];
-        if (contents instanceof PDFArray) {
-            for (let i = 0; i < contents.size(); i++) {
-                streams.push(pdfDoc.context.lookup(contents.get(i)));
-            }
-        } else if (contents) {
-            streams.push(contents);
-        }
-
-        let totalDos = 0;
-        let totalTargetDos = 0;
-
-        for (const stream of streams) {
-            if (!(stream instanceof PDFRawStream)) continue;
-
-            const data = getDecodedStreamContents(stream);
-
-            // 轉為字串搜尋
-            const text = decodeBinaryToText(data);
-
-            // 統計此頁面中所有 Do 呼叫的數量
-            // Do 指令格式：/ResourceName Do（ResourceName 前面必須有 /，後面必須是空白字符或換行）
-            const doPattern = /\/\w+\s+Do\b/g;
-            const allDos = text.match(doPattern) || [];
-
-            // 統計該特定 XObject 的 Do 呼叫
-            const targetCount = (
-                text.match(new RegExp('/' + escapeRegex(keyName) + '\\s+Do\\b', 'g')) || []
-            ).length;
-
-            totalDos += allDos.length;
-            totalTargetDos += targetCount;
-        }
-
-        // 若此頁面所有串流中總共只有一個 Do 呼叫，且正好是目標 XObject，則回傳 true
-        return totalDos === 1 && totalTargetDos === 1;
-    } catch (e) {
-        console.warn('isOnlyChildDo 檢查失敗', e);
-        return false;
-    }
-}
-
-/**
  * 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
  * @param {PDFDocument} srcDoc - 原始 PDF 文件物件
  * @param {number} pageIndex - 頁面索引 (0-indexed)
@@ -966,22 +906,6 @@ async function performBackgroundScan(scanDoc) {
         scanAnnotations(scanDoc, page, i);
         scanResources(scanDoc, page, i);
         scanDirectContent(scanDoc, page, i);
-    }
-
-    // --- 安全性檢查：標記危險的 Form XObject（頁面內容流唯一的 Do 呼叫） ---
-    for (const [refStr, entry] of detectedFormXObjects.entries()) {
-        // 檢查該物件在每一頁是否為唯一的 Do 呼叫
-        for (const pageNum of entry.pages) {
-            const pageIndex = pageNum - 1;
-            try {
-                if (await isOnlyChildDo(scanDoc, pageIndex, entry.keyName)) {
-                    dangerousFormXObjects.set(refStr, true);
-                    break; // 只要在任意一頁是危險模式，就標記為危險
-                }
-            } catch (e) {
-                console.debug(`檢查頁面 ${pageNum} 的 Form XObject ${entry.keyName} 時出錯`, e);
-            }
-        }
     }
 
     // --- 啟發式高頻率出現智慧偵測 (Heuristic Auto-Detect) ---

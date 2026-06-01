@@ -55,9 +55,6 @@
 <dt><a href="#formXObjectsToDestroy">formXObjectsToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存使用者勾選要刪除的 raw stream text</p>
 </dd>
-<dt><a href="#dangerousFormXObjects">dangerousFormXObjects</a> : <code>Map.&lt;string, boolean&gt;</code></dt>
-<dd><p>標記哪些 Form XObject 是「頁面內容流唯一的 Do 呼叫」（危險的樣式）</p>
-</dd>
 <dt><a href="#detectedAnnotations">detectedAnnotations</a> : <code>Map.&lt;string, any&gt;</code></dt>
 <dd><p>當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）</p>
 </dd>
@@ -251,12 +248,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
  當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
  若符合，則將其從資源字典中移除。</p>
-</dd>
-<dt><a href="#isOnlyChildDo">isOnlyChildDo(pdfDoc, pageIndex, keyName)</a> ⇒ <code>Promise.&lt;boolean&gt;</code></dt>
-<dd><p>安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
-此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。</p>
-<p>套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
-若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。</p>
 </dd>
 <dt><a href="#extractXObjectDrawBlock">extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName)</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
 <dd><p>從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）</p>
@@ -507,12 +498,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 **Kind**: global variable  
 <a name="dangerousFormXObjects"></a>
-
-## dangerousFormXObjects : <code>Map.&lt;string, boolean&gt;</code>
-標記哪些 Form XObject 是「頁面內容流唯一的 Do 呼叫」（危險的樣式）
-
-**Kind**: global variable  
-<a name="detectedAnnotations"></a>
 
 ## detectedAnnotations : <code>Map.&lt;string, any&gt;</code>
 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）
@@ -964,24 +949,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="isOnlyChildDo"></a>
 
-## isOnlyChildDo(pdfDoc, pageIndex, keyName) ⇒ <code>Promise.&lt;boolean&gt;</code>
-安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
-此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。
-
-套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
-若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。
-
-**Kind**: global function  
-**Returns**: <code>Promise.&lt;boolean&gt;</code> - 是否為唯一的 Do 呼叫  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
-| pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
-| keyName | <code>string</code> | Form XObject 的資源鍵名 |
-
-<a name="extractXObjectDrawBlock"></a>
-
 ## extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) ⇒ <code>Promise.&lt;(string\|null)&gt;</code>
 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
 
@@ -1427,4 +1394,3 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Description |
 | --- | --- | --- |
 | stream | <code>PDFRawStream</code> | PDF 原始二進位串流 |
-

@@ -133,7 +133,7 @@ try {
                     const btn = document.getElementById('processButton');
                     return btn && !btn.classList.contains('hidden') && !btn.disabled;
                 },
-                { timeout: 15000 }
+                { timeout: 30000 }
             );
 
             // 若有自訂設定選項，則在瀏覽器內執行該回呼函式（模擬點擊 UI）

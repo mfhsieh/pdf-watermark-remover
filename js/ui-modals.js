@@ -264,19 +264,6 @@ new WatermarkStrategyModal({
         }
 
         labelEl.appendChild(textSpan);
-
-        // 檢查是否為危險的「頁面內容流唯一 Do 呼叫」樣式
-        if (dangerousFormXObjects.has(key)) {
-            const dangerWarning = document.createElement('span');
-            dangerWarning.className = 'danger-badge';
-            dangerWarning.title = '警告：此物件是該頁面內容流中唯一的繪圖呼叫。刪除它可能導致頁面內容消失！';
-            dangerWarning.textContent = ' ⚠️ [危險]';
-            dangerWarning.style.color = '#d73a49';
-            dangerWarning.style.fontWeight = 'bold';
-            textSpan.appendChild(dangerWarning);
-        }
-
-        labelEl.appendChild(textSpan);
     },
     applyMsgTemplate: (len) => `已選擇套用清理 ${len} 個「表單外部物件」。`,
     resetMsg: '已將當前檔案中的「表單外部物件」清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。',

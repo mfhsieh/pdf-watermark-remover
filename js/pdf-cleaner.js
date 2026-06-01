@@ -102,6 +102,8 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
 
                 if (result.modified) {
                     const arr = encodeTextToBinary(result.text);
+                    // Trade-off: 此處以空字典建立新串流，捨棄了原有的壓縮 (如 FlateDecode Filter)。
+                    // 雖然會使處理後的 PDF 體積微幅增加，但能確保修改後內容流的結構穩定性，避免 Acrobat 報錯。
                     const emptyDict = pdfDoc.context.obj({});
                     const newStream = pdfDoc.context.stream(arr, emptyDict);
                     const newRef = pdfDoc.context.register(newStream);
@@ -309,7 +311,8 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
         if (result.modified) {
             const arr = encodeTextToBinary(result.text);
             const newDict = stream.dict.clone(pdfDoc.context);
-            // 移除原本的 Filter 與 Length，讓 pdf-lib 重新儲存時能正確處理壓縮與長度，避免 Acrobat 報錯損毀
+            // Trade-off: 移除原本的 Filter 與 Length，讓 pdf-lib 重新儲存時能正確處理內容長度。
+            // 捨棄原本的壓縮演算法以換取修改後的結構穩定性，避免 Acrobat 報錯損毀。
             newDict.delete(PDFLib.PDFName.of('Filter'));
             newDict.delete(PDFLib.PDFName.of('Length'));
 

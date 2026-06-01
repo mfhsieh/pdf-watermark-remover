@@ -26,15 +26,15 @@ fi
 echo "開始打包檔案至 $OUTPUT_PATH ..."
 
 # 定義要打包的檔案與資料夾（加入 doc 目錄）
-FILES_TO_ZIP="index.html README.md css/ js/ doc/"
+FILES_TO_ZIP=("index.html" "README.md" "css/" "js/" "doc/")
 
 # 將指定的檔案與目錄打包進 zip 檔
 if command -v zip &> /dev/null; then
     # -r: 遞迴處理目錄, -q: 安靜模式
-    zip -r -q "$OUTPUT_PATH" $FILES_TO_ZIP
+    zip -r -q "$OUTPUT_PATH" "${FILES_TO_ZIP[@]}"
 elif command -v python3 &> /dev/null; then
     echo "未偵測到 zip 指令，改用 Python zipfile 模組..."
-    python3 -m zipfile -c "$OUTPUT_PATH" $FILES_TO_ZIP
+    python3 -m zipfile -c "$OUTPUT_PATH" "${FILES_TO_ZIP[@]}"
 else
     echo "❌ 打包失敗，請檢查系統是否已安裝 zip 或 python3 指令。"
     exit 1

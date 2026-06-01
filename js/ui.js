@@ -104,9 +104,42 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
     });
 
-    // 支援 Escape 鍵全局關閉
+    // 支援 Escape 鍵全局關閉與 Tab 鍵焦點陷阱 (Fallback 相容性)
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Tab') {
+            const activeModal = document.querySelector('.modal-overlay.active');
+            if (activeModal) {
+                // 選取 Modal 內所有可獲取焦點的元素
+                const focusableElements = activeModal.querySelectorAll(
+                    'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (focusableElements.length > 0) {
+                    const firstElement = focusableElements[0];
+                    const lastElement = focusableElements[focusableElements.length - 1];
+
+                    // Shift + Tab：如果當前焦點在第一個元素，跳到最後一個
+                    if (e.shiftKey) {
+                        if (
+                            document.activeElement === firstElement ||
+                            document.activeElement === activeModal ||
+                            document.activeElement === document.body
+                        ) {
+                            e.preventDefault();
+                            lastElement.focus();
+                        }
+                    } else {
+                        // Tab：如果當前焦點在最後一個元素，跳到第一個
+                        if (document.activeElement === lastElement) {
+                            e.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+                } else {
+                    // 若無可獲取焦點的元素，直接攔截預設行為以將焦點鎖定在 modal
+                    e.preventDefault();
+                }
+            }
+        } else if (e.key === 'Escape') {
             const activeModal = document.querySelector('.modal-overlay.active');
             if (activeModal) {
                 // 尋找取消或關閉按鈕並觸發點擊，確保對應的清理邏輯 (如 Blob 釋放) 正常執行
