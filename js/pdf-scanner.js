@@ -236,7 +236,7 @@ function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
         CA: config.borderOpacity,
     });
 
-    let pageResources = page.node.get(PDFName.of('Resources'));
+    let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
     if (!(pageResources instanceof PDFDict)) {
         pageResources = previewDoc.context.obj({});
         page.node.set(PDFName.of('Resources'), pageResources);
