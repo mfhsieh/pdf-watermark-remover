@@ -375,11 +375,28 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     const xOffset = (pageWidth - finalW) / 2;
     const yOffset = (pageHeight - finalH) / 2;
 
-    // 由於複製頁面已經連帶複製了 Resources 字典，該圖片物件依然以原 keyName 存在於該頁面的 XObject 中
     const cleanKeyName = keyName.replace(/^\//, '');
 
     // 取得共用的紅框描繪指令
     const highlightCmd = getPreviewHighlightRawCommand(previewDoc, page, xOffset, yOffset, finalW, finalH);
+
+    // 確保 XObject 存在於預覽頁面的 Resources 中，特別是當它是深層巢狀圖片時
+    let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
+    if (!(pageResources instanceof PDFDict)) {
+        pageResources = previewDoc.context.obj({});
+        page.node.set(PDFName.of('Resources'), pageResources);
+    }
+    let xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
+    if (!(xObjects instanceof PDFDict)) {
+        xObjects = previewDoc.context.obj({});
+        pageResources.set(PDFName.of('XObject'), xObjects);
+    }
+
+    // 如果圖片沒有直接在外層 XObject 裡 (可能深層巢狀)，我們手動把它複製並加入
+    if (!xObjects.has(PDFName.of(cleanKeyName))) {
+        const clonedImg = previewDoc.context.register(rawStream.clone(previewDoc.context));
+        xObjects.set(PDFName.of(cleanKeyName), clonedImg);
+    }
 
     // q: 儲存狀態
     // {finalW} 0 0 {finalH} {xOffset} {yOffset} cm: 縮放平移矩陣
