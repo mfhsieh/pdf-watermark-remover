@@ -3,15 +3,6 @@
 // ==========================================
 
 /**
- * 將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
- * @param {string} str - 需要跳脫的原始字串
- * @returns {string} 跳脫後的字串
- */
-function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
  * 安全地從 PDFDict 資源字典中移除指定鍵值
  * 若原字典已被多頁共用，會先進行 clone 以隔離修改。
  *
@@ -99,9 +90,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
         const stream = pdfDoc.context.lookup(streamRef);
         if (stream instanceof PDFRawStream) {
             try {
-                const decoded = PDFLib.decodePDFRawStream(stream);
-                decoded.reset();
-                const bytes = decoded.getBytes();
+                const bytes = getDecodedStreamContents(stream);
                 let text = decodeBinaryToText(bytes);
 
                 const result = removeDeletedReferencesFromText(
@@ -312,9 +301,7 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
     const stream = pdfDoc.context.lookup(xObjRef);
     if (!(stream instanceof PDFRawStream)) return;
     try {
-        const decoded = PDFLib.decodePDFRawStream(stream);
-        decoded.reset();
-        const bytes = decoded.getBytes();
+        const bytes = getDecodedStreamContents(stream);
         let text = decodeBinaryToText(bytes);
 
         const result = removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);

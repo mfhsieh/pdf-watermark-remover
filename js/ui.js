@@ -48,6 +48,7 @@ const chkRemoveAnnotations = document.getElementById('removeAnnotations');
 const chkRemoveDirectContent = document.getElementById('removeDirectContent');
 /** @type {HTMLInputElement} 是否移除影像外部物件 (Image XObject) 的核取方塊 */
 const chkRemoveImageXObject = document.getElementById('removeImageXObject');
+/** @type {HTMLInputElement} 是否移除延伸圖形狀態 (ExtGState) 的核取方塊 */
 const chkRemoveExtGState = document.getElementById('removeExtGState');
 /** @type {HTMLInputElement} 是否移除選擇性內容群組 (OCG) 的核取方塊 */
 const chkRemoveOCG = document.getElementById('removeOCG');

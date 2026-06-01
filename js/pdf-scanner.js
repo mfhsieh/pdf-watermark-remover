@@ -29,13 +29,16 @@ async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
             streams.push(contents);
         }
 
+        let totalDos = 0;
+        let totalTargetDos = 0;
+
         for (const stream of streams) {
             if (!(stream instanceof PDFRawStream)) continue;
 
             const data = getDecodedStreamContents(stream);
 
             // 轉為字串搜尋
-            const text = new TextDecoder('latin1').decode(data);
+            const text = decodeBinaryToText(data);
 
             // 統計此頁面中所有 Do 呼叫的數量
             // Do 指令格式：/ResourceName Do（ResourceName 前面必須有 /，後面必須是空白字符或換行）
@@ -44,16 +47,15 @@ async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
 
             // 統計該特定 XObject 的 Do 呼叫
             const targetCount = (
-                text.match(new RegExp('/' + keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+Do\\b', 'g')) || []
+                text.match(new RegExp('/' + escapeRegex(keyName) + '\\s+Do\\b', 'g')) || []
             ).length;
 
-            // 若此頁面只有一個 Do 呼叫，且正好是目標 XObject，則回傳 true
-            if (allDos.length === 1 && targetCount === 1) {
-                return true;
-            }
+            totalDos += allDos.length;
+            totalTargetDos += targetCount;
         }
 
-        return false;
+        // 若此頁面所有串流中總共只有一個 Do 呼叫，且正好是目標 XObject，則回傳 true
+        return totalDos === 1 && totalTargetDos === 1;
     } catch (e) {
         console.warn('isOnlyChildDo 檢查失敗', e);
         return false;
@@ -89,7 +91,7 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
         const data = getDecodedStreamContents(stream);
 
         // 轉為字串搜尋
-        const text = new TextDecoder('latin1').decode(data);
+            const text = decodeBinaryToText(data);
         const doIdx = text.indexOf(doToken);
         if (doIdx === -1) continue;
 
@@ -955,16 +957,6 @@ function scanDirectContent(scanDoc, page, pageIndex) {
  * @param {PDFDocument} scanDoc
  */
 async function performBackgroundScan(scanDoc) {
-    // 重置全部 6 個偵測 Map，確保與 resetAllState 行為一致
-    detectedFormXObjects.clear();
-    detectedDirectContents.clear();
-    detectedAnnotations.clear();
-    detectedExtGStates.clear();
-    detectedOCGs.clear();
-    detectedImages.clear();
-
-    // 重置危險標記 Map
-    dangerousFormXObjects.clear();
 
     scanOCG(scanDoc);
 

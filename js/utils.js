@@ -14,6 +14,15 @@ const {
 } = PDFLib;
 
 /**
+ * 將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
+ * @param {string} str - 需要跳脫的原始字串
+ * @returns {string} 跳脫後的字串
+ */
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
  * @param {string} text - 鍵名或圖層名稱
  * @returns {boolean}
