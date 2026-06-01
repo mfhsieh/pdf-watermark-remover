@@ -112,7 +112,7 @@ processButton.addEventListener('click', async () => {
                     }
                 }
             }
-            
+
             if (dangerousSelected.length > 0) {
                 const msg = `⚠️ 警告：下列「表單外部物件」是該頁面內容流中唯一的繪圖呼叫，刪除它們可能導致頁面內容消失：\n\n${dangerousSelected.join('\n')}\n\n您確定要繼續刪除嗎？請務必在清除前備份 PDF 檔案。`;
                 const confirmed = confirm(msg);

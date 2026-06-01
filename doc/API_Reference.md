@@ -55,6 +55,9 @@
 <dt><a href="#formXObjectsToDestroy">formXObjectsToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存使用者勾選要刪除的 raw stream text</p>
 </dd>
+<dt><a href="#dangerousFormXObjects">dangerousFormXObjects</a> : <code>Map.&lt;string, boolean&gt;</code></dt>
+<dd><p>標記哪些 Form XObject 是「頁面內容流唯一的 Do 呼叫」（危險的樣式）</p>
+</dd>
 <dt><a href="#detectedAnnotations">detectedAnnotations</a> : <code>Map.&lt;string, any&gt;</code></dt>
 <dd><p>當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）</p>
 </dd>
@@ -195,6 +198,9 @@
 <dd><p>安全地從 PDFDict 資源字典中移除指定鍵值
 若原字典已被多頁共用，會先進行 clone 以隔離修改。</p>
 </dd>
+<dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText()</a></dt>
+<dd><p>共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)</p>
+</dd>
 <dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
 </dd>
@@ -246,13 +252,17 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
  若符合，則將其從資源字典中移除。</p>
 </dd>
-<dt><a href="#decompressFlateDecode">decompressFlateDecode(data)</a> ⇒ <code>Promise.&lt;Uint8Array&gt;</code></dt>
-<dd><p>輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
-PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 &quot;deflate&quot;。
-若失敗則嘗試 &quot;deflate-raw&quot;（無 zlib header 的 raw deflate）。</p>
+<dt><a href="#isOnlyChildDo">isOnlyChildDo(pdfDoc, pageIndex, keyName)</a> ⇒ <code>Promise.&lt;boolean&gt;</code></dt>
+<dd><p>安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
+此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。</p>
+<p>套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
+若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。</p>
 </dd>
 <dt><a href="#extractXObjectDrawBlock">extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName)</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
 <dd><p>從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）</p>
+</dd>
+<dt><a href="#findFormXObjectInResources">findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited])</a> ⇒ <code>Object</code> | <code>null</code></dt>
+<dd><p>在指定 Resources 中遞迴搜尋目標 Form XObject</p>
 </dd>
 <dt><a href="#getPreviewHighlightRawCommand">getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height)</a></dt>
 <dd><p>產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)</p>
@@ -494,6 +504,12 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 
 ## formXObjectsToDestroy : <code>Array.&lt;string&gt;</code>
 儲存使用者勾選要刪除的 raw stream text
+
+**Kind**: global variable  
+<a name="dangerousFormXObjects"></a>
+
+## dangerousFormXObjects : <code>Map.&lt;string, boolean&gt;</code>
+標記哪些 Form XObject 是「頁面內容流唯一的 Do 呼叫」（危險的樣式）
 
 **Kind**: global variable  
 <a name="detectedAnnotations"></a>
@@ -791,6 +807,12 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | targetRef | <code>PDFRef</code> \| <code>null</code> | 目標字典的參照物件 (如果有) |
 | keysToRemove | <code>Array.&lt;PDFName&gt;</code> | 準備移除的鍵名陣列 |
 
+<a name="removeDeletedReferencesFromText"></a>
+
+## removeDeletedReferencesFromText()
+共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
+
+**Kind**: global function  
 <a name="cleanContentStreams"></a>
 
 ## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)
@@ -940,30 +962,23 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | pdfDoc | <code>PDFDocument</code> | 文件物件 |
 | resources | <code>PDFDict</code> | 頁面資源字典 |
 
-<a name="decompressFlateDecode"></a>
+<a name="isOnlyChildDo"></a>
 
-## decompressFlateDecode(data) ⇒ <code>Promise.&lt;Uint8Array&gt;</code>
-輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
-PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 "deflate"。
-若失敗則嘗試 "deflate-raw"（無 zlib header 的 raw deflate）。
+## isOnlyChildDo(pdfDoc, pageIndex, keyName) ⇒ <code>Promise.&lt;boolean&gt;</code>
+安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
+此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。
+
+套娃結構範例：頁面 Content → /fzFrm0 Do → /fullpage Do → [實際內容]
+若 /fzFrm0 是唯一的 Do，則刪除它會導致頁面變空。
 
 **Kind**: global function  
-**Returns**: <code>Promise.&lt;Uint8Array&gt;</code> - 解壓縮後的位元組  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - 是否為唯一的 Do 呼叫  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| data | <code>Uint8Array</code> | 壓縮後的原始位元組 |
-
-<a name="decompressFlateDecode..tryDecompress"></a>
-
-### decompressFlateDecode~tryDecompress(format)
-使用指定格式進行解壓縮的內部實作
-
-**Kind**: inner method of [<code>decompressFlateDecode</code>](#decompressFlateDecode)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| format | <code>string</code> | 'deflate' 或 'deflate-raw' |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
+| keyName | <code>string</code> | Form XObject 的資源鍵名 |
 
 <a name="extractXObjectDrawBlock"></a>
 
@@ -978,6 +993,20 @@ PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStre
 | srcDoc | <code>PDFDocument</code> | 原始 PDF 文件物件 |
 | pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
 | cleanKeyName | <code>string</code> | 資源鍵名 (不含前綴斜線) |
+
+<a name="findFormXObjectInResources"></a>
+
+## findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited]) ⇒ <code>Object</code> \| <code>null</code>
+在指定 Resources 中遞迴搜尋目標 Form XObject
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| resourcesNode | <code>PDFObject</code> \| <code>PDFDict</code> | 
+| cleanKeyName | <code>string</code> | 
+| ownerDoc | <code>PDFDocument</code> | 
+| [visited] | <code>Set.&lt;string&gt;</code> | 
 
 <a name="getPreviewHighlightRawCommand"></a>
 

@@ -40,6 +40,49 @@ function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, target
 }
 
 /**
+ * 共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
+ */
+function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+    let modified = false;
+    let newText = text;
+
+    for (const key of deletedXObjKeys || []) {
+        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+        if (newText.includes('/' + cleanKey)) {
+            const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
+            const replaced = newText.replace(regex, '');
+            if (replaced !== newText) {
+                newText = replaced;
+                modified = true;
+            }
+        }
+    }
+    for (const key of deletedExtGStateKeys || []) {
+        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+        if (newText.includes('/' + cleanKey)) {
+            const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
+            const replaced = newText.replace(regex, '');
+            if (replaced !== newText) {
+                newText = replaced;
+                modified = true;
+            }
+        }
+    }
+    for (const key of deletedOcgKeys || []) {
+        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+        if (newText.includes('/' + cleanKey)) {
+            const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
+            const replaced = newText.replace(regex, '');
+            if (replaced !== newText) {
+                newText = replaced;
+                modified = true;
+            }
+        }
+    }
+    return { text: newText, modified };
+}
+
+/**
  * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
  * @param {PDFDocument} pdfDoc - PDF 文件物件
  * @param {PDFPage} page - 頁面物件
@@ -61,42 +104,15 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 const bytes = decoded.getBytes();
                 let text = decodeBinaryToText(bytes);
 
-                let modified = false;
-                for (const key of deletedXObjKeys || []) {
-                    const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    if (text.includes('/' + cleanKey)) {
-                        const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
-                        const newText = text.replace(regex, '');
-                        if (newText !== text) {
-                            text = newText;
-                            modified = true;
-                        }
-                    }
-                }
-                for (const key of deletedExtGStateKeys || []) {
-                    const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    if (text.includes('/' + cleanKey)) {
-                        const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
-                        const newText = text.replace(regex, '');
-                        if (newText !== text) {
-                            text = newText;
-                            modified = true;
-                        }
-                    }
-                }
-                for (const key of deletedOcgKeys || []) {
-                    const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-                    if (text.includes('/' + cleanKey)) {
-                        const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
-                        const newText = text.replace(regex, '');
-                        if (newText !== text) {
-                            text = newText;
-                            modified = true;
-                        }
-                    }
-                }
-                if (modified) {
-                    const arr = encodeTextToBinary(text);
+                const result = removeDeletedReferencesFromText(
+                    text,
+                    deletedXObjKeys,
+                    deletedExtGStateKeys,
+                    deletedOcgKeys
+                );
+
+                if (result.modified) {
+                    const arr = encodeTextToBinary(result.text);
                     const emptyDict = pdfDoc.context.obj({});
                     const newStream = pdfDoc.context.stream(arr, emptyDict);
                     const newRef = pdfDoc.context.register(newStream);
@@ -300,44 +316,11 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
         decoded.reset();
         const bytes = decoded.getBytes();
         let text = decodeBinaryToText(bytes);
-        let modified = false;
 
-        for (const key of deletedXObjKeys || []) {
-            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-            if (text.includes('/' + cleanKey)) {
-                const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
-                const newText = text.replace(regex, '');
-                if (newText !== text) {
-                    text = newText;
-                    modified = true;
-                }
-            }
-        }
-        for (const key of deletedExtGStateKeys || []) {
-            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-            if (text.includes('/' + cleanKey)) {
-                const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
-                const newText = text.replace(regex, '');
-                if (newText !== text) {
-                    text = newText;
-                    modified = true;
-                }
-            }
-        }
-        for (const key of deletedOcgKeys || []) {
-            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-            if (text.includes('/' + cleanKey)) {
-                const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
-                const newText = text.replace(regex, '');
-                if (newText !== text) {
-                    text = newText;
-                    modified = true;
-                }
-            }
-        }
+        const result = removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
 
-        if (modified) {
-            const arr = encodeTextToBinary(text);
+        if (result.modified) {
+            const arr = encodeTextToBinary(result.text);
             const newDict = stream.dict.clone(pdfDoc.context);
             // 移除原本的 Filter 與 Length，讓 pdf-lib 重新儲存時能正確處理壓縮與長度，避免 Acrobat 報錯損毀
             newDict.delete(PDFLib.PDFName.of('Filter'));
@@ -378,17 +361,7 @@ function removeFormXObjects(pdfDoc, resources) {
         const subtype = xObject instanceof PDFRawStream ? xObject.dict.get(PDFName.of('Subtype')) : null;
 
         if (subtype instanceof PDFName && subtype.toString() === '/Form') {
-            // 檢查冪等狀態：若該物件已完成清除，則跳過以避免重複處理
-            if (xObject instanceof PDFRawStream && xObject.dict.has(PDFName.of('IsWatermarkRemoved'))) {
-                continue;
-            }
-
-            let shouldRemove = false;
             if (formXObjectsToDestroy.includes(refStr)) {
-                shouldRemove = true;
-            }
-
-            if (shouldRemove) {
                 deletedKeys.push(key);
             }
         }

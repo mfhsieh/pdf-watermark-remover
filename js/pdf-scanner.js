@@ -3,53 +3,6 @@
 // ==========================================
 
 /**
- * 輔助函式：將 Uint8Array 以 zlib/deflate 解壓縮
- * PDF 的 FlateDecode 為標準 zlib 格式，瀏覽器對應的 DecompressionStream 格式為 "deflate"。
- * 若失敗則嘗試 "deflate-raw"（無 zlib header 的 raw deflate）。
- * @param {Uint8Array} data - 壓縮後的原始位元組
- * @returns {Promise<Uint8Array>} 解壓縮後的位元組
- */
-async function decompressFlateDecode(data) {
-    /**
-     * 使用指定格式進行解壓縮的內部實作
-     * @param {string} format - 'deflate' 或 'deflate-raw'
-     */
-    async function tryDecompress(format) {
-        const ds = new DecompressionStream(format);
-        const writer = ds.writable.getWriter();
-        const reader = ds.readable.getReader();
-        writer.write(data);
-        writer.close();
-        const chunks = [];
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-        }
-        const total = chunks.reduce((a, c) => a + c.length, 0);
-        const merged = new Uint8Array(total);
-        let offset = 0;
-        for (const chunk of chunks) {
-            merged.set(chunk, offset);
-            offset += chunk.length;
-        }
-        return merged;
-    }
-
-    try {
-        return await tryDecompress('deflate');
-    } catch (e) {
-        console.warn('deflate 解壓縮失敗，嘗試 deflate-raw', e);
-        try {
-            return await tryDecompress('deflate-raw');
-        } catch (e2) {
-            console.warn('deflate-raw 也失敗，使用原始未壓縮資料', e2);
-            return data;
-        }
-    }
-}
-
-/**
  * 安全性檢查：判定一個 Form XObject 是否為「頁面內容流唯一的 Do 呼叫」
  * 此模式表示該 Form XObject 是頁面正文的容器，刪除它會導致頁面內容消失。
  *
@@ -79,11 +32,7 @@ async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
         for (const stream of streams) {
             if (!(stream instanceof PDFRawStream)) continue;
 
-            let data = stream.contents;
-            const filter = stream.dict.get(PDFName.of('Filter'));
-            if (filter && filter.toString() === '/FlateDecode') {
-                data = await decompressFlateDecode(stream.contents);
-            }
+            const data = getDecodedStreamContents(stream);
 
             // 轉為字串搜尋
             const text = new TextDecoder('latin1').decode(data);
@@ -94,7 +43,6 @@ async function isOnlyChildDo(pdfDoc, pageIndex, keyName) {
             const allDos = text.match(doPattern) || [];
 
             // 統計該特定 XObject 的 Do 呼叫
-            const targetDo = `/${keyName} Do`;
             const targetCount = (
                 text.match(new RegExp('/' + keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+Do\\b', 'g')) || []
             ).length;
@@ -138,12 +86,7 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
     for (const stream of streams) {
         if (!(stream instanceof PDFRawStream)) continue;
 
-        let data = stream.contents;
-        // 嘗試解壓縮（FlateDecode），統一由輔助函式處理
-        const filter = stream.dict.get(PDFName.of('Filter'));
-        if (filter && filter.toString() === '/FlateDecode') {
-            data = await decompressFlateDecode(stream.contents);
-        }
+        const data = getDecodedStreamContents(stream);
 
         // 轉為字串搜尋
         const text = new TextDecoder('latin1').decode(data);

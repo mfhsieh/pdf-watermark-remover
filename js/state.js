@@ -252,7 +252,7 @@ function resetAllState() {
     // 6. 重置偵測到的註解類型與刪除清單
     detectedFormXObjects.clear();
     formXObjectsToDestroy = [];
-        dangerousFormXObjects.clear();
+    dangerousFormXObjects.clear();
     detectedAnnotations.clear();
     annotsToDestroy = [];
     detectedDirectContents.clear();

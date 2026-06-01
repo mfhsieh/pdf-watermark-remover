@@ -34,10 +34,10 @@
 
 本系統針對 PDF 的底層結構，實作了六種無損清除策略。所有的判定邏輯定義於 `utils.js`，清除邏輯實作於 `pdf-cleaner.js`：
 
-1. **表單外部物件 (Form XObject)：** 針對封裝為可重複使用的圖形或文字物件。清除時會使用空白的 XObject 串流進行取代。
+1. **表單外部物件 (Form XObject)：** 針對封裝為可重複使用的圖形或文字物件。清除時會直接從資源字典將其參照抹除，並清除呼叫指令。
 2. **註解 (Annotation)：** 包含浮水印 (`Watermark`)、印章 (`Stamp`) 等附加於頁面上方的元件。清除時直接從頁面的 `/Annots` 陣列中移除參照。
 3. **頁面直接內容 (Direct Content)：** 針對直接寫入於頁面內容流（Contents stream）的明文指令。系統會讀出並比對文字，若命中特徵碼則將該流內容清空。
-4. **影像外部物件 (Image XObject)：** 針對圖片型態的浮水印。清除時會置換為 1x1 的全透明影像遮罩 (`ImageMask`)。
+4. **影像外部物件 (Image XObject)：** 針對圖片型態的浮水印。清除時同樣自資源字典中移除物件參照並清除呼叫指令。
 5. **延伸圖形狀態 (ExtGState)：** 某些浮水印透過綁定特定的透明度（`ca` / `CA`）來呈現半透明效果。此策略負責移除特定的圖形狀態參照。
 6. **選擇性內容群組 (OCG / 圖層)：** 針對利用 PDF 圖層功能實作的浮水印。系統會從 `/OCGs` 清單中移除，並強制將其加入至預設隱藏（`/OFF`）陣列中。
 
@@ -74,15 +74,16 @@
   3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。
   4. 產生原始 PDF 的 Blob URL 以供預覽。
 - **預覽生成器：** `generateFormXObjectPreviewUrl` 等，這些函式會利用 PDF-lib 動態抽取出單一物件，將周遭干擾隱藏後轉出成獨立的 PDF 供 iframe 檢視。
+- **串流解壓縮：** 統一使用專案內建的 `getDecodedStreamContents` 來取代自行刻製的 FlateDecode 邏輯，避免重複造輪子且提昇穩定度。
 
 ### `pdf-cleaner.js`
 真正修改 PDF 位元組的引擎，遵循「無損置換」原則。
 - **核心流程 `processPdf(pdfDoc, options)`：**
   根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。
-- **空串流置換 `createBlankXObjectStream()`：**
-  對於需要移除的資源，不能物理刪除字典鍵值，否則可能導致 PDF 工具（如 Acrobat Reader）報錯。此函式會註冊一個完全透明的物件將其覆蓋。
-- **安全參照清理 `cleanContentStreams()`：**
-  若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do`）若繼續存在，也會導致報錯。此函式負責使用 RegExp 在明文內容流中徹底抹除這些呼叫。過程中會呼叫 `escapeRegex()` 以防止特殊字元導致正則引擎報錯 (ReDoS 風險)。
+- **安全移除資源字典 `safeRemoveFromDictionary()`：**
+  以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。
+- **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
+  若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do` 或 `/gs`）若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式會透過共用的 `removeDeletedReferencesFromText` 以正則表達式在明文內容流中徹底抹除這些殘留的呼叫，並透過 `escapeRegex()` 防止特殊字元造成正則引擎報錯 (ReDoS 風險)。
 
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。
@@ -104,4 +105,4 @@
 
 ### `polyfill-config.js`
 處理外部依賴套件相容性的補丁檔案。
-- **環境設定：** 定義 `window.TEXT_ENCODING_NO_POLYFILL` 等環境變數。主要是為了解決 `text-encoding` 函式庫在現代瀏覽器環境中執行時可能產生的衝突或錯誤，確保其 Big5 字元編解碼功能能穩定運作。
+- **環境設定：** 透過先將 `window.TextEncoder` 與 `window.TextDecoder` 設為 `undefined`，強制舊版 `text-encoding` polyfill 掛載其全域物件。確保應用程式在現代瀏覽器環境中依然能穩定呼叫 Big5 等非標準編碼的轉換功能。
