@@ -71,7 +71,7 @@
 - **核心流程 `showOriginalPreview(file)`：**
   1. 重置所有全域狀態。
   2. 嘗試讀取 PDF，若失敗則呼叫 `decryptWithQpdfWasm` 處理密碼邏輯。
-  3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。
+  3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。此過程中導入了**時間切片 (Time Slicing)** 技術，定期讓出主執行緒，避免掃描百頁大檔時造成瀏覽器畫面凍結。
   4. 產生原始 PDF 的 Blob URL 以供預覽。
 - **預覽生成器：** `generateFormXObjectPreviewUrl` 等，這些函式會利用 PDF-lib 動態抽取出單一物件，將周遭干擾隱藏後轉出成獨立的 PDF 供 iframe 檢視。
 - **串流解壓縮：** 統一使用專案內建的 `getDecodedStreamContents` 來取代自行刻製的 FlateDecode 邏輯，避免重複造輪子且提昇穩定度。
@@ -91,12 +91,12 @@
 - **`WatermarkStrategyModal` 類別：** 
   提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 物件將六大策略的資料綁定在同一套 UI 上。底層渲染改用安全的 `replaceChildren()` 避免 `innerHTML` 風險。
 - **即時預覽系統 (`openObjectPreview` & `closeObjectPreview`)：**
-  根據不同的浮水印策略類型動態載入預覽 iframe，並在關閉視窗時即時呼叫 `URL.revokeObjectURL()` 釋放記憶體。
+  根據不同的浮水印策略類型動態載入預覽 iframe。除了在關閉視窗時釋放記憶體外，在連續快速切換不同物件預覽時，也會主動攔截並清除前一次的 Blob URL，徹底防堵記憶體洩漏 (Memory Leak)。
 
 ### `ui.js`
 不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
 - **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
-- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤焦點穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈，作為不支援 `inert` 屬性的舊版瀏覽器之安全相容 Fallback，確保完全符合 WCAG AA 無障礙標準。
+- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤焦點穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈確保相容性，且針對包含 `textarea` 與 `select` 的設定型彈窗最佳化焦點優先權，避免開啟時發生不正常的畫面位移。
 
 ### `app.js`
 系統的生命週期進入點。

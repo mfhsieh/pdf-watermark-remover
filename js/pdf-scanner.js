@@ -908,7 +908,7 @@ async function performBackgroundScan(scanDoc) {
 
         // 每處理 5 頁讓出一次主執行緒 (Time Slicing)，避免大檔掃描時瀏覽器畫面凍結
         if (i > 0 && i % 5 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await new Promise((resolve) => setTimeout(resolve, 0));
         }
     }
 

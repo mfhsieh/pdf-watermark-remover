@@ -138,7 +138,9 @@ processButton.addEventListener('click', async () => {
         // 先解除隱藏再設定 src，避免 iOS Safari 忽略 display:none 狀態下的 iframe 載入
         processedPreviewBox.classList.remove('hidden');
         // 加入微小延遲確保 DOM 已渲染
-        setTimeout(() => { processedPreview.src = processedUrl; }, 10);
+        setTimeout(() => {
+            processedPreview.src = processedUrl;
+        }, 10);
     } catch (error) {
         console.error(error);
         addStatusMessage(
