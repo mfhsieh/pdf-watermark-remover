@@ -1,6 +1,6 @@
 # PDF 浮水印清除工具 - 前端 JavaScript 架構文件
 
-本文件詳細記錄了 `js/` 目錄下的所有 JavaScript 模組之架構、分工作用以及核心邏輯。本專案採用 Vanilla JavaScript (ES6+) 開發，並基於 `pdf-lib` 與 `qpdf-wasm` 進行 PDF 結構的解析與操作。
+本文件詳細記錄了 `js/` 目錄下的所有 JavaScript 模組之架構、分工作用以及核心邏輯。本專案採用 Vanilla JavaScript (ES6+) 開發，具備 **100% 的 JSDoc 型別註釋與模組說明覆蓋率**，並基於 `pdf-lib` 與 `qpdf-wasm` 進行 PDF 結構的解析與操作。
 
 ## 1. 架構總覽
 
@@ -57,29 +57,34 @@
   - `detectedFormXObjects` 等：儲存背景掃描引擎抓出的物件 Map。
   - `formXObjectsToDestroy` 等：儲存使用者目前「勾選準備要刪除」的物件清單。
   - `cachedDecryptedBytes`: 儲存剛解密後的 PDF 原始資料（免去重複解密耗時）。
+  - **`STRATEGY_REGISTRY`**: 全域策略註冊表 (Single Source of Truth)，將六大清理策略的資料狀態 (`map`, `destroyList`) 與 UI 綁定 ID 集中管理，完美解決了散彈槍手術 (Shotgun Surgery) 的壞味道。
 - **重要函式：**
   - `decryptWithQpdfWasm(pdfBytes, password)`: 呼叫 qpdf-wasm 引擎進行非同步解密。包含虛擬記憶體清理（`FS.unlink`）的防禦性除錯邏輯。
-  - `resetAllState()`: 負責清空快取變數並安全釋放所有儲存於 `previewUrlCache` 的 Blob URL，防止記憶體洩漏。
+  - `resetAllState()`: 負責清空快取變數並安全釋放 `previewUrlCache` 的 Blob URL，防止記憶體洩漏。此處重置陣列時採用**就地清空 (`length = 0`)** 進行突變 (Mutation)，以確保所有 Modal 與引擎間的陣列記憶體參照 (Reference) 永不中斷。
 
 ### `utils.js`
-所有與「判定是否為浮水印」相關的純函式 (Pure functions)。
+所有與「判定是否為浮水印」相關的純函式 (Pure functions) 與二進位處理工具。
 - **判定函式：** `isSuspectKeyName(text)`, `isSuspectContentText(text)` 等，這兩個是底層文字特徵比對。
 - **策略判定與智慧門檻：** `isSuspectFormXObject()`, `isSuspectAnnotation()`, `isSuspectExtGState()` 等。其中實作了「高頻特徵門檻」（針對出現次數異常高的物件）與「高透明度特徵門檻」（針對 Alpha 值 < 0.3 的圖形狀態），供掃描引擎呼叫以決定是否要「預設勾選」該物件。
+- **解碼與快取 (Performance)：** 實作 `getDecodedStreamContents` 並導入 `WeakMap` 進行解碼快取 (`streamDecodeCache`)，避免在大型 PDF 背景掃描、特徵比對與提取 CTM 矩陣時，對同一串流進行重複的 FlateDecode 效能消耗。
 
 ### `pdf-scanner.js`
 極其核心的非同步掃描器，職責包含「安全載入」與「預覽生成」。
+- **統一註冊防呆：** 實作 `registerSuspectEntry()` 與跨頁專用的 `registerOrUpdateXObject()` 輔助函式，統一接管 6 大策略的掃描註冊與頁碼陣列推入，消滅重複的 IF 判斷，徹底落實 DRY 原則。
 - **核心流程 `showOriginalPreview(file)`：**
   1. 重置所有全域狀態。
   2. 嘗試讀取 PDF，若失敗則呼叫 `decryptWithQpdfWasm` 處理密碼邏輯。
   3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。此過程中導入了**時間切片 (Time Slicing)** 技術避免凍結，並支援**遞迴掃描巢狀 Form XObject** (`traverseResources`)，確保深層隱藏的浮水印也能被抓出。
   4. 產生原始 PDF 的 Blob URL 以供預覽。
-- **預覽生成與矩陣解析 (CTM)：** `generateFormXObjectPreviewUrl` 等函式會利用 PDF-lib 動態抽出單一物件產生隔離預覽。透過 `getCTMForXObject` 精確解析累積變換矩陣，完美還原物件的縮放與旋轉角度，甚至產生精準貼合的傾斜多邊形紅框 (`getPreviewHighlightPolygonCmd`)。
+- **隔離沙盒與矩陣解析 (CTM)：** 透過 `createIsolatedPreviewDoc()` 產生乾淨的預覽沙盒。透過 `getCTMForXObject` 精確解析累積變換矩陣，完美還原物件的縮放與旋轉角度，甚至產生精準貼合的傾斜多邊形紅框 (`getPreviewHighlightPolygonCmd`)。Form 與 Image 的預覽邏輯已被完美收斂至 `generateXObjectPreviewUrl()` 引擎中共用。
 - **串流解壓縮：** 統一使用專案內建的 `getDecodedStreamContents` 來取代自行刻製的 FlateDecode 邏輯，避免重複造輪子且提昇穩定度。
 
 ### `pdf-cleaner.js`
 真正修改 PDF 位元組的引擎，遵循「無損置換」原則。
 - **核心流程 `processPdf(pdfDoc, options)`：**
   根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。針對不規範的 `PDFRef` 也已具備安全容錯機制。
+- **高階共用刪除引擎 (`removeDictEntries` / `removeArrayItems`)：**
+  將所有的資源字典 (Dictionary) 屬性移除與陣列 (Array) 元素移除邏輯抽象化。接收高階函式 (Callback) 作為刪除條件判定，並採用反向迴圈確保陣列物理移除時不會發生索引錯位。
 - **安全移除資源字典 `safeRemoveFromDictionary()`：**
   以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。
 - **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
@@ -89,21 +94,31 @@
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。
 - **`WatermarkStrategyModal` 類別：** 
-  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 物件將六大策略的資料綁定在同一套 UI 上。底層渲染改用安全的 `replaceChildren()` 避免 `innerHTML` 風險。
+  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 將六大策略資料綁定。**動態生成的 DOM 結構嚴格遵循 HTML5 規範（使用獨立外層 `<div>` 容器分離 `<label>` 與 `<button>`），確保螢幕閱讀器與鍵盤焦點行為正確無誤。**
 - **即時預覽系統 (`openObjectPreview` & `closeObjectPreview`)：**
-  根據不同的浮水印策略類型動態載入預覽 iframe。除了在關閉視窗時釋放記憶體外，在連續快速切換不同物件預覽時，也會主動攔截並清除前一次的 Blob URL，徹底防堵記憶體洩漏 (Memory Leak)。
+  捨棄冗長的 `if...else`，改用**策略模式 (Strategy Pattern)** 的 `previewHandlers` 字典來分派預覽載入。切換預覽時會主動攔截並清除前一次的 Blob URL，徹底防堵記憶體洩漏 (Memory Leak)。
 
 ### `ui.js`
 不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
 - **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
-- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"`，防止鍵盤焦點穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈確保相容性，且針對包含 `textarea` 與 `select` 的設定型彈窗最佳化焦點優先權，避免開啟時發生不正常的畫面位移。
+- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"` 與 `aria-hidden="true"`，防止鍵盤焦點與螢幕閱讀器穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈確保相容性，且針對包含 `textarea` 與 `select` 的設定型彈窗最佳化焦點優先權，避免開啟時發生不正常的畫面位移。
 
 ### `app.js`
 系統的生命週期進入點。
 - **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。加入了針對非同步預覽的錯誤捕捉 (`catch`) 防護，避免發生 Unhandled Promise Rejection 引發的隱性崩潰。同時在拖曳上傳中增加了附檔名檢查，作為跨作業系統拖曳時可能遺失 MIME Type (`file.type`) 的後備方案。
 - **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
-- **處理流程：** 當使用者點擊「開始清除浮水印」按鈕時，取出 `cachedDecryptedBytes`，呼叫 `processPdf`，然後將重構完成的文件轉成 Blob 並掛載到右側結果預覽區及下載按鈕。
+- **動態配置讀取與輸出：** 捨棄寫死的 DOM ID 綁定，`getOptions()` 會動態迭代全域的 `STRATEGY_REGISTRY` 來抓取 6 大策略當前的核取狀態，達到完全解耦（開閉原則）。處理流程中，會呼叫 `processPdf`，並將重構完成的文件轉成 Blob 供下載，**同時具備容錯的下載檔名處理後備方案**。
 
 ### `polyfill-config.js`
 處理外部依賴套件相容性的補丁檔案。
 - **環境設定：** 透過先將 `window.TextEncoder` 與 `window.TextDecoder` 設為 `undefined`，強制舊版 `text-encoding` polyfill 掛載其全域物件。確保應用程式在現代瀏覽器環境中依然能穩定呼叫 Big5 等非標準編碼的轉換功能。
+
+---
+
+## 5. 自動化 API 文件生成
+
+本專案所有的 JavaScript 模組皆嚴格遵守 JSDoc 規範撰寫註解（包含 `@fileoverview`, `@param`, `@returns`, `@type` 等標籤）。
+開發者可透過專案內建的 npm script 指令，自動掃描所有 `.js` 檔案並產出或更新 `API_Reference.md`：
+```bash
+npm run docs
+```

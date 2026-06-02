@@ -96,6 +96,11 @@
 <dt><a href="#DEFAULT_CONTENT_KEYWORDS">DEFAULT_CONTENT_KEYWORDS</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>預設的實際內容文字關鍵字</p>
 </dd>
+<dt><a href="#STRATEGY_REGISTRY">STRATEGY_REGISTRY</a> : <code>Array.&lt;{map: Map, destroyList: Array, checkboxId: string, rowId: string}&gt;</code></dt>
+<dd><p>全域策略註冊表 (Strategy Registry)
+將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
+供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。</p>
+</dd>
 <dt><a href="#annotSubtypeMeta">annotSubtypeMeta</a> : <code>Object.&lt;string, {label: string, defaultDestroy: boolean, color: string}&gt;</code></dt>
 <dd><p>註解 (Annotation) 子類型元資料設定</p>
 </dd>
@@ -147,58 +152,43 @@
 <dt><a href="#objectPreviewIframe">objectPreviewIframe</a> : <code>HTMLIFrameElement</code></dt>
 <dd><p>物件預覽 iframe</p>
 </dd>
-<dt><a href="#chkRemoveFormXObject">chkRemoveFormXObject</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除表單外部物件 (Form XObject) 的核取方塊</p>
-</dd>
-<dt><a href="#chkRemoveAnnotations">chkRemoveAnnotations</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除註解 (Annotations) 的核取方塊</p>
-</dd>
-<dt><a href="#chkRemoveDirectContent">chkRemoveDirectContent</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除頁面直接內容 (Direct Content) 的核取方塊</p>
-</dd>
-<dt><a href="#chkRemoveImageXObject">chkRemoveImageXObject</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除影像外部物件 (Image XObject) 的核取方塊</p>
-</dd>
-<dt><a href="#chkRemoveExtGState">chkRemoveExtGState</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除延伸圖形狀態 (ExtGState) 的核取方塊</p>
-</dd>
-<dt><a href="#chkRemoveOCG">chkRemoveOCG</a> : <code>HTMLInputElement</code></dt>
-<dd><p>是否移除選擇性內容群組 (OCG) 的核取方塊</p>
+<dt><a href="#streamDecodeCache">streamDecodeCache</a> : <code>WeakMap.&lt;PDFRawStream, Uint8Array&gt;</code></dt>
+<dd><p>內容串流解碼快取，用於降低大檔重複掃描的效能開銷</p>
 </dd>
 </dl>
 
 ## Functions
 
 <dl>
-<dt><a href="#handleFileSelected">handleFileSelected(file)</a></dt>
+<dt><a href="#handleFileSelected">handleFileSelected(file)</a> ⇒ <code>void</code></dt>
 <dd><p>共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描</p>
 </dd>
 <dt><a href="#formatBytes">formatBytes(bytes)</a> ⇒ <code>string</code></dt>
 <dd><p>輔助函式：格式化檔案大小單位</p>
 </dd>
-<dt><a href="#updateFileAreaDisplay">updateFileAreaDisplay()</a></dt>
+<dt><a href="#updateFileAreaDisplay">updateFileAreaDisplay()</a> ⇒ <code>void</code></dt>
 <dd><p>依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。</p>
 </dd>
-<dt><a href="#getOptions">getOptions()</a> ⇒ <code>Object</code></dt>
+<dt><a href="#getOptions">getOptions()</a> ⇒ <code>Object.&lt;string, boolean&gt;</code></dt>
 <dd><p>取得目前畫面中 checkbox 勾選的清理選項</p>
 </dd>
-<dt><a href="#buildFinalContentKeywords">buildFinalContentKeywords()</a></dt>
+<dt><a href="#buildFinalContentKeywords">buildFinalContentKeywords()</a> ⇒ <code>void</code></dt>
 <dd><p>根據目前的 WATERMARK_CONTENT_KEYWORDS 建立最終的多重編碼比對特徵碼陣列</p>
 </dd>
-<dt><a href="#loadGlobalKeywords">loadGlobalKeywords()</a></dt>
+<dt><a href="#loadGlobalKeywords">loadGlobalKeywords()</a> ⇒ <code>void</code></dt>
 <dd><p>載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）</p>
 </dd>
-<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold)</a></dt>
+<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold)</a> ⇒ <code>void</code></dt>
 <dd><p>儲存全域設定至 localStorage</p>
 </dd>
-<dt><a href="#safeRemoveFromDictionary">safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)</a></dt>
+<dt><a href="#safeRemoveFromDictionary">safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)</a> ⇒ <code>void</code></dt>
 <dd><p>安全地從 PDFDict 資源字典中移除指定鍵值
 若原字典已被多頁共用，會先進行 clone 以隔離修改。</p>
 </dd>
-<dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText()</a></dt>
+<dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>Object</code></dt>
 <dd><p>共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)</p>
 </dd>
-<dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a></dt>
+<dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>void</code></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
 </dd>
 <dt><a href="#processPdf">processPdf(pdfDoc, options)</a> ⇒ <code>Object</code></dt>
@@ -208,17 +198,24 @@
 並主動清理 Content Stream 中的參照 (如 <code>Do</code>, <code>gs</code>)，確保 PDF 結構完整，防止 Acrobat Reader 報錯。
 同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。</p>
 </dd>
-<dt><a href="#cleanResourcesRecursively">cleanResourcesRecursively()</a></dt>
+<dt><a href="#cleanResourcesRecursively">cleanResourcesRecursively(pdfDoc, resources, pageIndex, options, allDeletedXObjectKeys, allDeletedExtGStateKeys, allDeletedOcgKeys)</a> ⇒ <code>number</code></dt>
 <dd><p>遞迴清理 Resources (支援巢狀 Form XObject)</p>
 </dd>
-<dt><a href="#cleanFormXObjectStream">cleanFormXObjectStream()</a></dt>
+<dt><a href="#cleanFormXObjectStream">cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>void</code></dt>
 <dd><p>專門用於清理 Form XObject 內部 Content Stream 的函式</p>
 </dd>
-<dt><a href="#removeFormXObjects">removeFormXObjects(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
-<dd><p>策略一：清除 Form XObject 浮水印
- Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
- 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
- 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。</p>
+<dt><a href="#removeDictEntries">removeDictEntries(pdfDoc, resources, dictKeyName, shouldDeleteFn)</a> ⇒ <code>Object</code></dt>
+<dd><p>共用清除邏輯：依據條件動態移除 Resources 字典下的特定項目
+適用於 XObject, ExtGState, Properties 等資源字典。</p>
+</dd>
+<dt><a href="#removeArrayItems">removeArrayItems(pdfArray, shouldDeleteFn)</a> ⇒ <code>number</code></dt>
+<dd><p>共用清除邏輯：依據條件動態移除 PDF 陣列中的特定項目
+採用反向迴圈確保安全移除元素而不影響未處理的索引。</p>
+</dd>
+<dt><a href="#removeXObjects">removeXObjects(pdfDoc, resources, targetSubtype, targetDestroyList)</a> ⇒ <code>Object</code></dt>
+<dd><p>共用清除邏輯：清除指定的 XObject (支援 Form 與 Image)
+ 根據提供的 Subtype 與欲刪除的參照清單，逐一檢視 Resources 下的 XObject，
+ 若符合條件則將其從資源字典中無損移除。</p>
 </dd>
 <dt><a href="#removeAnnotations">removeAnnotations(page)</a> ⇒ <code>number</code></dt>
 <dd><p>策略二：清除註解 (Annotation)
@@ -243,30 +240,36 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#removeOCG">removeOCG(pdfDoc)</a> ⇒ <code>number</code></dt>
 <dd><p>策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）</p>
 </dd>
-<dt><a href="#removeImageXObjects">removeImageXObjects(pdfDoc, resources)</a> ⇒ <code>Object</code></dt>
-<dd><p>策略四：清除圖片型浮水印 (Image XObject)
- 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
- 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
- 若符合，則將其從資源字典中移除。</p>
-</dd>
-<dt><a href="#extractXObjectDrawBlock">extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName)</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
-<dd><p>從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）</p>
-</dd>
 <dt><a href="#getPageResources">getPageResources(node)</a> ⇒ <code>PDFDict</code> | <code>null</code></dt>
 <dd><p>取得頁面或節點的 Resources 字典，支援從 Parent Pages 樹狀結構遞迴繼承</p>
 </dd>
-<dt><a href="#getCTMForXObject">getCTMForXObject()</a></dt>
+<dt><a href="#getCTMForXObject">getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, [targetRefStr], [baseCTM], [parentResourcesDict])</a> ⇒ <code>Array.&lt;number&gt;</code> | <code>null</code></dt>
 <dd><p>從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
 支援跨越巢狀 Form XObject 進行深層搜尋。</p>
 </dd>
 <dt><a href="#findFormXObjectInResources">findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited])</a> ⇒ <code>Object</code> | <code>null</code></dt>
 <dd><p>在指定 Resources 中遞迴搜尋目標 Form XObject</p>
 </dd>
-<dt><a href="#getPreviewHighlightRawCommand">getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height)</a></dt>
+<dt><a href="#ensurePreviewHighlightExtGState">ensurePreviewHighlightExtGState(previewDoc, page, extGStateName)</a></dt>
+<dd><p>共用輔助函式：確保頁面資源中存在預覽高亮專用的 ExtGState，用以設定紅框半透明度</p>
+</dd>
+<dt><a href="#getPreviewHighlightRawCommand">getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height)</a> ⇒ <code>string</code></dt>
 <dd><p>產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)</p>
 </dd>
-<dt><a href="#getPreviewHighlightPolygonCmd">getPreviewHighlightPolygonCmd()</a></dt>
+<dt><a href="#getPreviewHighlightPolygonCmd">getPreviewHighlightPolygonCmd(previewDoc, page, pts)</a> ⇒ <code>string</code></dt>
 <dd><p>產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)</p>
+</dd>
+<dt><a href="#saveAndCreatePreviewUrl">saveAndCreatePreviewUrl(previewDoc)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
+<dd><p>儲存預覽 PDF 文件並建立 Blob URL 以供即時預覽，同時將其加入快取清單以防記憶體洩漏</p>
+</dd>
+<dt><a href="#createIsolatedPreviewDoc">createIsolatedPreviewDoc(srcDoc, pageIndex)</a> ⇒ <code>Promise.&lt;{previewDoc: PDFDocument, page: PDFPage, pageResources: PDFDict, xObjects: PDFDict}&gt;</code></dt>
+<dd><p>建立供即時預覽用的隔離單頁 PDF 文件，並回傳對應的頁面資源與 XObject 字典</p>
+</dd>
+<dt><a href="#applyPreviewContentAndSave">applyPreviewContentAndSave(previewDoc, page, drawCommand)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
+<dd><p>將預覽繪圖指令套用至頁面，並產出 Blob URL</p>
+</dd>
+<dt><a href="#formatMatrixToCm">formatMatrixToCm(matrix)</a> ⇒ <code>string</code></dt>
+<dd><p>將矩陣陣列轉換為 PDF cm 指令字串</p>
 </dd>
 <dt><a href="#generateFormXObjectPreviewUrl">generateFormXObjectPreviewUrl(keyName, pageIndex)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
 <dd><p>生成 Form XObject 的即時預覽 URL</p>
@@ -295,11 +298,21 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#scanAnnotations">scanAnnotations(scanDoc, page, pageIndex)</a></dt>
 <dd><p>掃描並記錄指定頁面中的註解 (Annotations)</p>
 </dd>
+<dt><a href="#registerOrUpdateXObject">registerOrUpdateXObject(detectedMap, refStr, pageIndex, createEntryFn, isSuspectFn, destroyList)</a></dt>
+<dd><p>輔助函式：註冊或更新跨頁的 XObject (共用於 Form 與 Image)</p>
+</dd>
+<dt><a href="#registerSuspectEntry">registerSuspectEntry(detectedMap, key, entry, isSuspectFn, destroyList)</a></dt>
+<dd><p>輔助函式：註冊偵測到的物件並判斷是否為浮水印 (供單頁/全域物件共用)</p>
+</dd>
 <dt><a href="#scanResources">scanResources(scanDoc, page, pageIndex)</a></dt>
 <dd><p>掃描並記錄指定頁面中的資源 (Resources)，包含 XObject 與 ExtGState</p>
 </dd>
 <dt><a href="#scanDirectContent">scanDirectContent(scanDoc, page, pageIndex)</a></dt>
 <dd><p>掃描並記錄指定頁面中的直接內容 (Direct Content)</p>
+</dd>
+<dt><a href="#applyHeuristicThreshold">applyHeuristicThreshold(detectedMap, destroyList, threshold, pageCount)</a></dt>
+<dd><p>輔助函式：套用高頻特徵門檻 (Heuristic Threshold) 判定
+共用於 Form XObject 與 Image XObject 的智慧偵測</p>
 </dd>
 <dt><a href="#performBackgroundScan">performBackgroundScan(scanDoc)</a></dt>
 <dd><p>進行背景高速掃描以找出 PDF 中可能包含浮水印的物件</p>
@@ -308,10 +321,10 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dd><p>載入新 PDF 後立即偵測加密狀態，若需要開啟密碼則向使用者詢問，
 並將解密後的位元組與密碼快取，最後顯示預覽。</p>
 </dd>
-<dt><a href="#addStatusMessage">addStatusMessage(text, type)</a></dt>
+<dt><a href="#addStatusMessage">addStatusMessage(text, type)</a> ⇒ <code>void</code></dt>
 <dd><p>追加一條狀態日誌到控制台面板中，並自動滾動到最下方</p>
 </dd>
-<dt><a href="#clearStatusMessages">clearStatusMessages()</a></dt>
+<dt><a href="#clearStatusMessages">clearStatusMessages()</a> ⇒ <code>void</code></dt>
 <dd><p>清空控制台面板的所有日誌</p>
 </dd>
 <dt><a href="#decryptWithQpdfWasm">decryptWithQpdfWasm(pdfBytes, password)</a> ⇒ <code>Promise.&lt;Uint8Array&gt;</code></dt>
@@ -323,16 +336,20 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#promptForPassword">promptForPassword([isRetry])</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
 <dd><p>顯示密碼彈窗並等待使用者輸入</p>
 </dd>
-<dt><a href="#resetAllState">resetAllState()</a></dt>
+<dt><a href="#resetAllState">resetAllState()</a> ⇒ <code>void</code></dt>
 <dd><p>重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態</p>
 </dd>
-<dt><a href="#clearPreviewUrlCache">clearPreviewUrlCache()</a></dt>
+<dt><a href="#clearPreviewUrlCache">clearPreviewUrlCache()</a> ⇒ <code>void</code></dt>
 <dd><p>釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏</p>
 </dd>
-<dt><a href="#openObjectPreview">openObjectPreview(strategyType, key, entry)</a></dt>
+<dt><a href="#appendHeuristicBadge">appendHeuristicBadge(parentEl)</a></dt>
+<dd><p>輔助函式：為 UI 標籤加上高頻偵測的視覺徽章
+共用於 Form XObject 與 Image XObject</p>
+</dd>
+<dt><a href="#openObjectPreview">openObjectPreview(strategyType, key, entry)</a> ⇒ <code>Promise.&lt;void&gt;</code></dt>
 <dd><p>開啟物件即時預覽彈窗</p>
 </dd>
-<dt><a href="#closeObjectPreview">closeObjectPreview()</a></dt>
+<dt><a href="#closeObjectPreview">closeObjectPreview()</a> ⇒ <code>void</code></dt>
 <dd><p>關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏</p>
 </dd>
 <dt><a href="#escapeRegex">escapeRegex(str)</a> ⇒ <code>string</code></dt>
@@ -350,7 +367,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。</li>
 </ol>
 </dd>
-<dt><a href="#isSuspectFormXObject">isSuspectFormXObject(entry)</a> ⇒ <code>boolean</code></dt>
+<dt><a href="#isSuspectFormXObject">isSuspectFormXObject(entry, [rawStr])</a> ⇒ <code>boolean</code></dt>
 <dd><p>策略 1: 表單外部物件 (Form XObject) 判定</p>
 </dd>
 <dt><a href="#isSuspectAnnotation">isSuspectAnnotation(entry)</a> ⇒ <code>boolean</code></dt>
@@ -374,7 +391,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#encodeTextToBinary">encodeTextToBinary(text)</a> ⇒ <code>Uint8Array</code></dt>
 <dd><p>將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列</p>
 </dd>
-<dt><a href="#compileToBig5Latin1">compileToBig5Latin1()</a></dt>
+<dt><a href="#compileToBig5Latin1">compileToBig5Latin1(str)</a> ⇒ <code>string</code></dt>
 <dd><p>將字串動態編譯為 Big5 格式的 Latin1 字串
 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)</p>
 </dd>
@@ -582,6 +599,14 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 預設的實際內容文字關鍵字
 
 **Kind**: global constant  
+<a name="STRATEGY_REGISTRY"></a>
+
+## STRATEGY\_REGISTRY : <code>Array.&lt;{map: Map, destroyList: Array, checkboxId: string, rowId: string}&gt;</code>
+全域策略註冊表 (Strategy Registry)
+將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
+供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。
+
+**Kind**: global constant  
 <a name="annotSubtypeMeta"></a>
 
 ## annotSubtypeMeta : <code>Object.&lt;string, {label: string, defaultDestroy: boolean, color: string}&gt;</code>
@@ -684,45 +709,15 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 物件預覽 iframe
 
 **Kind**: global constant  
-<a name="chkRemoveFormXObject"></a>
+<a name="streamDecodeCache"></a>
 
-## chkRemoveFormXObject : <code>HTMLInputElement</code>
-是否移除表單外部物件 (Form XObject) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveAnnotations"></a>
-
-## chkRemoveAnnotations : <code>HTMLInputElement</code>
-是否移除註解 (Annotations) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveDirectContent"></a>
-
-## chkRemoveDirectContent : <code>HTMLInputElement</code>
-是否移除頁面直接內容 (Direct Content) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveImageXObject"></a>
-
-## chkRemoveImageXObject : <code>HTMLInputElement</code>
-是否移除影像外部物件 (Image XObject) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveExtGState"></a>
-
-## chkRemoveExtGState : <code>HTMLInputElement</code>
-是否移除延伸圖形狀態 (ExtGState) 的核取方塊
-
-**Kind**: global constant  
-<a name="chkRemoveOCG"></a>
-
-## chkRemoveOCG : <code>HTMLInputElement</code>
-是否移除選擇性內容群組 (OCG) 的核取方塊
+## streamDecodeCache : <code>WeakMap.&lt;PDFRawStream, Uint8Array&gt;</code>
+內容串流解碼快取，用於降低大檔重複掃描的效能開銷
 
 **Kind**: global constant  
 <a name="handleFileSelected"></a>
 
-## handleFileSelected(file)
+## handleFileSelected(file) ⇒ <code>void</code>
 共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描
 
 **Kind**: global function  
@@ -745,32 +740,32 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="updateFileAreaDisplay"></a>
 
-## updateFileAreaDisplay()
+## updateFileAreaDisplay() ⇒ <code>void</code>
 依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。
 
 **Kind**: global function  
 <a name="getOptions"></a>
 
-## getOptions() ⇒ <code>Object</code>
+## getOptions() ⇒ <code>Object.&lt;string, boolean&gt;</code>
 取得目前畫面中 checkbox 勾選的清理選項
 
 **Kind**: global function  
-**Returns**: <code>Object</code> - 清理選項物件  
+**Returns**: <code>Object.&lt;string, boolean&gt;</code> - 清理選項物件  
 <a name="buildFinalContentKeywords"></a>
 
-## buildFinalContentKeywords()
+## buildFinalContentKeywords() ⇒ <code>void</code>
 根據目前的 WATERMARK_CONTENT_KEYWORDS 建立最終的多重編碼比對特徵碼陣列
 
 **Kind**: global function  
 <a name="loadGlobalKeywords"></a>
 
-## loadGlobalKeywords()
+## loadGlobalKeywords() ⇒ <code>void</code>
 載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）
 
 **Kind**: global function  
 <a name="saveGlobalKeywords"></a>
 
-## saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold)
+## saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold) ⇒ <code>void</code>
 儲存全域設定至 localStorage
 
 **Kind**: global function  
@@ -784,7 +779,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="safeRemoveFromDictionary"></a>
 
-## safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)
+## safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove) ⇒ <code>void</code>
 安全地從 PDFDict 資源字典中移除指定鍵值
 若原字典已被多頁共用，會先進行 clone 以隔離修改。
 
@@ -801,13 +796,22 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="removeDeletedReferencesFromText"></a>
 
-## removeDeletedReferencesFromText()
+## removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>Object</code>
 共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
 
 **Kind**: global function  
+**Returns**: <code>Object</code> - 置換後的文字與是否被修改的布林值  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| text | <code>string</code> | 原始內容流文字 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+
 <a name="cleanContentStreams"></a>
 
-## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)
+## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>void</code>
 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
 
 **Kind**: global function  
@@ -819,6 +823,19 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
 | deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
 | deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+
+<a name="cleanContentStreams..processStream"></a>
+
+### cleanContentStreams~processStream(streamRef, idxOrKey, contentsArray) ⇒ <code>void</code>
+內部輔助函式：處理單一內容流，進行參照指令抹除與重新打包
+
+**Kind**: inner method of [<code>cleanContentStreams</code>](#cleanContentStreams)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| streamRef | <code>PDFRef</code> | 串流參照 |
+| idxOrKey | <code>number</code> \| <code>null</code> | 在陣列中的索引，或單一參照的 null |
+| contentsArray | <code>PDFArray</code> \| <code>null</code> | 若有多個內容流，此為父陣列 |
 
 <a name="processPdf"></a>
 
@@ -840,23 +857,42 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="cleanResourcesRecursively"></a>
 
-## cleanResourcesRecursively()
+## cleanResourcesRecursively(pdfDoc, resources, pageIndex, options, allDeletedXObjectKeys, allDeletedExtGStateKeys, allDeletedOcgKeys) ⇒ <code>number</code>
 遞迴清理 Resources (支援巢狀 Form XObject)
 
 **Kind**: global function  
+**Returns**: <code>number</code> - 實際清理的物件總數  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| resources | <code>PDFDict</code> | 資源字典物件 |
+| pageIndex | <code>number</code> | 當前處理頁面的 0-indexed 索引 |
+| options | <code>Object</code> | 包含清理策略的選項物件 |
+| allDeletedXObjectKeys | <code>Array.&lt;string&gt;</code> | 收集被刪除的 XObject 鍵名 |
+| allDeletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 收集被刪除的 ExtGState 鍵名 |
+| allDeletedOcgKeys | <code>Array.&lt;string&gt;</code> | 收集被刪除的 OCG 鍵名 |
+
 <a name="cleanFormXObjectStream"></a>
 
-## cleanFormXObjectStream()
+## cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>void</code>
 專門用於清理 Form XObject 內部 Content Stream 的函式
 
 **Kind**: global function  
-<a name="removeFormXObjects"></a>
 
-## removeFormXObjects(pdfDoc, resources) ⇒ <code>Object</code>
-策略一：清除 Form XObject 浮水印
- Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
- 大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
- 逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| xObjRef | <code>PDFRef</code> | Form XObject 的參照物件 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+
+<a name="removeDictEntries"></a>
+
+## removeDictEntries(pdfDoc, resources, dictKeyName, shouldDeleteFn) ⇒ <code>Object</code>
+共用清除邏輯：依據條件動態移除 Resources 字典下的特定項目
+適用於 XObject, ExtGState, Properties 等資源字典。
 
 **Kind**: global function  
 **Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
@@ -865,6 +901,39 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
 | resources | <code>PDFDict</code> | 頁面資源字典 |
+| dictKeyName | <code>string</code> | 目標字典的鍵名 (如 'XObject') |
+| shouldDeleteFn | <code>function</code> | 判斷是否應刪除的回呼函式 (key: PDFName, objRef: PDFRef) => boolean |
+
+<a name="removeArrayItems"></a>
+
+## removeArrayItems(pdfArray, shouldDeleteFn) ⇒ <code>number</code>
+共用清除邏輯：依據條件動態移除 PDF 陣列中的特定項目
+採用反向迴圈確保安全移除元素而不影響未處理的索引。
+
+**Kind**: global function  
+**Returns**: <code>number</code> - 實際刪除的數量  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfArray | <code>PDFArray</code> | 目標 PDF 陣列物件 |
+| shouldDeleteFn | <code>function</code> | 判斷是否應刪除的回呼函式 (item: any) => boolean |
+
+<a name="removeXObjects"></a>
+
+## removeXObjects(pdfDoc, resources, targetSubtype, targetDestroyList) ⇒ <code>Object</code>
+共用清除邏輯：清除指定的 XObject (支援 Form 與 Image)
+ 根據提供的 Subtype 與欲刪除的參照清單，逐一檢視 Resources 下的 XObject，
+ 若符合條件則將其從資源字典中無損移除。
+
+**Kind**: global function  
+**Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| resources | <code>PDFDict</code> | 頁面資源字典 |
+| targetSubtype | <code>string</code> | 目標 XObject 的子類型 (如 '/Form' 或 '/Image') |
+| targetDestroyList | <code>Array.&lt;string&gt;</code> | 待刪除的目標物件參照字串陣列 |
 
 <a name="removeAnnotations"></a>
 
@@ -938,36 +1007,6 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
 
-<a name="removeImageXObjects"></a>
-
-## removeImageXObjects(pdfDoc, resources) ⇒ <code>Object</code>
-策略四：清除圖片型浮水印 (Image XObject)
- 當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
- 我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
- 若符合，則將其從資源字典中移除。
-
-**Kind**: global function  
-**Returns**: <code>Object</code> - 清除統計與被刪除的鍵名清單  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| pdfDoc | <code>PDFDocument</code> | 文件物件 |
-| resources | <code>PDFDict</code> | 頁面資源字典 |
-
-<a name="extractXObjectDrawBlock"></a>
-
-## extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) ⇒ <code>Promise.&lt;(string\|null)&gt;</code>
-從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
-
-**Kind**: global function  
-**Returns**: <code>Promise.&lt;(string\|null)&gt;</code> - 提取出的繪圖指令字串，若找不到則回傳 null  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| srcDoc | <code>PDFDocument</code> | 原始 PDF 文件物件 |
-| pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
-| cleanKeyName | <code>string</code> | 資源鍵名 (不含前綴斜線) |
-
 <a name="getPageResources"></a>
 
 ## getPageResources(node) ⇒ <code>PDFDict</code> \| <code>null</code>
@@ -982,47 +1021,131 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="getCTMForXObject"></a>
 
-## getCTMForXObject()
+## getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, [targetRefStr], [baseCTM], [parentResourcesDict]) ⇒ <code>Array.&lt;number&gt;</code> \| <code>null</code>
 從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
 支援跨越巢狀 Form XObject 進行深層搜尋。
 
 **Kind**: global function  
+**Returns**: <code>Array.&lt;number&gt;</code> \| <code>null</code> - 計算出的 6 個元素的 CTM 陣列，若找不到則回傳 null  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| ownerDoc | <code>PDFDocument</code> |  | 擁有該物件的 PDFDocument 實例 |
+| streamOrPage | <code>PDFPage</code> \| <code>PDFRawStream</code> |  | 起始掃描的頁面或 Form XObject 串流 |
+| cleanKeyName | <code>string</code> |  | 目標物件的資源鍵名 (不含前綴斜線) |
+| [targetRefStr] | <code>string</code> \| <code>null</code> | <code>null</code> | 目標物件的特定參照字串 (可選) |
+| [baseCTM] | <code>Array.&lt;number&gt;</code> | <code>[1, 0, 0, 1, 0, 0]</code> | 初始基準變換矩陣 |
+| [parentResourcesDict] | <code>PDFDict</code> \| <code>null</code> | <code></code> | 父層級的資源字典 |
+
 <a name="findFormXObjectInResources"></a>
 
 ## findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited]) ⇒ <code>Object</code> \| <code>null</code>
 在指定 Resources 中遞迴搜尋目標 Form XObject
 
 **Kind**: global function  
+**Returns**: <code>Object</code> \| <code>null</code> - 找到的參照與物件，若無則回傳 null  
 
-| Param | Type |
-| --- | --- |
-| resourcesNode | <code>PDFObject</code> \| <code>PDFDict</code> | 
-| cleanKeyName | <code>string</code> | 
-| ownerDoc | <code>PDFDocument</code> | 
-| [visited] | <code>Set.&lt;string&gt;</code> | 
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| resourcesNode | <code>PDFObject</code> \| <code>PDFDict</code> |  | 欲搜尋的 Resources 節點 |
+| cleanKeyName | <code>string</code> |  | 目標 Form XObject 的鍵名 (不含斜線) |
+| ownerDoc | <code>PDFDocument</code> |  | 擁有該資源的 PDFDocument 實例 |
+| [visited] | <code>Set.&lt;string&gt;</code> | <code>new Set()</code> | 用於防止循環參照的已訪問集合 |
+
+<a name="ensurePreviewHighlightExtGState"></a>
+
+## ensurePreviewHighlightExtGState(previewDoc, page, extGStateName)
+共用輔助函式：確保頁面資源中存在預覽高亮專用的 ExtGState，用以設定紅框半透明度
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| previewDoc | <code>PDFDocument</code> | 預覽用的 PDF 文件物件 |
+| page | <code>PDFPage</code> | 欲繪製紅框的頁面物件 |
+| extGStateName | <code>string</code> | 預期的 ExtGState 鍵名 |
 
 <a name="getPreviewHighlightRawCommand"></a>
 
-## getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height)
+## getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) ⇒ <code>string</code>
 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
 
 **Kind**: global function  
+**Returns**: <code>string</code> - 繪製矩形紅框的 PDF 內容流指令字串  
 
-| Param | Type |
-| --- | --- |
-| previewDoc | <code>PDFDocument</code> | 
-| page | <code>PDFPage</code> | 
-| x | <code>number</code> | 
-| y | <code>number</code> | 
-| width | <code>number</code> | 
-| height | <code>number</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| previewDoc | <code>PDFDocument</code> | 預覽用的 PDF 文件物件 |
+| page | <code>PDFPage</code> | 欲繪製紅框的頁面物件 |
+| x | <code>number</code> | 矩形左下角 X 座標 |
+| y | <code>number</code> | 矩形左下角 Y 座標 |
+| width | <code>number</code> | 矩形寬度 |
+| height | <code>number</code> | 矩形高度 |
 
 <a name="getPreviewHighlightPolygonCmd"></a>
 
-## getPreviewHighlightPolygonCmd()
+## getPreviewHighlightPolygonCmd(previewDoc, page, pts) ⇒ <code>string</code>
 產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)
 
 **Kind**: global function  
+**Returns**: <code>string</code> - 繪製多邊形紅框的 PDF 內容流指令字串  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| previewDoc | <code>PDFDocument</code> | 預覽用的 PDF 文件物件 |
+| page | <code>PDFPage</code> | 欲繪製紅框的頁面物件 |
+| pts | <code>Array.&lt;{x: number, y: number}&gt;</code> | 多邊形的四個頂點座標陣列 (依序連接) |
+
+<a name="saveAndCreatePreviewUrl"></a>
+
+## saveAndCreatePreviewUrl(previewDoc) ⇒ <code>Promise.&lt;string&gt;</code>
+儲存預覽 PDF 文件並建立 Blob URL 以供即時預覽，同時將其加入快取清單以防記憶體洩漏
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;string&gt;</code> - Blob URL 網址  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| previewDoc | <code>PDFDocument</code> | 已產生好預覽畫面的 PDF 文件物件 |
+
+<a name="createIsolatedPreviewDoc"></a>
+
+## createIsolatedPreviewDoc(srcDoc, pageIndex) ⇒ <code>Promise.&lt;{previewDoc: PDFDocument, page: PDFPage, pageResources: PDFDict, xObjects: PDFDict}&gt;</code>
+建立供即時預覽用的隔離單頁 PDF 文件，並回傳對應的頁面資源與 XObject 字典
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| srcDoc | <code>PDFDocument</code> | 原始 PDF 文件 |
+| pageIndex | <code>number</code> | 欲複製的頁面索引 |
+
+<a name="applyPreviewContentAndSave"></a>
+
+## applyPreviewContentAndSave(previewDoc, page, drawCommand) ⇒ <code>Promise.&lt;string&gt;</code>
+將預覽繪圖指令套用至頁面，並產出 Blob URL
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;string&gt;</code> - Blob URL  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| previewDoc | <code>PDFDocument</code> | 預覽用的 PDF 文件 |
+| page | <code>PDFPage</code> | 目標頁面 |
+| drawCommand | <code>string</code> | PDF 內容流繪製指令 |
+
+<a name="formatMatrixToCm"></a>
+
+## formatMatrixToCm(matrix) ⇒ <code>string</code>
+將矩陣陣列轉換為 PDF cm 指令字串
+
+**Kind**: global function  
+**Returns**: <code>string</code> - PDF cm 指令  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| matrix | <code>Array.&lt;number&gt;</code> | 變換矩陣陣列 |
+
 <a name="generateFormXObjectPreviewUrl"></a>
 
 ## generateFormXObjectPreviewUrl(keyName, pageIndex) ⇒ <code>Promise.&lt;string&gt;</code>
@@ -1107,10 +1230,11 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密
 
 **Kind**: global function  
+**Returns**: <code>Promise.&lt;{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}&gt;</code> - 解密狀態與位元組結果  
 
-| Param | Type |
-| --- | --- |
-| file | <code>File</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| file | <code>File</code> | 使用者上傳的原始 PDF 檔案 |
 
 <a name="scanOCG"></a>
 
@@ -1135,6 +1259,37 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
 | page | <code>PDFPage</code> | 目標頁面物件 |
 | pageIndex | <code>number</code> | 頁面索引 (0-based) |
+
+<a name="registerOrUpdateXObject"></a>
+
+## registerOrUpdateXObject(detectedMap, refStr, pageIndex, createEntryFn, isSuspectFn, destroyList)
+輔助函式：註冊或更新跨頁的 XObject (共用於 Form 與 Image)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| detectedMap | <code>Map</code> | 目標偵測 Map |
+| refStr | <code>string</code> | 物件參照字串 |
+| pageIndex | <code>number</code> | 當前頁面索引 (0-based) |
+| createEntryFn | <code>function</code> | 建立新 entry 的回呼函式 |
+| isSuspectFn | <code>function</code> | 判斷是否為浮水印的回呼函式 |
+| destroyList | <code>Array.&lt;string&gt;</code> | 待刪除清單 |
+
+<a name="registerSuspectEntry"></a>
+
+## registerSuspectEntry(detectedMap, key, entry, isSuspectFn, destroyList)
+輔助函式：註冊偵測到的物件並判斷是否為浮水印 (供單頁/全域物件共用)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| detectedMap | <code>Map</code> | 目標偵測 Map |
+| key | <code>string</code> | 物件鍵值或識別碼 |
+| entry | <code>Object</code> | 物件資料實體 |
+| isSuspectFn | <code>function</code> | 判斷是否為浮水印的回呼函式 |
+| destroyList | <code>Array.&lt;string&gt;</code> | 待刪除清單 |
 
 <a name="scanResources"></a>
 
@@ -1162,6 +1317,21 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | page | <code>PDFPage</code> | 目標頁面物件 |
 | pageIndex | <code>number</code> | 頁面索引 (0-based) |
 
+<a name="applyHeuristicThreshold"></a>
+
+## applyHeuristicThreshold(detectedMap, destroyList, threshold, pageCount)
+輔助函式：套用高頻特徵門檻 (Heuristic Threshold) 判定
+共用於 Form XObject 與 Image XObject 的智慧偵測
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| detectedMap | <code>Map</code> | 偵測到的物件 Map |
+| destroyList | <code>Array.&lt;string&gt;</code> | 待刪除的目標陣列 |
+| threshold | <code>number</code> | 頻率門檻 (0~1) |
+| pageCount | <code>number</code> | 總頁數 |
+
 <a name="performBackgroundScan"></a>
 
 ## performBackgroundScan(scanDoc)
@@ -1169,9 +1339,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 **Kind**: global function  
 
-| Param | Type |
-| --- | --- |
-| scanDoc | <code>PDFDocument</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| scanDoc | <code>PDFDocument</code> | 欲掃描的 PDFDocument 實例 |
 
 <a name="showOriginalPreview"></a>
 
@@ -1187,7 +1357,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="addStatusMessage"></a>
 
-## addStatusMessage(text, type)
+## addStatusMessage(text, type) ⇒ <code>void</code>
 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
 
 **Kind**: global function  
@@ -1199,7 +1369,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="clearStatusMessages"></a>
 
-## clearStatusMessages()
+## clearStatusMessages() ⇒ <code>void</code>
 清空控制台面板的所有日誌
 
 **Kind**: global function  
@@ -1234,19 +1404,31 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="resetAllState"></a>
 
-## resetAllState()
+## resetAllState() ⇒ <code>void</code>
 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
 
 **Kind**: global function  
 <a name="clearPreviewUrlCache"></a>
 
-## clearPreviewUrlCache()
+## clearPreviewUrlCache() ⇒ <code>void</code>
 釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏
 
 **Kind**: global function  
+<a name="appendHeuristicBadge"></a>
+
+## appendHeuristicBadge(parentEl)
+輔助函式：為 UI 標籤加上高頻偵測的視覺徽章
+共用於 Form XObject 與 Image XObject
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| parentEl | <code>HTMLElement</code> | 要附加徽章的父元素 |
+
 <a name="openObjectPreview"></a>
 
-## openObjectPreview(strategyType, key, entry)
+## openObjectPreview(strategyType, key, entry) ⇒ <code>Promise.&lt;void&gt;</code>
 開啟物件即時預覽彈窗
 
 **Kind**: global function  
@@ -1259,7 +1441,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="closeObjectPreview"></a>
 
-## closeObjectPreview()
+## closeObjectPreview() ⇒ <code>void</code>
 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
 
 **Kind**: global function  
@@ -1281,6 +1463,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
 
 **Kind**: global function  
+**Returns**: <code>boolean</code> - 若包含浮水印特徵則回傳 true，否則回傳 false  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1297,6 +1480,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
 
 **Kind**: global function  
+**Returns**: <code>boolean</code> - 若包含浮水印特徵則回傳 true，否則回傳 false  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1304,15 +1488,16 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 <a name="isSuspectFormXObject"></a>
 
-## isSuspectFormXObject(entry) ⇒ <code>boolean</code>
+## isSuspectFormXObject(entry, [rawStr]) ⇒ <code>boolean</code>
 策略 1: 表單外部物件 (Form XObject) 判定
 
 **Kind**: global function  
 **Returns**: <code>boolean</code> - 是否為疑似浮水印  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| entry | <code>Object</code> | 表單外部物件偵測 Entry |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| entry | <code>Object</code> |  | 表單外部物件偵測 Entry |
+| [rawStr] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | 原始內容流文字 (可選) |
 
 <a name="isSuspectAnnotation"></a>
 
@@ -1380,10 +1565,11 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
 
 **Kind**: global function  
+**Returns**: <code>string</code> - 轉換後的字串  
 
-| Param | Type |
-| --- | --- |
-| data | <code>Uint8Array</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| data | <code>Uint8Array</code> | 二進位資料陣列 |
 
 <a name="encodeTextToBinary"></a>
 
@@ -1391,18 +1577,25 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列
 
 **Kind**: global function  
+**Returns**: <code>Uint8Array</code> - 轉換後的位元組陣列  
 
-| Param | Type |
-| --- | --- |
-| text | <code>string</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| text | <code>string</code> | Latin1 格式的二進位字串 |
 
 <a name="compileToBig5Latin1"></a>
 
-## compileToBig5Latin1()
+## compileToBig5Latin1(str) ⇒ <code>string</code>
 將字串動態編譯為 Big5 格式的 Latin1 字串
 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
 
 **Kind**: global function  
+**Returns**: <code>string</code> - Big5 編碼的 Latin1 字串，若失敗則回傳空字串  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| str | <code>string</code> | 輸入字串 |
+
 <a name="compileToUTF16BELatin1"></a>
 
 ## compileToUTF16BELatin1(str) ⇒ <code>string</code>
