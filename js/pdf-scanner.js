@@ -593,11 +593,6 @@ async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIn
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
     const { previewDoc, page, pageResources } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
-    // 【隔離策略】清空原本 Resources 裡面的 XObject，確保不會畫出圖片或 Form，只留純粹的 Direct Content
-    if (pageResources instanceof PDFDict) {
-        pageResources.delete(PDFName.of('XObject'));
-    }
-
     const contentsKey = PDFName.of('Contents');
     const contents = previewDoc.context.lookup(page.node.get(contentsKey));
     if (contents instanceof PDFArray) {
