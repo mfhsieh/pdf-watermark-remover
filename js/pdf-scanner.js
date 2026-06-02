@@ -430,9 +430,6 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
  */
 async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-    const previewDoc = await PDFDocument.create();
-    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-    const page = previewDoc.addPage(copiedPage);
     const cleanKeyName = keyName.replace(/^\//, '');
 
     let targetRefStr = null;
@@ -444,6 +441,15 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     }
 
     let matrix = getCTMForXObject(srcDoc, srcDoc.getPage(pageIndex), cleanKeyName, targetRefStr);
+
+    // Fail Fast: 提早檢查，若無法取得矩陣，直接中斷，避免下方耗費記憶體去建立預覽文件
+    if (!matrix) {
+        throw new Error('無法解析影像變換矩陣 (CTM)，精準模式失敗，且後備模式已被移除。');
+    }
+
+    const previewDoc = await PDFDocument.create();
+    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+    const page = previewDoc.addPage(copiedPage);
 
     let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
     if (!(pageResources instanceof PDFDict)) {
@@ -463,41 +469,20 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     let drawCommand;
     let highlightCmd;
 
-    if (matrix) {
-        const pts = [
-            { x: 0, y: 0 },
-            { x: 1, y: 0 },
-            { x: 1, y: 1 },
-            { x: 0, y: 1 },
-        ].map((p) => ({
-            x: matrix[0] * p.x + matrix[2] * p.y + matrix[4],
-            y: matrix[1] * p.x + matrix[3] * p.y + matrix[5],
-        }));
+    const pts = [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+    ].map((p) => ({
+        x: matrix[0] * p.x + matrix[2] * p.y + matrix[4],
+        y: matrix[1] * p.x + matrix[3] * p.y + matrix[5],
+    }));
 
-        highlightCmd = getPreviewHighlightPolygonCmd(previewDoc, page, pts);
-        const formatNum = (n) => Number(n.toFixed(6)).toString();
-        const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
-        drawCommand = `q\n${matrixCmd}\n/${uniqueKeyName} Do\nQ\n${highlightCmd}`;
-    } else {
-        let imgWidth = 500,
-            imgHeight = 500;
-        if (rawStream instanceof PDFRawStream) {
-            const w = rawStream.dict.context.lookup(rawStream.dict.get(PDFName.of('Width')));
-            const h = rawStream.dict.context.lookup(rawStream.dict.get(PDFName.of('Height')));
-            if (w && typeof w.value === 'function') imgWidth = w.value();
-            if (h && typeof h.value === 'function') imgHeight = h.value();
-        }
-        const pageWidth = page.getWidth(),
-            pageHeight = page.getHeight();
-        const scale = Math.min((pageWidth * 0.8) / imgWidth, (pageHeight * 0.8) / imgHeight, 1);
-        const finalW = imgWidth * scale,
-            finalH = imgHeight * scale;
-        const xOffset = (pageWidth - finalW) / 2,
-            yOffset = (pageHeight - finalH) / 2;
-
-        highlightCmd = getPreviewHighlightRawCommand(previewDoc, page, xOffset, yOffset, finalW, finalH);
-        drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${uniqueKeyName} Do Q\n${highlightCmd}`;
-    }
+    highlightCmd = getPreviewHighlightPolygonCmd(previewDoc, page, pts);
+    const formatNum = (n) => Number(n.toFixed(6)).toString();
+    const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
+    drawCommand = `q\n${matrixCmd}\n/${uniqueKeyName} Do\nQ\n${highlightCmd}`;
 
     const contentStream = previewDoc.context.stream(drawCommand);
     const contentStreamRef = previewDoc.context.register(contentStream);
