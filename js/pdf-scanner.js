@@ -3,61 +3,6 @@
 // ==========================================
 
 /**
- * 從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）
- * @param {PDFDocument} srcDoc - 原始 PDF 文件物件
- * @param {number} pageIndex - 頁面索引 (0-indexed)
- * @param {string} cleanKeyName - 資源鍵名 (不含前綴斜線)
- * @returns {Promise<string|null>} 提取出的繪圖指令字串，若找不到則回傳 null
- */
-async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
-    const page = srcDoc.getPage(pageIndex);
-    const contentsRef = page.node.get(PDFName.of('Contents'));
-    const contents = srcDoc.context.lookup(contentsRef);
-
-    const streams = [];
-    if (contents instanceof PDFArray) {
-        for (let i = 0; i < contents.size(); i++) {
-            streams.push(srcDoc.context.lookup(contents.get(i)));
-        }
-    } else if (contents) {
-        streams.push(contents);
-    }
-
-    const doToken = `/${cleanKeyName} Do`;
-
-    for (const stream of streams) {
-        if (!(stream instanceof PDFRawStream)) continue;
-
-        const data = getDecodedStreamContents(stream);
-
-        // 轉為字串搜尋
-        const text = decodeBinaryToText(data);
-        const doIdx = text.indexOf(doToken);
-        if (doIdx === -1) continue;
-
-        // 向前搜尋最近的 'q' 指令（儲存 graphics state）
-        const before = text.slice(0, doIdx);
-        let qIdx = before.lastIndexOf('\nq\n');
-        if (qIdx === -1) qIdx = before.lastIndexOf(' q\n');
-        if (qIdx === -1) qIdx = before.lastIndexOf('\nq ');
-        if (qIdx === -1) qIdx = before.lastIndexOf('\nq');
-        if (qIdx === -1 && /^q(?:\s|\r|\n)/.test(before)) {
-            qIdx = before.indexOf('q');
-        }
-
-        const block = qIdx !== -1 ? before.slice(qIdx).trim() : '';
-
-        // 確認 block 中有 cm 矩陣
-        const hasCM = /[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+[-\d.eE]+\s+cm/.test(block);
-        if (hasCM) {
-            // 移除開頭的 'q'（後面我們自己加），回傳純淨的繪圖指令（cm + 顏色等）
-            return block.replace(/^q\s*/, '');
-        }
-    }
-    return null;
-}
-
-/**
  * 取得頁面或節點的 Resources 字典，支援從 Parent Pages 樹狀結構遞迴繼承
  * @param {PDFDict} node - 頁面或表單節點
  * @returns {PDFDict|null} 解析出的 Resources 字典
@@ -77,6 +22,13 @@ function getPageResources(node) {
 /**
  * 從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
  * 支援跨越巢狀 Form XObject 進行深層搜尋。
+ * @param {PDFDocument} ownerDoc - 擁有該物件的 PDFDocument 實例
+ * @param {PDFPage|PDFRawStream} streamOrPage - 起始掃描的頁面或 Form XObject 串流
+ * @param {string} cleanKeyName - 目標物件的資源鍵名 (不含前綴斜線)
+ * @param {string|null} [targetRefStr=null] - 目標物件的特定參照字串 (可選)
+ * @param {number[]} [baseCTM=[1, 0, 0, 1, 0, 0]] - 初始基準變換矩陣
+ * @param {PDFDict|null} [parentResourcesDict=null] - 父層級的資源字典
+ * @returns {number[]|null} 計算出的 6 個元素的 CTM 陣列，若找不到則回傳 null
  */
 function getCTMForXObject(
     ownerDoc,
@@ -218,11 +170,11 @@ function getCTMForXObject(
 
 /**
  * 在指定 Resources 中遞迴搜尋目標 Form XObject
- * @param {PDFObject|PDFDict} resourcesNode
- * @param {string} cleanKeyName
- * @param {PDFDocument} ownerDoc
- * @param {Set<string>} [visited]
- * @returns {{ref: any, obj: any}|null}
+ * @param {PDFObject|PDFDict} resourcesNode - 欲搜尋的 Resources 節點
+ * @param {string} cleanKeyName - 目標 Form XObject 的鍵名 (不含斜線)
+ * @param {PDFDocument} ownerDoc - 擁有該資源的 PDFDocument 實例
+ * @param {Set<string>} [visited=new Set()] - 用於防止循環參照的已訪問集合
+ * @returns {{ref: any, obj: any}|null} 找到的參照與物件，若無則回傳 null
  */
 function findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, visited = new Set()) {
     if (!resourcesNode) return null;
@@ -265,18 +217,13 @@ function findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, visit
 }
 
 /**
- * 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
- * @param {PDFDocument} previewDoc
- * @param {PDFPage} page
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
+ * 共用輔助函式：確保頁面資源中存在預覽高亮專用的 ExtGState，用以設定紅框半透明度
+ * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件物件
+ * @param {PDFPage} page - 欲繪製紅框的頁面物件
+ * @param {string} extGStateName - 預期的 ExtGState 鍵名
  */
-function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
+function ensurePreviewHighlightExtGState(previewDoc, page, extGStateName) {
     const config = PREVIEW_HIGHLIGHT_CONFIG;
-
-    const extGStateName = 'GsPreviewHighlight';
     const extGStateDict = previewDoc.context.obj({
         Type: 'ExtGState',
         ca: config.fillOpacity,
@@ -295,6 +242,23 @@ function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
         pageResources.set(PDFName.of('ExtGState'), extGState);
     }
     extGState.set(PDFName.of(extGStateName), extGStateDict);
+}
+
+/**
+ * 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
+ * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件物件
+ * @param {PDFPage} page - 欲繪製紅框的頁面物件
+ * @param {number} x - 矩形左下角 X 座標
+ * @param {number} y - 矩形左下角 Y 座標
+ * @param {number} width - 矩形寬度
+ * @param {number} height - 矩形高度
+ * @returns {string} 繪製矩形紅框的 PDF 內容流指令字串
+ */
+function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
+    const config = PREVIEW_HIGHLIGHT_CONFIG;
+    const extGStateName = 'GsPreviewHighlight';
+
+    ensurePreviewHighlightExtGState(previewDoc, page, extGStateName);
 
     const [r, g, b] = config.color;
     return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${x} ${y} ${width} ${height} re\nB\nQ`;
@@ -302,27 +266,16 @@ function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
 
 /**
  * 產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)
+ * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件物件
+ * @param {PDFPage} page - 欲繪製紅框的頁面物件
+ * @param {Array<{x: number, y: number}>} pts - 多邊形的四個頂點座標陣列 (依序連接)
+ * @returns {string} 繪製多邊形紅框的 PDF 內容流指令字串
  */
 function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
     const config = PREVIEW_HIGHLIGHT_CONFIG;
     const extGStateName = 'GsPreviewHighlight';
-    const extGStateDict = previewDoc.context.obj({
-        Type: 'ExtGState',
-        ca: config.fillOpacity,
-        CA: config.borderOpacity,
-    });
 
-    let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
-    if (!(pageResources instanceof PDFDict)) {
-        pageResources = previewDoc.context.obj({});
-        page.node.set(PDFName.of('Resources'), pageResources);
-    }
-    let extGState = previewDoc.context.lookup(pageResources.get(PDFName.of('ExtGState')));
-    if (!(extGState instanceof PDFDict)) {
-        extGState = previewDoc.context.obj({});
-        pageResources.set(PDFName.of('ExtGState'), extGState);
-    }
-    extGState.set(PDFName.of(extGStateName), extGStateDict);
+    ensurePreviewHighlightExtGState(previewDoc, page, extGStateName);
 
     const formatNum = (n) => Number(n.toFixed(6)).toString();
     const path = `${formatNum(pts[0].x)} ${formatNum(pts[0].y)} m\n${formatNum(pts[1].x)} ${formatNum(pts[1].y)} l\n${formatNum(pts[2].x)} ${formatNum(pts[2].y)} l\n${formatNum(pts[3].x)} ${formatNum(pts[3].y)} l\nh`;
@@ -396,14 +349,16 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     // 取得共用的紅框描繪指令
     const boxCmd = getPreviewHighlightRawCommand(previewDoc, page, x0, y0, w, h);
 
-    // 4. 嘗試從原頁面 Contents Stream 中提取原始的 cm 變換矩陣（含旋轉角度）
-    // 若找得到，就用原始矩陣還原浮水印的真實角度；找不到則退回 BBox 平移模式
-    let drawBlock = await extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName);
+    // 4. 嘗試從原頁面提取精準的累積變換矩陣 (CTM)，支援巢狀 Form 解析
+    let matrix = getCTMForXObject(srcDoc, srcPage, cleanKeyName, foundForm.ref ? foundForm.ref.toString() : null);
 
     let drawCommand;
-    if (drawBlock) {
-        // 用原始的完整繪圖區塊（cm 矩陣 + 顏色 + Do），完美還原旋轉！並在同一個座標系畫上紅框
-        drawCommand = `q\n${drawBlock}\n/${cleanKeyName} Do\n${boxCmd}\nQ`;
+    if (matrix) {
+        // 將陣列轉換為 PDF cm 指令
+        const formatNum = (n) => Number(n.toFixed(6)).toString();
+        const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
+        // 用精準計算的矩陣還原旋轉與平移！並在同一個座標系畫上紅框
+        drawCommand = `q\n${matrixCmd}\n/${cleanKeyName} Do\n${boxCmd}\nQ`;
     } else {
         // Fallback：不再強制平移至 (0,0)，讓 XObject 保持在自己 BBox 的原始座標上
         // 同樣補上紅框
@@ -731,8 +686,8 @@ function updateScanResultUI(optionsContainer) {
 
 /**
  * 讀取原始位元組，嘗試偵測是否有開啟密碼並進行解密
- * @param {File} file
- * @returns {Promise<{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}>}
+ * @param {File} file - 使用者上傳的原始 PDF 檔案
+ * @returns {Promise<{previewBytes: Uint8Array, needsPassword: boolean, decryptedSuccessfully: boolean}>} 解密狀態與位元組結果
  */
 async function loadAndDecryptPdf(file) {
     const rawBuffer = await file.arrayBuffer();
@@ -1079,7 +1034,7 @@ function scanDirectContent(scanDoc, page, pageIndex) {
 
 /**
  * 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
- * @param {PDFDocument} scanDoc
+ * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
  */
 async function performBackgroundScan(scanDoc) {
     scanOCG(scanDoc);
