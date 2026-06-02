@@ -624,21 +624,31 @@ async function openObjectPreview(strategyType, key, entry) {
             );
         }
 
-        if (strategyType === 'formXObjectItem') {
-            objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
-            previewUrl = await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
-        } else if (strategyType === 'imageXObjectItem') {
-            objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
-            previewUrl = await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.pages[0] - 1);
-        } else if (strategyType === 'directContentItem') {
-            objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：串流 (第 ${entry.page} 頁)`;
-            previewUrl = await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
-        } else if (strategyType === 'annotItem') {
-            objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
-            previewUrl = await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
-        } else if (strategyType === 'ocgItem') {
-            objectPreviewTitle.innerHTML = `🔍 圖層<strong class="preview-effect-badge">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
-            previewUrl = await generateOCGPreviewUrl(key);
+        const previewHandlers = {
+            formXObjectItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 表單外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
+                return await generateFormXObjectPreviewUrl(entry.keyName, entry.pages[0] - 1);
+            },
+            imageXObjectItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 影像外部物件預覽：/${escapeHTML(entry.keyName.replace(/^\//, ''))} (第 ${entry.pages[0]} 頁)`;
+                return await generateImageXObjectPreviewUrl(entry.keyName, entry.rawStream, entry.pages[0] - 1);
+            },
+            directContentItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 頁面直接內容預覽：串流 (第 ${entry.page} 頁)`;
+                return await generateDirectContentPreviewUrl(key, entry.page - 1, entry.streamIndex);
+            },
+            annotItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 註解預覽：${escapeHTML(entry.subtype)} (第 ${entry.page} 頁)`;
+                return await generateAnnotationPreviewUrl(key, entry.page - 1, entry.annotIndex);
+            },
+            ocgItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 圖層<strong class="preview-effect-badge">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
+                return await generateOCGPreviewUrl(key);
+            }
+        };
+
+        if (previewHandlers[strategyType]) {
+            previewUrl = await previewHandlers[strategyType]();
         }
 
         if (previewUrl) {

@@ -614,44 +614,9 @@ async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIn
  * @param {HTMLElement} optionsContainer - 策略選項容器 DOM 元素
  */
 function updateScanResultUI(optionsContainer) {
-    // 策略列 ID → 對應偵測 Map 的對應關係
-    const strategyRows = [
-        {
-            rowId: 'optionRowFormXObject',
-            map: detectedFormXObjects,
-            destroyList: formXObjectsToDestroy,
-            checkboxId: 'removeFormXObject',
-        },
-        {
-            rowId: 'optionRowAnnotations',
-            map: detectedAnnotations,
-            destroyList: annotsToDestroy,
-            checkboxId: 'removeAnnotations',
-        },
-        {
-            rowId: 'optionRowDirectContent',
-            map: detectedDirectContents,
-            destroyList: directContentsToDestroy,
-            checkboxId: 'removeDirectContent',
-        },
-        {
-            rowId: 'optionRowImageXObject',
-            map: detectedImages,
-            destroyList: imagesToDestroy,
-            checkboxId: 'removeImageXObject',
-        },
-        {
-            rowId: 'optionRowExtGState',
-            map: detectedExtGStates,
-            destroyList: extGStatesToDestroy,
-            checkboxId: 'removeExtGState',
-        },
-        { rowId: 'optionRowOCG', map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG' },
-    ];
-
     let anySuspected = false;
 
-    strategyRows.forEach(({ rowId, map, destroyList, checkboxId }) => {
+    STRATEGY_REGISTRY.forEach(({ rowId, map, destroyList, checkboxId }) => {
         // 根據偵測結果動態顯示或隱藏策略選項列
         document.getElementById(rowId).classList.toggle('hidden', map.size === 0);
         // 自動勾選：若有偵測到疑似浮水印的物件

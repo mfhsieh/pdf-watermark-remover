@@ -55,6 +55,46 @@ let detectedOCGs = new Map();
 let ocgsToDestroy = [];
 
 /**
+ * 全域策略註冊表 (Strategy Registry)
+ * 將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
+ * 供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。
+ * @type {Array<{map: Map, destroyList: Array, checkboxId: string, rowId: string}>}
+ */
+const STRATEGY_REGISTRY = window.STRATEGY_REGISTRY = [
+    {
+        map: detectedFormXObjects,
+        destroyList: formXObjectsToDestroy,
+        checkboxId: 'removeFormXObject',
+        rowId: 'optionRowFormXObject',
+    },
+    {
+        map: detectedAnnotations,
+        destroyList: annotsToDestroy,
+        checkboxId: 'removeAnnotations',
+        rowId: 'optionRowAnnotations',
+    },
+    {
+        map: detectedDirectContents,
+        destroyList: directContentsToDestroy,
+        checkboxId: 'removeDirectContent',
+        rowId: 'optionRowDirectContent',
+    },
+    {
+        map: detectedImages,
+        destroyList: imagesToDestroy,
+        checkboxId: 'removeImageXObject',
+        rowId: 'optionRowImageXObject',
+    },
+    {
+        map: detectedExtGStates,
+        destroyList: extGStatesToDestroy,
+        checkboxId: 'removeExtGState',
+        rowId: 'optionRowExtGState',
+    },
+    { map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG', rowId: 'optionRowOCG' },
+];
+
+/**
  * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
  * @param {string} text - 日誌文字內容
  * @param {string} type - 日誌類型 ('info', 'success', 'error')
@@ -185,6 +225,10 @@ function promptForPassword(isRetry = false) {
         modal.classList.add('active');
         input.focus();
 
+        /**
+         * 內部輔助函式：清理 Modal 的事件監聽器，防止重複觸發引發 Memory Leak
+         * @returns {void}
+         */
         function cleanup() {
             modal.classList.remove('active');
             submitBtn.removeEventListener('click', onSubmit);
@@ -192,17 +236,30 @@ function promptForPassword(isRetry = false) {
             input.removeEventListener('keydown', onKeyDown);
         }
 
+        /**
+         * 內部輔助函式：處理送出密碼邏輯
+         * @returns {void}
+         */
         function onSubmit() {
             const password = input.value;
             cleanup();
             resolve(password);
         }
 
+        /**
+         * 內部輔助函式：處理取消密碼輸入邏輯
+         * @returns {void}
+         */
         function onCancel() {
             cleanup();
             resolve(null);
         }
 
+        /**
+         * 內部輔助函式：處理鍵盤按鍵事件 (Enter 送出、Escape 取消)
+         * @param {KeyboardEvent} e - 鍵盤事件物件
+         * @returns {void}
+         */
         function onKeyDown(e) {
             if (e.key === 'Enter') {
                 onSubmit();
@@ -249,36 +306,18 @@ function resetAllState() {
     // 5. 隱藏開始處理按鈕
     processButton.classList.add('hidden');
 
-    // 6. 重置偵測到的註解類型與刪除清單
-    detectedFormXObjects.clear();
-    formXObjectsToDestroy = [];
-    detectedAnnotations.clear();
-    annotsToDestroy = [];
-    detectedDirectContents.clear();
-    directContentsToDestroy = [];
-    detectedImages.clear();
-    imagesToDestroy = [];
-    detectedExtGStates.clear();
-    extGStatesToDestroy = [];
-    detectedOCGs.clear();
-    ocgsToDestroy = [];
+    // 6. 重置所有策略的偵測紀錄、刪除清單與主畫面選項勾選狀態
+    STRATEGY_REGISTRY.forEach((strategy) => {
+        strategy.map.clear();
+        strategy.destroyList.length = 0;
+        const chk = document.getElementById(strategy.checkboxId);
+        if (chk) chk.checked = false;
+    });
 
     // 7. 隱藏清理策略選項區塊
     if (optionsContainer) {
         optionsContainer.classList.add('hidden');
     }
-
-    // 8. 重置所有清理策略為預設不勾選
-    [
-        chkRemoveFormXObject,
-        chkRemoveAnnotations,
-        chkRemoveDirectContent,
-        chkRemoveImageXObject,
-        chkRemoveExtGState,
-        chkRemoveOCG,
-    ].forEach((el) => {
-        if (el) el.checked = false;
-    });
 }
 
 /**
