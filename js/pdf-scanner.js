@@ -822,6 +822,30 @@ function scanAnnotations(scanDoc, page, pageIndex) {
 }
 
 /**
+ * 輔助函式：註冊或更新跨頁的 XObject (共用於 Form 與 Image)
+ * @param {Map} detectedMap - 目標偵測 Map
+ * @param {string} refStr - 物件參照字串
+ * @param {number} pageIndex - 當前頁面索引 (0-based)
+ * @param {Function} createEntryFn - 建立新 entry 的回呼函式
+ * @param {Function} isSuspectFn - 判斷是否為浮水印的回呼函式
+ * @param {string[]} destroyList - 待刪除清單
+ */
+function registerOrUpdateXObject(detectedMap, refStr, pageIndex, createEntryFn, isSuspectFn, destroyList) {
+    if (!detectedMap.has(refStr)) {
+        const entry = createEntryFn();
+        detectedMap.set(refStr, entry);
+        if (isSuspectFn(entry)) {
+            if (!destroyList.includes(refStr)) destroyList.push(refStr);
+        }
+    } else {
+        const entry = detectedMap.get(refStr);
+        if (entry && !entry.pages.includes(pageIndex + 1)) {
+            entry.pages.push(pageIndex + 1);
+        }
+    }
+}
+
+/**
  * 掃描並記錄指定頁面中的資源 (Resources)，包含 XObject 與 ExtGState
  * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
  * @param {PDFPage} page - 目標頁面物件
@@ -861,21 +885,14 @@ function scanResources(scanDoc, page, pageIndex) {
                                 const data = getDecodedStreamContents(xObj);
                                 const rawStr = decodeBinaryToText(data);
 
-                                if (!detectedFormXObjects.has(refStr)) {
-                                    const entry = {
-                                        keyName: keyName,
-                                        pages: [pageIndex + 1],
-                                        rawStr: rawStr,
-                                        ref: xObjRef,
-                                    };
-                                    detectedFormXObjects.set(refStr, entry);
-                                    if (isSuspectFormXObject(entry, rawStr)) {
-                                        if (!formXObjectsToDestroy.includes(refStr)) formXObjectsToDestroy.push(refStr);
-                                    }
-                                } else {
-                                    const entry = detectedFormXObjects.get(refStr);
-                                    if (entry && !entry.pages.includes(pageIndex + 1)) entry.pages.push(pageIndex + 1);
-                                }
+                                registerOrUpdateXObject(
+                                    detectedFormXObjects,
+                                    refStr,
+                                    pageIndex,
+                                    () => ({ keyName: keyName, pages: [pageIndex + 1], rawStr: rawStr, ref: xObjRef }),
+                                    (entry) => isSuspectFormXObject(entry, rawStr),
+                                    formXObjectsToDestroy
+                                );
 
                                 // 遞迴掃描巢狀 Form XObject 內部的 Resources
                                 const formResourcesNode = xObj.dict.get(PDFName.of('Resources'));
@@ -887,18 +904,21 @@ function scanResources(scanDoc, page, pageIndex) {
                             }
                         }
                         if (subtype.toString() === '/Image' && xObj instanceof PDFRawStream) {
-                            if (!detectedImages.has(refStr)) {
-                                const widthObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Width')));
-                                const heightObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Height')));
-                                const filterObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Filter')));
+                            const widthObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Width')));
+                            const heightObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Height')));
+                            const filterObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Filter')));
 
-                                const width =
-                                    widthObj && typeof widthObj.value === 'function' ? widthObj.value() : '未知';
-                                const height =
-                                    heightObj && typeof heightObj.value === 'function' ? heightObj.value() : '未知';
-                                const filterStr = filterObj ? filterObj.toString() : 'RAW';
+                            const width =
+                                widthObj && typeof widthObj.value === 'function' ? widthObj.value() : '未知';
+                            const height =
+                                heightObj && typeof heightObj.value === 'function' ? heightObj.value() : '未知';
+                            const filterStr = filterObj ? filterObj.toString() : 'RAW';
 
-                                const entry = {
+                            registerOrUpdateXObject(
+                                detectedImages,
+                                refStr,
+                                pageIndex,
+                                () => ({
                                     keyName: keyName,
                                     width: width,
                                     height: height,
@@ -906,16 +926,10 @@ function scanResources(scanDoc, page, pageIndex) {
                                     pages: [pageIndex + 1],
                                     ref: xObjRef,
                                     rawStream: xObj,
-                                };
-                                detectedImages.set(refStr, entry);
-
-                                if (isSuspectKeyName(keyName)) {
-                                    if (!imagesToDestroy.includes(refStr)) imagesToDestroy.push(refStr);
-                                }
-                            } else {
-                                const entry = detectedImages.get(refStr);
-                                if (entry && !entry.pages.includes(pageIndex + 1)) entry.pages.push(pageIndex + 1);
-                            }
+                                }),
+                                (entry) => isSuspectKeyName(entry.keyName),
+                                imagesToDestroy
+                            );
                         }
                     }
                 }
