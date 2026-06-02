@@ -84,7 +84,7 @@ let browser;
 try {
     // 啟動 Puppeteer 無頭瀏覽器 (Headless Browser)
     browser = await puppeteer.launch({
-        executablePath: '/usr/bin/google-chrome',
+        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
         headless: true, // 升級為標準設定，避免 headless: 'new' 引發的棄用警告
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });

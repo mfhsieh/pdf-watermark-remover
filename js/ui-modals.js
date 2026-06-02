@@ -153,8 +153,17 @@ class WatermarkStrategyModal {
             const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
             let index = 0;
             sortedEntries.forEach(([key, entry]) => {
+                // 建立外層容器取代原本的 label 承載 flex 排版，避免 button 放在 label 內違反 HTML5 規範
+                const wrapper = document.createElement('div');
+                wrapper.className = 'annot-checkbox-label';
+                wrapper.style.cursor = 'default';
+
                 const label = document.createElement('label');
-                label.className = 'annot-checkbox-label';
+                label.style.display = 'flex';
+                label.style.alignItems = 'center';
+                label.style.gap = '8px';
+                label.style.flex = '1';
+                label.style.cursor = 'pointer';
 
                 const input = document.createElement('input');
                 input.type = 'checkbox';
@@ -174,6 +183,7 @@ class WatermarkStrategyModal {
 
                 label.appendChild(input);
                 this.renderLabel(label, key, entry, isChecked);
+                wrapper.appendChild(label);
 
                 // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
                 const previewTypes = [
@@ -198,10 +208,10 @@ class WatermarkStrategyModal {
                         openObjectPreview(this.checkboxName, key, entry);
                     });
 
-                    label.appendChild(previewBtn);
+                    wrapper.appendChild(previewBtn);
                 }
 
-                this.listContainer.appendChild(label);
+                this.listContainer.appendChild(wrapper);
                 index++;
             });
         }

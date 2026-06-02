@@ -24,11 +24,11 @@ try {
     console.log('🧹 正在預防性清理 Windows 殘留 Chrome 除錯行程...');
     try {
         execSync(
-            'powershell.exe -Command \'$p = Get-WmiObject Win32_Process | Where-Object {$_.Name -eq "chrome.exe" -and $_.CommandLine -like "*chrome-debug-wsl*"}; if ($p) { $p | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }\'',
+            'powershell.exe -Command \'$p = Get-CimInstance Win32_Process | Where-Object {$_.Name -eq "chrome.exe" -and $_.CommandLine -like "*chrome-debug-wsl*"}; if ($p) { $p | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }\'',
             { stdio: 'ignore' }
         );
         console.log('   └─ 清理完成');
-    } catch {}
+    } catch { }
 
     console.log('🚀 正在 Windows 端啟動除錯 Chrome 瀏覽器並開啟除錯埠...');
     const targetUrl = 'http://127.0.0.1:5500/index.html';
