@@ -124,18 +124,6 @@ function loadGlobalKeywords() {
             savedHeuristicThreshold !== null && !isNaN(parseFloat(savedHeuristicThreshold))
                 ? parseFloat(savedHeuristicThreshold)
                 : DEFAULT_HEURISTIC_THRESHOLD;
-
-        // 確保新加入的預設關鍵字也能生效於舊使用者
-        DEFAULT_KEY_KEYWORDS.forEach((kw) => {
-            if (!WATERMARK_KEY_KEYWORDS.includes(kw)) {
-                WATERMARK_KEY_KEYWORDS.push(kw);
-            }
-        });
-        DEFAULT_CONTENT_KEYWORDS.forEach((kw) => {
-            if (!WATERMARK_CONTENT_KEYWORDS.includes(kw)) {
-                WATERMARK_CONTENT_KEYWORDS.push(kw);
-            }
-        });
     } catch {
         WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];

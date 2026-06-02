@@ -41,6 +41,9 @@ async function extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName) {
         if (qIdx === -1) qIdx = before.lastIndexOf(' q\n');
         if (qIdx === -1) qIdx = before.lastIndexOf('\nq ');
         if (qIdx === -1) qIdx = before.lastIndexOf('\nq');
+        if (qIdx === -1 && /^q(?:\s|\r|\n)/.test(before)) {
+            qIdx = before.indexOf('q');
+        }
 
         const block = qIdx !== -1 ? before.slice(qIdx).trim() : '';
 

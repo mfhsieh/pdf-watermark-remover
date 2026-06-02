@@ -183,7 +183,7 @@ class WatermarkStrategyModal {
                     previewBtn.className = 'preview-item-btn';
                     previewBtn.title = '即時預覽該浮水印物件';
                     previewBtn.setAttribute('aria-label', '即時預覽該浮水印物件');
-                    previewBtn.innerHTML = '👁️';
+                    previewBtn.innerHTML = '<span aria-hidden="true">👁️</span>';
                     // margin-left: auto 與 padding 已由 .preview-item-btn CSS 定義，無需重複設定
 
                     previewBtn.addEventListener('click', (e) => {
