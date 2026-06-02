@@ -745,13 +745,7 @@ function scanOCG(scanDoc) {
             const nameObject = ocg.lookup(PDFName.of('Name'));
             if (nameObject instanceof PDFString || nameObject instanceof PDFHexString) {
                 const name = nameObject.decodeText();
-                registerSuspectEntry(
-                    detectedOCGs,
-                    ocgRefStr,
-                    { name: name, ref: ocgRef },
-                    isSuspectOCG,
-                    ocgsToDestroy
-                );
+                registerSuspectEntry(detectedOCGs, ocgRefStr, { name: name, ref: ocgRef }, isSuspectOCG, ocgsToDestroy);
             }
         }
     }
@@ -890,8 +884,7 @@ function scanResources(scanDoc, page, pageIndex) {
                             const heightObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Height')));
                             const filterObj = scanDoc.context.lookup(xObj.dict.get(PDFName.of('Filter')));
 
-                            const width =
-                                widthObj && typeof widthObj.value === 'function' ? widthObj.value() : '未知';
+                            const width = widthObj && typeof widthObj.value === 'function' ? widthObj.value() : '未知';
                             const height =
                                 heightObj && typeof heightObj.value === 'function' ? heightObj.value() : '未知';
                             const filterStr = filterObj ? filterObj.toString() : 'RAW';

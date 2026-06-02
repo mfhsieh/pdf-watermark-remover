@@ -660,7 +660,7 @@ async function openObjectPreview(strategyType, key, entry) {
             ocgItem: async () => {
                 objectPreviewTitle.innerHTML = `🔍 圖層<strong class="preview-effect-badge">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
                 return await generateOCGPreviewUrl(key);
-            }
+            },
         };
 
         if (previewHandlers[strategyType]) {

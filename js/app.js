@@ -199,7 +199,7 @@ function updateFileAreaDisplay() {
  */
 function getOptions() {
     const options = {};
-    STRATEGY_REGISTRY.forEach(strategy => {
+    STRATEGY_REGISTRY.forEach((strategy) => {
         const chk = document.getElementById(strategy.checkboxId);
         options[strategy.checkboxId] = chk ? chk.checked : false;
     });

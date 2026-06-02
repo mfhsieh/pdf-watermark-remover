@@ -28,7 +28,7 @@ try {
             { stdio: 'ignore' }
         );
         console.log('   └─ 清理完成');
-    } catch { }
+    } catch {}
 
     console.log('🚀 正在 Windows 端啟動除錯 Chrome 瀏覽器並開啟除錯埠...');
     const targetUrl = 'http://127.0.0.1:5500/index.html';

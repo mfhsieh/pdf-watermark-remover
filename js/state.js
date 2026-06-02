@@ -65,7 +65,7 @@ let ocgsToDestroy = [];
  * 供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。
  * @type {Array<{map: Map, destroyList: Array, checkboxId: string, rowId: string}>}
  */
-const STRATEGY_REGISTRY = window.STRATEGY_REGISTRY = [
+const STRATEGY_REGISTRY = (window.STRATEGY_REGISTRY = [
     {
         map: detectedFormXObjects,
         destroyList: formXObjectsToDestroy,
@@ -97,7 +97,7 @@ const STRATEGY_REGISTRY = window.STRATEGY_REGISTRY = [
         rowId: 'optionRowExtGState',
     },
     { map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG', rowId: 'optionRowOCG' },
-];
+]);
 
 /**
  * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
