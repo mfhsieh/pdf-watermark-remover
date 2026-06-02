@@ -1020,6 +1020,25 @@ function scanDirectContent(scanDoc, page, pageIndex) {
 }
 
 /**
+ * 輔助函式：套用高頻特徵門檻 (Heuristic Threshold) 判定
+ * 共用於 Form XObject 與 Image XObject 的智慧偵測
+ * @param {Map} detectedMap - 偵測到的物件 Map
+ * @param {string[]} destroyList - 待刪除的目標陣列
+ * @param {number} threshold - 頻率門檻 (0~1)
+ * @param {number} pageCount - 總頁數
+ */
+function applyHeuristicThreshold(detectedMap, destroyList, threshold, pageCount) {
+    for (const [refStr, entry] of detectedMap.entries()) {
+        if (entry.pages.length / pageCount >= threshold) {
+            entry.isHeuristic = true;
+            if (!destroyList.includes(refStr)) {
+                destroyList.push(refStr);
+            }
+        }
+    }
+}
+
+/**
  * 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
  * @param {PDFDocument} scanDoc - 欲掃描的 PDFDocument 實例
  */
@@ -1043,25 +1062,9 @@ async function performBackgroundScan(scanDoc) {
     if (pageCount > 1) {
         const threshold = HEURISTIC_THRESHOLD;
 
-        // 檢查 Form XObjects
-        for (const [refStr, entry] of detectedFormXObjects.entries()) {
-            if (entry.pages.length / pageCount >= threshold) {
-                entry.isHeuristic = true;
-                if (!formXObjectsToDestroy.includes(refStr)) {
-                    formXObjectsToDestroy.push(refStr);
-                }
-            }
-        }
-
-        // 檢查 Image XObjects
-        for (const [refStr, entry] of detectedImages.entries()) {
-            if (entry.pages.length / pageCount >= threshold) {
-                entry.isHeuristic = true;
-                if (!imagesToDestroy.includes(refStr)) {
-                    imagesToDestroy.push(refStr);
-                }
-            }
-        }
+        // 共用邏輯：套用高頻偵測於 Form 與 Image XObjects
+        applyHeuristicThreshold(detectedFormXObjects, formXObjectsToDestroy, threshold, pageCount);
+        applyHeuristicThreshold(detectedImages, imagesToDestroy, threshold, pageCount);
     }
 
     console.log(

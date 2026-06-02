@@ -202,6 +202,18 @@ class WatermarkStrategyModal {
     }
 }
 
+/**
+ * 輔助函式：為 UI 標籤加上高頻偵測的視覺徽章
+ * 共用於 Form XObject 與 Image XObject
+ * @param {HTMLElement} parentEl - 要附加徽章的父元素
+ */
+function appendHeuristicBadge(parentEl) {
+    const highlight = document.createElement('span');
+    highlight.className = 'heuristic-badge';
+    highlight.textContent = ' [高頻偵測]';
+    parentEl.appendChild(highlight);
+}
+
 // ==========================================
 // 註解 (Annotation) 元資料定義與 Modal 初始化
 // ==========================================
@@ -256,10 +268,7 @@ new WatermarkStrategyModal({
         textSpan.appendChild(document.createTextNode(`${displayName}${pageLabel} [實體: ${key}]`));
 
         if (entry.isHeuristic) {
-            const highlight = document.createElement('span');
-            highlight.className = 'heuristic-badge';
-            highlight.textContent = ' [高頻偵測]';
-            textSpan.appendChild(highlight);
+            appendHeuristicBadge(textSpan);
         }
 
         labelEl.appendChild(textSpan);
@@ -369,10 +378,7 @@ new WatermarkStrategyModal({
         );
 
         if (entry.isHeuristic) {
-            const highlight = document.createElement('span');
-            highlight.className = 'heuristic-badge';
-            highlight.textContent = ' [高頻偵測]';
-            textSpan.appendChild(highlight);
+            appendHeuristicBadge(textSpan);
         }
 
         labelEl.appendChild(textSpan);
