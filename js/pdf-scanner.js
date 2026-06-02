@@ -78,7 +78,14 @@ function getPageResources(node) {
  * 從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
  * 支援跨越巢狀 Form XObject 進行深層搜尋。
  */
-function getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, targetRefStr = null, baseCTM = [1, 0, 0, 1, 0, 0], parentResourcesDict = null) {
+function getCTMForXObject(
+    ownerDoc,
+    streamOrPage,
+    cleanKeyName,
+    targetRefStr = null,
+    baseCTM = [1, 0, 0, 1, 0, 0],
+    parentResourcesDict = null
+) {
     let streams = [];
     let dict = null;
     let resourcesDict = null;
@@ -111,11 +118,19 @@ function getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, targetRefStr = n
                 const obj = ownerDoc.context.lookup(matrixArr.get(i));
                 return obj && typeof obj.value === 'function' ? obj.value() : Number(obj);
             };
-            const m1 = getNum(0), m2 = getNum(1), m3 = getNum(2), m4 = getNum(3), m5 = getNum(4), m6 = getNum(5);
+            const m1 = getNum(0),
+                m2 = getNum(1),
+                m3 = getNum(2),
+                m4 = getNum(3),
+                m5 = getNum(4),
+                m6 = getNum(5);
             currentCTM = [
-                m1 * currentCTM[0] + m2 * currentCTM[2], m1 * currentCTM[1] + m2 * currentCTM[3],
-                m3 * currentCTM[0] + m4 * currentCTM[2], m3 * currentCTM[1] + m4 * currentCTM[3],
-                m5 * currentCTM[0] + m6 * currentCTM[2] + currentCTM[4], m5 * currentCTM[1] + m6 * currentCTM[3] + currentCTM[5]
+                m1 * currentCTM[0] + m2 * currentCTM[2],
+                m1 * currentCTM[1] + m2 * currentCTM[3],
+                m3 * currentCTM[0] + m4 * currentCTM[2],
+                m3 * currentCTM[1] + m4 * currentCTM[3],
+                m5 * currentCTM[0] + m6 * currentCTM[2] + currentCTM[4],
+                m5 * currentCTM[1] + m6 * currentCTM[3] + currentCTM[5],
             ];
         }
     }
@@ -128,7 +143,10 @@ function getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, targetRefStr = n
         const data = getDecodedStreamContents(stream);
         let text = decodeBinaryToText(data);
 
-        text = text.replace(/%.*(\r\n|\n|\r|$)/g, '').replace(/BI[\s\S]*?EI/g, '').replace(/<[0-9a-fA-F\s]*>/g, '');
+        text = text
+            .replace(/%.*(\r\n|\n|\r|$)/g, '')
+            .replace(/BI[\s\S]*?EI/g, '')
+            .replace(/<[0-9a-fA-F\s]*>/g, '');
         let prevText;
         do {
             prevText = text;
@@ -143,15 +161,23 @@ function getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, targetRefStr = n
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             if (token === 'q') stack.push([...ctm]);
-            else if (token === 'Q') { if (stack.length > 0) ctm = stack.pop(); }
-            else if (token === 'cm' && i >= 6) {
-                const m1 = parseFloat(tokens[i - 6]), m2 = parseFloat(tokens[i - 5]), m3 = parseFloat(tokens[i - 4]);
-                const m4 = parseFloat(tokens[i - 3]), m5 = parseFloat(tokens[i - 2]), m6 = parseFloat(tokens[i - 1]);
+            else if (token === 'Q') {
+                if (stack.length > 0) ctm = stack.pop();
+            } else if (token === 'cm' && i >= 6) {
+                const m1 = parseFloat(tokens[i - 6]),
+                    m2 = parseFloat(tokens[i - 5]),
+                    m3 = parseFloat(tokens[i - 4]);
+                const m4 = parseFloat(tokens[i - 3]),
+                    m5 = parseFloat(tokens[i - 2]),
+                    m6 = parseFloat(tokens[i - 1]);
                 if (!isNaN(m1) && !isNaN(m6)) {
                     ctm = [
-                        m1 * ctm[0] + m2 * ctm[2], m1 * ctm[1] + m2 * ctm[3],
-                        m3 * ctm[0] + m4 * ctm[2], m3 * ctm[1] + m4 * ctm[3],
-                        m5 * ctm[0] + m6 * ctm[2] + ctm[4], m5 * ctm[1] + m6 * ctm[3] + ctm[5]
+                        m1 * ctm[0] + m2 * ctm[2],
+                        m1 * ctm[1] + m2 * ctm[3],
+                        m3 * ctm[0] + m4 * ctm[2],
+                        m3 * ctm[1] + m4 * ctm[3],
+                        m5 * ctm[0] + m6 * ctm[2] + ctm[4],
+                        m5 * ctm[1] + m6 * ctm[3] + ctm[5],
                     ];
                 }
             } else if (token === 'Do' && i >= 1 && tokens[i - 1].startsWith('/')) {
@@ -161,15 +187,26 @@ function getCTMForXObject(ownerDoc, streamOrPage, cleanKeyName, targetRefStr = n
                     const xobjNode = resourcesDict.get(PDFName.of('XObject'));
                     if (xobjNode) {
                         const xobjs = ownerDoc.context.lookup(xobjNode);
-                        if (xobjs instanceof PDFDict && xobjs.has(PDFName.of(name))) objRef = xobjs.get(PDFName.of(name));
+                        if (xobjs instanceof PDFDict && xobjs.has(PDFName.of(name)))
+                            objRef = xobjs.get(PDFName.of(name));
                     }
                 }
-                if (targetRefStr ? (objRef && objRef.toString() === targetRefStr) : (name === cleanKeyName)) return ctm;
+                if (targetRefStr ? objRef && objRef.toString() === targetRefStr : name === cleanKeyName) return ctm;
                 if (objRef) {
                     const xobj = ownerDoc.context.lookup(objRef);
-                    const subtype = xobj instanceof PDFRawStream ? ownerDoc.context.lookup(xobj.dict.get(PDFName.of('Subtype'))) : null;
+                    const subtype =
+                        xobj instanceof PDFRawStream
+                            ? ownerDoc.context.lookup(xobj.dict.get(PDFName.of('Subtype')))
+                            : null;
                     if (subtype instanceof PDFName && subtype.toString() === '/Form') {
-                        const nestedResult = getCTMForXObject(ownerDoc, xobj, cleanKeyName, targetRefStr, ctm, resourcesDict);
+                        const nestedResult = getCTMForXObject(
+                            ownerDoc,
+                            xobj,
+                            cleanKeyName,
+                            targetRefStr,
+                            ctm,
+                            resourcesDict
+                        );
                         if (nestedResult) return nestedResult;
                     }
                 }
@@ -270,7 +307,9 @@ function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
     const config = PREVIEW_HIGHLIGHT_CONFIG;
     const extGStateName = 'GsPreviewHighlight';
     const extGStateDict = previewDoc.context.obj({
-        Type: 'ExtGState', ca: config.fillOpacity, CA: config.borderOpacity,
+        Type: 'ExtGState',
+        ca: config.fillOpacity,
+        CA: config.borderOpacity,
     });
 
     let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
@@ -285,7 +324,7 @@ function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
     }
     extGState.set(PDFName.of(extGStateName), extGStateDict);
 
-    const formatNum = n => Number(n.toFixed(6)).toString();
+    const formatNum = (n) => Number(n.toFixed(6)).toString();
     const path = `${formatNum(pts[0].x)} ${formatNum(pts[0].y)} m\n${formatNum(pts[1].x)} ${formatNum(pts[1].y)} l\n${formatNum(pts[2].x)} ${formatNum(pts[2].y)} l\n${formatNum(pts[3].x)} ${formatNum(pts[3].y)} l\nh`;
     const [r, g, b] = config.color;
     return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${path}\nB\nQ`;
@@ -426,28 +465,35 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
 
     if (matrix) {
         const pts = [
-            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }
-        ].map(p => ({
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 1, y: 1 },
+            { x: 0, y: 1 },
+        ].map((p) => ({
             x: matrix[0] * p.x + matrix[2] * p.y + matrix[4],
-            y: matrix[1] * p.x + matrix[3] * p.y + matrix[5]
+            y: matrix[1] * p.x + matrix[3] * p.y + matrix[5],
         }));
 
         highlightCmd = getPreviewHighlightPolygonCmd(previewDoc, page, pts);
-        const formatNum = n => Number(n.toFixed(6)).toString();
+        const formatNum = (n) => Number(n.toFixed(6)).toString();
         const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
         drawCommand = `q\n${matrixCmd}\n/${uniqueKeyName} Do\nQ\n${highlightCmd}`;
     } else {
-        let imgWidth = 500, imgHeight = 500;
+        let imgWidth = 500,
+            imgHeight = 500;
         if (rawStream instanceof PDFRawStream) {
             const w = rawStream.dict.context.lookup(rawStream.dict.get(PDFName.of('Width')));
             const h = rawStream.dict.context.lookup(rawStream.dict.get(PDFName.of('Height')));
             if (w && typeof w.value === 'function') imgWidth = w.value();
             if (h && typeof h.value === 'function') imgHeight = h.value();
         }
-        const pageWidth = page.getWidth(), pageHeight = page.getHeight();
+        const pageWidth = page.getWidth(),
+            pageHeight = page.getHeight();
         const scale = Math.min((pageWidth * 0.8) / imgWidth, (pageHeight * 0.8) / imgHeight, 1);
-        const finalW = imgWidth * scale, finalH = imgHeight * scale;
-        const xOffset = (pageWidth - finalW) / 2, yOffset = (pageHeight - finalH) / 2;
+        const finalW = imgWidth * scale,
+            finalH = imgHeight * scale;
+        const xOffset = (pageWidth - finalW) / 2,
+            yOffset = (pageHeight - finalH) / 2;
 
         highlightCmd = getPreviewHighlightRawCommand(previewDoc, page, xOffset, yOffset, finalW, finalH);
         drawCommand = `q ${finalW} 0 0 ${finalH} ${xOffset} ${yOffset} cm /${uniqueKeyName} Do Q\n${highlightCmd}`;

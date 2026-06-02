@@ -252,11 +252,21 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#extractXObjectDrawBlock">extractXObjectDrawBlock(srcDoc, pageIndex, cleanKeyName)</a> ⇒ <code>Promise.&lt;(string|null)&gt;</code></dt>
 <dd><p>從頁面的 Contents Stream 中，提取呼叫指定 XObject 前完整的繪圖指令區塊（含 cm 矩陣）</p>
 </dd>
+<dt><a href="#getPageResources">getPageResources(node)</a> ⇒ <code>PDFDict</code> | <code>null</code></dt>
+<dd><p>取得頁面或節點的 Resources 字典，支援從 Parent Pages 樹狀結構遞迴繼承</p>
+</dd>
+<dt><a href="#getCTMForXObject">getCTMForXObject()</a></dt>
+<dd><p>從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
+支援跨越巢狀 Form XObject 進行深層搜尋。</p>
+</dd>
 <dt><a href="#findFormXObjectInResources">findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited])</a> ⇒ <code>Object</code> | <code>null</code></dt>
 <dd><p>在指定 Resources 中遞迴搜尋目標 Form XObject</p>
 </dd>
 <dt><a href="#getPreviewHighlightRawCommand">getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height)</a></dt>
 <dd><p>產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)</p>
+</dd>
+<dt><a href="#getPreviewHighlightPolygonCmd">getPreviewHighlightPolygonCmd()</a></dt>
+<dd><p>產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)</p>
 </dd>
 <dt><a href="#generateFormXObjectPreviewUrl">generateFormXObjectPreviewUrl(keyName, pageIndex)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
 <dd><p>生成 Form XObject 的即時預覽 URL</p>
@@ -958,6 +968,25 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
 | cleanKeyName | <code>string</code> | 資源鍵名 (不含前綴斜線) |
 
+<a name="getPageResources"></a>
+
+## getPageResources(node) ⇒ <code>PDFDict</code> \| <code>null</code>
+取得頁面或節點的 Resources 字典，支援從 Parent Pages 樹狀結構遞迴繼承
+
+**Kind**: global function  
+**Returns**: <code>PDFDict</code> \| <code>null</code> - 解析出的 Resources 字典  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| node | <code>PDFDict</code> | 頁面或表單節點 |
+
+<a name="getCTMForXObject"></a>
+
+## getCTMForXObject()
+從頁面或 Form XObject 中精確計算呼叫目標 XObject 時的累積變換矩陣 (CTM)
+支援跨越巢狀 Form XObject 進行深層搜尋。
+
+**Kind**: global function  
 <a name="findFormXObjectInResources"></a>
 
 ## findFormXObjectInResources(resourcesNode, cleanKeyName, ownerDoc, [visited]) ⇒ <code>Object</code> \| <code>null</code>
@@ -988,6 +1017,12 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | width | <code>number</code> | 
 | height | <code>number</code> | 
 
+<a name="getPreviewHighlightPolygonCmd"></a>
+
+## getPreviewHighlightPolygonCmd()
+產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)
+
+**Kind**: global function  
 <a name="generateFormXObjectPreviewUrl"></a>
 
 ## generateFormXObjectPreviewUrl(keyName, pageIndex) ⇒ <code>Promise.&lt;string&gt;</code>

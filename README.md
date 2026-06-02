@@ -1,11 +1,11 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.3.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.3.3-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build Status](https://github.com/mfhsieh/pdf-watermark-remover/actions/workflows/deploy.yml/badge.svg)](https://github.com/mfhsieh/pdf-watermark-remover/actions)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.3.2.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.3.3.zip)
 
 ## 📌 專案簡介
 
@@ -147,6 +147,8 @@
 
 ## 📦 Release Notes
 
+- **v2.3.3 (2026-06-02)**
+  - ✨ **常規更新**：微調及修正部分錯誤。
 - **v2.3.2 (2026-06-01)**
   - ⚡ **效能提升**：在內容流清理前新增快速字串比對，減少大檔處理時間。
   - 🔄 **深度清除支援**：支援嵌套的巢狀 Form XObject 掃描與清除。

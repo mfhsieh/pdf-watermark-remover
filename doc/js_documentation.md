@@ -23,7 +23,7 @@
 | `utils.js` | 核心判定工具 | 提供六大浮水印策略的判定邏輯（`isSuspect...`）、二進位字串轉換，以及高頻與高透明度等「智慧門檻偵測」。 |
 | `ui.js` | DOM 選取與無障礙 | 集中宣告介面上的 DOM 元素常數，並負責全域的無障礙 (a11y) 控制（如 Escape 鍵監聽與 Modal 焦點陷阱）。 |
 | `ui-modals.js` | 彈窗管理類別 | 將清除策略的選項視窗封裝為 `WatermarkStrategyModal` 類別，並包含物件即時預覽 (`openObjectPreview`) 的載入與清理邏輯。 |
-| `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
+| `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件（支援巢狀遞迴掃描）以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
 | `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」與正則防禦技術來移除浮水印，防止 PDF 損毀。 |
 | `app.js` | 流程控制與事件綁定 | 程式的進入點。負責綁定拖曳、點擊等事件，統一檔案處理流程 (`handleFileSelected`)，並串接上述模組完成完整流程。 |
 | `polyfill-config.js` | 相容性補丁 | 定義 `window.TEXT_ENCODING_NO_POLYFILL` 等環境變數，確保 `text-encoding` 函式庫在現代瀏覽器中正常運作。 |
@@ -34,7 +34,7 @@
 
 本系統針對 PDF 的底層結構，實作了六種無損清除策略。所有的判定邏輯定義於 `utils.js`，清除邏輯實作於 `pdf-cleaner.js`：
 
-1. **表單外部物件 (Form XObject)：** 針對封裝為可重複使用的圖形或文字物件。清除時會直接從資源字典將其參照抹除，並清除呼叫指令。
+1. **表單外部物件 (Form XObject)：** 針對封裝為可重複使用的圖形或文字物件（支援巢狀結構）。清除時會直接從資源字典將其參照抹除，並清除呼叫指令。
 2. **註解 (Annotation)：** 包含浮水印 (`Watermark`)、印章 (`Stamp`) 等附加於頁面上方的元件。清除時直接從頁面的 `/Annots` 陣列中移除參照。
 3. **頁面直接內容 (Direct Content)：** 針對直接寫入於頁面內容流（Contents stream）的明文指令。系統會讀出並比對文字，若命中特徵碼則將該流內容清空。
 4. **影像外部物件 (Image XObject)：** 針對圖片型態的浮水印。清除時同樣自資源字典中移除物件參照並清除呼叫指令。
@@ -71,19 +71,19 @@
 - **核心流程 `showOriginalPreview(file)`：**
   1. 重置所有全域狀態。
   2. 嘗試讀取 PDF，若失敗則呼叫 `decryptWithQpdfWasm` 處理密碼邏輯。
-  3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。此過程中導入了**時間切片 (Time Slicing)** 技術，定期讓出主執行緒，避免掃描百頁大檔時造成瀏覽器畫面凍結。
+  3. 進入**背景掃描迴圈**，遍歷所有頁面的 `Resources`、`Annots` 與 `Contents`，建立可疑物件清單。此過程中導入了**時間切片 (Time Slicing)** 技術避免凍結，並支援**遞迴掃描巢狀 Form XObject** (`traverseResources`)，確保深層隱藏的浮水印也能被抓出。
   4. 產生原始 PDF 的 Blob URL 以供預覽。
-- **預覽生成器：** `generateFormXObjectPreviewUrl` 等，這些函式會利用 PDF-lib 動態抽取出單一物件，將周遭干擾隱藏後轉出成獨立的 PDF 供 iframe 檢視。
+- **預覽生成與矩陣解析 (CTM)：** `generateFormXObjectPreviewUrl` 等函式會利用 PDF-lib 動態抽出單一物件產生隔離預覽。透過 `getCTMForXObject` 精確解析累積變換矩陣，完美還原物件的縮放與旋轉角度，甚至產生精準貼合的傾斜多邊形紅框 (`getPreviewHighlightPolygonCmd`)。
 - **串流解壓縮：** 統一使用專案內建的 `getDecodedStreamContents` 來取代自行刻製的 FlateDecode 邏輯，避免重複造輪子且提昇穩定度。
 
 ### `pdf-cleaner.js`
 真正修改 PDF 位元組的引擎，遵循「無損置換」原則。
 - **核心流程 `processPdf(pdfDoc, options)`：**
-  根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。
+  根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。針對不規範的 `PDFRef` 也已具備安全容錯機制。
 - **安全移除資源字典 `safeRemoveFromDictionary()`：**
   以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。
 - **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
-  若將 XObject 抽掉，原本呼叫該物件的指令（如 `/Fm0 Do` 或 `/gs`）若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式會透過共用的 `removeDeletedReferencesFromText` 以正則表達式在明文內容流中徹底抹除這些殘留的呼叫，並透過 `escapeRegex()` 防止特殊字元造成正則引擎報錯 (ReDoS 風險)。
+  若將 XObject 抽掉，原本呼叫該物件的指令若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式除了以正則徹底抹除殘留呼叫外，更新增了**快速字串比對**，在執行昂貴的正則替換前先做預先過濾，大幅降低了大檔的處理時間。同時也支援了巢狀 `Resources` 的遞迴清理 (`cleanResourcesRecursively`)。
   > **Trade-off (效能/穩定性取捨)**：為了確保修改後的 Content Stream 結構穩定性並避免 Acrobat 報錯，重新寫入的內容流會捨棄原有的壓縮演算法 (如 `FlateDecode` Filter)。這會使得處理後的 PDF 體積微幅增加，但大幅提升了檔案的相容性與修復成功率。
 
 ### `ui-modals.js`
