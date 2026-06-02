@@ -1,7 +1,6 @@
 # PDF 浮水印清除工具
 [![Version](https://img.shields.io/badge/version-2.3.3-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Build Status](https://github.com/mfhsieh/pdf-watermark-remover/actions/workflows/deploy.yml/badge.svg)](https://github.com/mfhsieh/pdf-watermark-remover/actions)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
@@ -25,7 +24,7 @@
 ### 2. 六種清除策略可分別勾選
 針對 PDF 底層結構的六種物件類型，支援個別偵測、預覽與勾選：
 - **「頁面直接內容」 (Direct Content)**：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
-- **「表單外部物件」 (Form XObject)**：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
+- **「表單外部物件」 (Form XObject)**：獨立封裝的複用元件（支援深層巢狀結構掃描），常見於整頁重複疊加的背景或滿版浮水印。
 - **「影像外部物件」 (Image XObject)**：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
 - **「註解」 (Annotation)**：互動註解、圖示或蓋章（如浮水印標記層）。
 - **「延伸圖形狀態」 (ExtGState)**：控制透明度（Alpha 值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
@@ -33,7 +32,7 @@
 
 ### 3. 預覽功能（個體標記 + 雙欄前後對照）
 清除前可先確認效果，降低誤刪的風險：
-- **個體預覽**：點擊項目旁的「預覽」，系統會產生隔離該物件的 PDF，部分不可視物件會以**半透明紅框**標示其位置。
+- **個體預覽**：點擊項目旁的「預覽」，系統會產生隔離該物件的 PDF，部分不可視物件會以**半透明紅框（支援精確解析矩陣，還原傾斜與縮放角度）**標示其位置。
 - **雙欄前後對照**：處理完成後，可在主畫面左右比較清除前後的差異。
 
 ### 4. 權限解鎖與密碼沿用
@@ -64,7 +63,7 @@
 
 ### 4. 針對單一物件「預覽」
 為了避免誤刪重要的正文圖表，在各策略的子項設定清單中，您可以針對任何有疑慮的物件點擊 **「👁️ 預覽」** 按鈕。
-系統會即時產生該物件的單獨視窗預覽（若是不可視的註解，則會以半透明紅框高亮標示其位置），讓您百分之百確認該物件是否為惱人的浮水印。
+系統會即時產生該物件的單獨視窗預覽（若是不可視的物件，則會精準計算變換矩陣，以半透明多邊形紅框高亮標示其位置與旋轉角度），讓您百分之百確認該物件是否為惱人的浮水印。
 
 ### 5. 執行清除
 確認勾選狀態無誤後，點擊畫面中央的 **「開始清除浮水印」** 按鈕。系統會在瀏覽器記憶體中，以「無損置換」的技術安全地剝離浮水印底層結構，不會破壞原始文件內容。
@@ -98,7 +97,8 @@
 
 | 指令 | 說明 |
 |------|------|
-| `npm run test` | 執行端到端 (E2E) 測試，以 `test/e2e.mjs` 自動進行無頭瀏覽器操作與結果驗證。 |
+| `npm run e2e`  | 執行端到端 (E2E) 測試，以 `test/e2e.mjs` 自動進行無頭瀏覽器操作與結果驗證。 |
+| `npm run snap` | 執行視覺與狀態的 Snapshot 快照測試 (`test/snap.mjs`)。 |
 | `npm run docs` | 自動將 `js/` 目錄下的所有原始碼註釋，產生並更新 `doc/API_Reference.md` 文件。 |
 | `npm run lint` | 執行 ESLint 語法檢查，確保程式碼品質。 |
 | `npm run format`| 執行 Prettier，一鍵將所有 HTML/CSS/JS 程式碼自動排版。 |

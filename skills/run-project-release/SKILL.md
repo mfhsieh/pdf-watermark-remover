@@ -6,8 +6,9 @@ description: 執行專案發佈流程。當要求「發佈新版」或「升級�
 # 📦 專案發佈 SOP
 
 ## 1. 更新版本號
-同步更新 `package.json` 與 `package-lock.json`：
+建議先執行安裝以確保環境與 `package-lock.json` 同步，再更新版號：
 ```bash
+npm install
 npm --no-git-tag-version version <新版本號>
 ```
 
