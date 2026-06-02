@@ -25,7 +25,7 @@ function escapeRegex(str) {
 /**
  * 判定資源鍵名或圖層名稱是否含有疑似浮水印的特徵
  * @param {string} text - 鍵名或圖層名稱
- * @returns {boolean}
+ * @returns {boolean} 若包含浮水印特徵則回傳 true，否則回傳 false
  */
 function isSuspectKeyName(text) {
     if (!text) return false;
@@ -42,7 +42,7 @@ function isSuspectKeyName(text) {
  * 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
  *
  * @param {string} text - 內容流文字（以 Latin1 解碼的二進位字串）
- * @returns {boolean}
+ * @returns {boolean} 若包含浮水印特徵則回傳 true，否則回傳 false
  */
 function isSuspectContentText(text) {
     if (!text) return false;
@@ -59,6 +59,7 @@ function isSuspectContentText(text) {
 /**
  * 策略 1: 表單外部物件 (Form XObject) 判定
  * @param {Object} entry - 表單外部物件偵測 Entry
+ * @param {string} [rawStr=''] - 原始內容流文字 (可選)
  * @returns {boolean} 是否為疑似浮水印
  */
 function isSuspectFormXObject(entry, rawStr = '') {
@@ -126,8 +127,8 @@ function isSuspectOCG(entry) {
 
 /**
  * 將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）
- * @param {Uint8Array} data
- * @returns {string}
+ * @param {Uint8Array} data - 二進位資料陣列
+ * @returns {string} 轉換後的字串
  */
 function decodeBinaryToText(data) {
     let str = '';
@@ -140,8 +141,8 @@ function decodeBinaryToText(data) {
 
 /**
  * 將二進位 Latin1 字串安全地轉換回 Uint8Array 位元組陣列
- * @param {string} text
- * @returns {Uint8Array}
+ * @param {string} text - Latin1 格式的二進位字串
+ * @returns {Uint8Array} 轉換後的位元組陣列
  */
 function encodeTextToBinary(text) {
     const arr = new Uint8Array(text.length);
@@ -157,6 +158,8 @@ function encodeTextToBinary(text) {
 /**
  * 將字串動態編譯為 Big5 格式的 Latin1 字串
  * 依賴 text-encoding polyfill (NONSTANDARD_allowLegacyEncoding)
+ * @param {string} str - 輸入字串
+ * @returns {string} Big5 編碼的 Latin1 字串，若失敗則回傳空字串
  */
 function compileToBig5Latin1(str) {
     try {

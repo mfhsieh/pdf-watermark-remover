@@ -32,6 +32,11 @@ function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, target
 
 /**
  * 共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
+ * @param {string} text - 原始內容流文字
+ * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
+ * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
+ * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @returns {{text: string, modified: boolean}} 置換後的文字與是否被修改的布林值
  */
 function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     let modified = false;
@@ -208,6 +213,14 @@ function processPdf(pdfDoc, options) {
 
 /**
  * 遞迴清理 Resources (支援巢狀 Form XObject)
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFDict} resources - 資源字典物件
+ * @param {number} pageIndex - 當前處理頁面的 0-indexed 索引
+ * @param {Object} options - 包含清理策略的選項物件
+ * @param {string[]} allDeletedXObjectKeys - 收集被刪除的 XObject 鍵名
+ * @param {string[]} allDeletedExtGStateKeys - 收集被刪除的 ExtGState 鍵名
+ * @param {string[]} allDeletedOcgKeys - 收集被刪除的 OCG 鍵名
+ * @returns {number} 實際清理的物件總數
  */
 function cleanResourcesRecursively(
     pdfDoc,
@@ -298,6 +311,11 @@ function cleanResourcesRecursively(
 
 /**
  * 專門用於清理 Form XObject 內部 Content Stream 的函式
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFRef} xObjRef - Form XObject 的參照物件
+ * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
+ * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
+ * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
  */
 function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     const stream = pdfDoc.context.lookup(xObjRef);

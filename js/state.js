@@ -58,6 +58,7 @@ let ocgsToDestroy = [];
  * 追加一條狀態日誌到控制台面板中，並自動滾動到最下方
  * @param {string} text - 日誌文字內容
  * @param {string} type - 日誌類型 ('info', 'success', 'error')
+ * @returns {void}
  */
 function addStatusMessage(text, type = 'info') {
     if (!statusEl) return;
@@ -71,6 +72,7 @@ function addStatusMessage(text, type = 'info') {
 
 /**
  * 清空控制台面板的所有日誌
+ * @returns {void}
  */
 function clearStatusMessages() {
     if (statusEl) {
@@ -217,6 +219,7 @@ function promptForPassword(isRetry = false) {
 
 /**
  * 重置所有狀態與暫存，確保新檔案載入時不殘留舊狀態
+ * @returns {void}
  */
 function resetAllState() {
     // 1. 釋放處理後的舊 Blob URL 記憶體，防止洩漏
@@ -280,6 +283,7 @@ function resetAllState() {
 
 /**
  * 釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏
+ * @returns {void}
  */
 function clearPreviewUrlCache() {
     previewUrlCache.forEach((url) => {

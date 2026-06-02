@@ -67,6 +67,7 @@ const PREVIEW_HIGHLIGHT_CONFIG = {
 
 /**
  * 根據目前的 WATERMARK_CONTENT_KEYWORDS 建立最終的多重編碼比對特徵碼陣列
+ * @returns {void}
  */
 function buildFinalContentKeywords() {
     const rawKeywords = [];
@@ -106,6 +107,7 @@ function buildFinalContentKeywords() {
 // ==========================================
 /**
  * 載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）
+ * @returns {void}
  */
 function loadGlobalKeywords() {
     try {
@@ -139,6 +141,7 @@ function loadGlobalKeywords() {
  * @param {string[]} contentsArray - 內容文字關鍵字陣列
  * @param {number} threshold - 透明度門檻值
  * @param {number} heuristicThreshold - 智慧偵測高頻率門檻
+ * @returns {void}
  */
 function saveGlobalKeywords(
     keysArray,

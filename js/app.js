@@ -5,6 +5,7 @@
 /**
  * 共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描
  * @param {File} file - 使用者選取的 PDF 檔案
+ * @returns {void}
  */
 function handleFileSelected(file) {
     selectedFile = file;
@@ -167,6 +168,7 @@ function formatBytes(bytes) {
 
 /**
  * 依據目前選取的 selectedFile 更新拖曳上傳區域的文字顯示。
+ * @returns {void}
  */
 function updateFileAreaDisplay() {
     fileAreaInner.replaceChildren();

@@ -577,6 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {string} strategyType - 策略類型 (如 'formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem')
  * @param {string} key - 物件鍵值或識別碼
  * @param {Object} entry - 物件資料實體
+ * @returns {Promise<void>}
  */
 async function openObjectPreview(strategyType, key, entry) {
     objectPreviewTitle.textContent = `🔍 即時預覽：正在載入項目...`;
@@ -650,6 +651,7 @@ async function openObjectPreview(strategyType, key, entry) {
 
 /**
  * 關閉物件即時預覽彈窗，並即時釋放該預覽 PDF 的 Blob URL 以防止記憶體洩漏
+ * @returns {void}
  */
 function closeObjectPreview() {
     objectPreviewModal.classList.remove('active');

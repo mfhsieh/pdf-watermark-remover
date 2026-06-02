@@ -297,6 +297,55 @@ async function saveAndCreatePreviewUrl(previewDoc) {
 }
 
 /**
+ * 建立供即時預覽用的隔離單頁 PDF 文件，並回傳對應的頁面資源與 XObject 字典
+ * @param {PDFDocument} srcDoc - 原始 PDF 文件
+ * @param {number} pageIndex - 欲複製的頁面索引
+ * @returns {Promise<{previewDoc: PDFDocument, page: PDFPage, pageResources: PDFDict, xObjects: PDFDict}>}
+ */
+async function createIsolatedPreviewDoc(srcDoc, pageIndex) {
+    const previewDoc = await PDFDocument.create();
+    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
+    const page = previewDoc.addPage(copiedPage);
+
+    let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
+    if (!(pageResources instanceof PDFDict)) {
+        pageResources = previewDoc.context.obj({});
+        page.node.set(PDFName.of('Resources'), pageResources);
+    }
+
+    let xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
+    if (!(xObjects instanceof PDFDict)) {
+        xObjects = previewDoc.context.obj({});
+        pageResources.set(PDFName.of('XObject'), xObjects);
+    }
+
+    return { previewDoc, page, pageResources, xObjects };
+}
+
+/**
+ * 將預覽繪圖指令套用至頁面，並產出 Blob URL
+ * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件
+ * @param {PDFPage} page - 目標頁面
+ * @param {string} drawCommand - PDF 內容流繪製指令
+ * @returns {Promise<string>} Blob URL
+ */
+async function applyPreviewContentAndSave(previewDoc, page, drawCommand) {
+    const contentStream = previewDoc.context.stream(drawCommand);
+    const contentStreamRef = previewDoc.context.register(contentStream);
+    page.node.set(PDFName.of('Contents'), contentStreamRef);
+    return await saveAndCreatePreviewUrl(previewDoc);
+}
+
+/**
+ * 將矩陣陣列轉換為 PDF cm 指令字串
+ * @param {number[]} matrix - 變換矩陣陣列
+ * @returns {string} PDF cm 指令
+ */
+function formatMatrixToCm(matrix) {
+    return `${matrix.map((n) => Number(n.toFixed(6)).toString()).join(' ')} cm`;
+}
+
+/**
  * 生成 Form XObject 的即時預覽 URL
  * @param {string} keyName - 資源鍵名
  * @param {number} pageIndex - 頁面索引 (0-indexed)
@@ -304,10 +353,7 @@ async function saveAndCreatePreviewUrl(previewDoc) {
  */
 async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-    const previewDoc = await PDFDocument.create();
-
     const srcPage = srcDoc.getPage(pageIndex);
-
     // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
     const cleanKeyName = keyName.replace(/^\//, '');
 
@@ -318,31 +364,20 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     }
     const fmObj = foundForm.obj;
 
-    // 2. 直接「拷貝原頁面」，從而完美繼承原頁面中所有的字型資源、編碼、CMap 與環境上下文！
-    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-    const page = previewDoc.addPage(copiedPage);
-    // 保留原頁面尺寸，讓浮水印顯示在原始位置（含旋轉角度）
+    // 2. 呼叫共用輔助函式：建立隔離沙盒頁面
+    const { previewDoc, page, pageResources, xObjects } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
-    // 如果目標 XObject 是巢狀定義在另一個 Form 內，先把它補回頂層 page Resources 中
-    const pageResources = page.node.lookup(PDFName.of('Resources'));
-    if (pageResources instanceof PDFDict) {
-        let xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
-        if (!(xObjects instanceof PDFDict)) {
-            xObjects = previewDoc.context.obj({});
-            pageResources.set(PDFName.of('XObject'), xObjects);
+    // 3. 如果目標 XObject 是巢狀定義在另一個 Form 內，把它補回頂層 XObject 字典中
+    if (!xObjects.has(PDFName.of(cleanKeyName))) {
+        const nestedRef = findFormXObjectInResources(pageResources, cleanKeyName, previewDoc);
+        if (nestedRef && nestedRef.ref) {
+            xObjects.set(PDFName.of(cleanKeyName), nestedRef.ref);
         }
+    }
 
-        if (!xObjects.has(PDFName.of(cleanKeyName))) {
-            const nestedRef = findFormXObjectInResources(pageResources, cleanKeyName, previewDoc);
-            if (nestedRef && nestedRef.ref) {
-                xObjects.set(PDFName.of(cleanKeyName), nestedRef.ref);
-            }
-        }
-
-        const clonedFm = previewDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
-        if (clonedFm instanceof PDFRawStream) {
-            clonedFm.dict.delete(PDFName.of('OC'));
-        }
+    const clonedFm = previewDoc.context.lookup(xObjects.get(PDFName.of(cleanKeyName)));
+    if (clonedFm instanceof PDFRawStream) {
+        clonedFm.dict.delete(PDFName.of('OC'));
     }
 
     // 取得 Form XObject 的 BBox 邊界，以便繪製紅框
@@ -367,22 +402,15 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
 
     let drawCommand;
     if (matrix) {
-        // 將陣列轉換為 PDF cm 指令
-        const formatNum = (n) => Number(n.toFixed(6)).toString();
-        const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
         // 用精準計算的矩陣還原旋轉與平移！並在同一個座標系畫上紅框
-        drawCommand = `q\n${matrixCmd}\n/${cleanKeyName} Do\n${boxCmd}\nQ`;
+        drawCommand = `q\n${formatMatrixToCm(matrix)}\n/${cleanKeyName} Do\n${boxCmd}\nQ`;
     } else {
         // Fallback：不再強制平移至 (0,0)，讓 XObject 保持在自己 BBox 的原始座標上
         // 同樣補上紅框
         drawCommand = `q /${cleanKeyName} Do \n${boxCmd}\nQ`;
     }
 
-    const contentStream = previewDoc.context.stream(drawCommand);
-    const contentStreamRef = previewDoc.context.register(contentStream);
-    page.node.set(PDFName.of('Contents'), contentStreamRef);
-
-    return await saveAndCreatePreviewUrl(previewDoc);
+    return await applyPreviewContentAndSave(previewDoc, page, drawCommand);
 }
 
 /**
@@ -411,20 +439,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
         throw new Error('無法解析影像變換矩陣 (CTM)，精準模式失敗，且後備模式已被移除。');
     }
 
-    const previewDoc = await PDFDocument.create();
-    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-    const page = previewDoc.addPage(copiedPage);
-
-    let pageResources = previewDoc.context.lookup(page.node.get(PDFName.of('Resources')));
-    if (!(pageResources instanceof PDFDict)) {
-        pageResources = previewDoc.context.obj({});
-        page.node.set(PDFName.of('Resources'), pageResources);
-    }
-    let xObjects = previewDoc.context.lookup(pageResources.get(PDFName.of('XObject')));
-    if (!(xObjects instanceof PDFDict)) {
-        xObjects = previewDoc.context.obj({});
-        pageResources.set(PDFName.of('XObject'), xObjects);
-    }
+    const { previewDoc, page, xObjects } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
     const uniqueKeyName = 'PreviewTargetImg';
     const clonedImg = previewDoc.context.register(rawStream.clone(previewDoc.context));
@@ -444,15 +459,9 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     }));
 
     highlightCmd = getPreviewHighlightPolygonCmd(previewDoc, page, pts);
-    const formatNum = (n) => Number(n.toFixed(6)).toString();
-    const matrixCmd = `${matrix.map(formatNum).join(' ')} cm`;
-    drawCommand = `q\n${matrixCmd}\n/${uniqueKeyName} Do\nQ\n${highlightCmd}`;
+    drawCommand = `q\n${formatMatrixToCm(matrix)}\n/${uniqueKeyName} Do\nQ\n${highlightCmd}`;
 
-    const contentStream = previewDoc.context.stream(drawCommand);
-    const contentStreamRef = previewDoc.context.register(contentStream);
-    page.node.set(PDFName.of('Contents'), contentStreamRef);
-
-    return await saveAndCreatePreviewUrl(previewDoc);
+    return await applyPreviewContentAndSave(previewDoc, page, drawCommand);
 }
 
 /**
@@ -523,10 +532,7 @@ async function generateOCGPreviewUrl(ocgRefStr) {
 async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
     try {
         const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-        const previewDoc = await PDFDocument.create();
-        const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-        const page = previewDoc.addPage(copiedPage);
-
+        const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
         const pageNode = page.node;
 
         const annots = pageNode.lookup(PDFName.of('Annots'));
@@ -569,11 +575,7 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
             drawCommand = getPreviewHighlightRawCommand(previewDoc, page, x0, y0, w, h);
         }
 
-        const contentStream = previewDoc.context.stream(drawCommand);
-        const contentStreamRef = previewDoc.context.register(contentStream);
-        pageNode.set(PDFName.of('Contents'), contentStreamRef);
-
-        return await saveAndCreatePreviewUrl(previewDoc);
+        return await applyPreviewContentAndSave(previewDoc, page, drawCommand);
     } catch (error) {
         console.error('生成註解預覽時發生錯誤:', error);
         throw error;
@@ -589,14 +591,11 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
  */
 async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-    const previewDoc = await PDFDocument.create();
-    const [copiedPage] = await previewDoc.copyPages(srcDoc, [pageIndex]);
-    const page = previewDoc.addPage(copiedPage);
+    const { previewDoc, page, pageResources } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
     // 【隔離策略】清空原本 Resources 裡面的 XObject，確保不會畫出圖片或 Form，只留純粹的 Direct Content
-    const resources = page.node.lookup(page.node.get(PDFName.of('Resources')));
-    if (resources instanceof PDFDict) {
-        resources.delete(PDFName.of('XObject'));
+    if (pageResources instanceof PDFDict) {
+        pageResources.delete(PDFName.of('XObject'));
     }
 
     const contentsKey = PDFName.of('Contents');
