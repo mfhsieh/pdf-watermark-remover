@@ -77,7 +77,7 @@ processButton.addEventListener('click', async () => {
     // 每次開始新的處理時，主動隱藏下載區域與上一次的處理後預覽畫面，避免處理失敗時殘留舊狀態
     downloadArea.classList.add('hidden');
     processedPreviewBox.classList.add('hidden');
-    processedPreview.src = '';
+    processedPreview.removeAttribute('src');
 
     clearStatusMessages();
     addStatusMessage('🚀 開始處理 PDF 文件，請稍候...', 'info');
@@ -135,8 +135,10 @@ processButton.addEventListener('click', async () => {
         addStatusMessage('🎉 浮水印清除已完成！請點擊下方按鈕下載處理後的 PDF。', 'success');
 
         // 7. 將處理完畢的 PDF 掛載至右側 After 預覽窗並顯現出來
-        processedPreview.src = processedUrl;
+        // 先解除隱藏再設定 src，避免 iOS Safari 忽略 display:none 狀態下的 iframe 載入
         processedPreviewBox.classList.remove('hidden');
+        // 加入微小延遲確保 DOM 已渲染
+        setTimeout(() => { processedPreview.src = processedUrl; }, 10);
     } catch (error) {
         console.error(error);
         addStatusMessage(

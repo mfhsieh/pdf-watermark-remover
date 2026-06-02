@@ -500,6 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             adjustTextareaHeight(keyInput);
             adjustTextareaHeight(contentInput);
+            const listContainer = modal.querySelector('.modal-list-container');
+            if (listContainer) listContainer.scrollTop = 0;
         }, 50);
     });
 
@@ -582,7 +584,7 @@ async function openObjectPreview(strategyType, key, entry) {
     // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
     objectPreviewSpinner.classList.remove('hidden');
     objectPreviewIframe.classList.add('hidden');
-    objectPreviewIframe.src = '';
+    objectPreviewIframe.removeAttribute('src');
     objectPreviewModal.classList.add('active');
 
     try {
@@ -624,8 +626,8 @@ async function openObjectPreview(strategyType, key, entry) {
         }
 
         if (previewUrl) {
-            objectPreviewIframe.src = previewUrl;
             objectPreviewIframe.classList.remove('hidden');
+            objectPreviewIframe.src = previewUrl;
         } else {
             throw new Error('不支援此物件類型的預覽。');
         }
@@ -657,7 +659,9 @@ function closeObjectPreview() {
             console.warn('釋放即時預覽 Blob URL 失敗:', e);
         }
     }
-    objectPreviewIframe.src = '';
+    objectPreviewIframe.removeAttribute('src');
+    objectPreviewIframe.classList.add('hidden');
+    objectPreviewSpinner.classList.add('hidden');
 }
 
 // 綁定關閉預覽彈窗事件

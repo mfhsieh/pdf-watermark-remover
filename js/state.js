@@ -237,7 +237,7 @@ function resetAllState() {
 
     // 3. 隱藏並清空處理後的預覽視窗
     processedPreviewBox.classList.add('hidden');
-    processedPreview.src = '';
+    processedPreview.removeAttribute('src');
 
     // 4. 清除密碼快取與解密後的位元組快取
     cachedPassword = null;

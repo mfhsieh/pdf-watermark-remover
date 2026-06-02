@@ -978,12 +978,13 @@ async function showOriginalPreview(file) {
 
     // 3. 建立 Blob URL 並顯示預覽
     const blob = new Blob([previewBytes], { type: 'application/pdf' });
-    originalUrl = URL.createObjectURL(blob);
-    originalPreview.src = originalUrl;
 
     // 4. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
     previewContainer.classList.remove('hidden');
     processedPreviewBox.classList.add('hidden');
+
+    originalUrl = URL.createObjectURL(blob);
+    originalPreview.src = originalUrl;
 
     // 5. 只有在無加密，或已成功解密的情況下，才顯示「開始清除浮水印」按鈕
     if (!needsPassword || decryptedSuccessfully) {
