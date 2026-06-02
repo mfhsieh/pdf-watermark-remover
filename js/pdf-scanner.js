@@ -539,9 +539,6 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
 
         const pageNode = page.node;
 
-        // 使用者要求：不展示原本頁面（清空背景），僅以紅框表示相對位置
-        pageNode.delete(PDFName.of('Contents'));
-
         const annots = pageNode.lookup(PDFName.of('Annots'));
         let targetRect = null;
         if (annots instanceof PDFArray) {
@@ -572,27 +569,19 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
             }
         }
 
-        // 由於很多註解（如 Link）沒有視覺外觀，我們在它所在的 Rect 位置畫一個半透明的紅色框來突顯它！
+        let drawCommand = ' ';
         if (targetRect) {
             const x0 = Math.min(targetRect[0], targetRect[2]);
             const y0 = Math.min(targetRect[1], targetRect[3]);
             const w = Math.abs(targetRect[2] - targetRect[0]);
             const h = Math.abs(targetRect[3] - targetRect[1]);
 
-            const config = PREVIEW_HIGHLIGHT_CONFIG;
-
-            page.drawRectangle({
-                x: x0,
-                y: y0,
-                width: w,
-                height: h,
-                borderWidth: config.borderWidth,
-                borderColor: PDFLib.rgb(...config.color),
-                color: PDFLib.rgb(...config.color),
-                opacity: config.fillOpacity,
-                borderOpacity: config.borderOpacity,
-            });
+            drawCommand = getPreviewHighlightRawCommand(previewDoc, page, x0, y0, w, h);
         }
+
+        const contentStream = previewDoc.context.stream(drawCommand);
+        const contentStreamRef = previewDoc.context.register(contentStream);
+        pageNode.set(PDFName.of('Contents'), contentStreamRef);
 
         const pdfBytes = await previewDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
