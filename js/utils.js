@@ -1,3 +1,8 @@
+/**
+ * @fileoverview 核心工具與特徵判定輔助模組。
+ * 實作 PDFLib 資源解構、二進位字串編解碼、十六進制處理、以及六大浮水印策略的純函式判定邏輯 (Heuristics & Matching)。
+ */
+
 // ==========================================
 // [Core Utilities] 核心工具與輔助函式
 // ==========================================
@@ -184,6 +189,8 @@ function compileToBig5Latin1(str) {
 function compileToUTF16BELatin1(str) {
     let result = '';
     for (let i = 0; i < str.length; i++) {
+        // 將 UTF-8 字元的 16 位元代碼，拆分為高位元組 (High byte) 與低位元組 (Low byte)
+        // 以支援 PDF 標準中文字型的 UTF-16BE 二進位特徵表示法
         const code = str.charCodeAt(i);
         const hi = code >> 8;
         const lo = code & 0xff;
@@ -202,6 +209,7 @@ function decodeHexStringsInText(text) {
     let expandedText = text;
     let start = 0;
     while (true) {
+        // 找尋 < 與 >，框出十六進位字串區塊
         const openIdx = text.indexOf('<', start);
         if (openIdx === -1) break;
         const closeIdx = text.indexOf('>', openIdx);
@@ -212,6 +220,7 @@ function decodeHexStringsInText(text) {
 
         if (hexClean.length === 0) continue;
         let paddedHex = hexClean;
+        // 若十六進位字串長度為奇數，依 PDF 規範應在尾部補 0
         if (paddedHex.length % 2 !== 0) {
             paddedHex += '0';
         }
@@ -221,6 +230,7 @@ function decodeHexStringsInText(text) {
 
         try {
             let decodedStr = '';
+            // 將每兩個十六進位字元視為一個位元組進行解碼，並組合成 Latin1 字串
             for (let i = 0; i < paddedHex.length; i += 2) {
                 const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
                 decodedStr += String.fromCharCode(byteVal);
@@ -233,6 +243,9 @@ function decodeHexStringsInText(text) {
     return expandedText;
 }
 
+/** @type {WeakMap<PDFRawStream, Uint8Array>} 內容串流解碼快取，用於降低大檔重複掃描的效能開銷 */
+const streamDecodeCache = new WeakMap();
+
 /**
  * 安全地獲取並解壓縮 PDFRawStream 的二進位內容
  * @param {PDFRawStream} stream - PDF 原始二進位串流
@@ -240,12 +253,21 @@ function decodeHexStringsInText(text) {
  */
 function getDecodedStreamContents(stream) {
     if (!(stream instanceof PDFRawStream)) return new Uint8Array();
+
+    if (streamDecodeCache.has(stream)) {
+        return streamDecodeCache.get(stream);
+    }
+
     try {
         const decoded = PDFLib.decodePDFRawStream(stream);
         decoded.reset();
-        return decoded.getBytes();
+        const bytes = decoded.getBytes();
+        streamDecodeCache.set(stream, bytes);
+        return bytes;
     } catch (err) {
         console.error('解碼二進位串流失敗，回退至 raw 資料', err);
-        return stream.contents || new Uint8Array();
+        const bytes = stream.contents || new Uint8Array();
+        streamDecodeCache.set(stream, bytes);
+        return bytes;
     }
 }

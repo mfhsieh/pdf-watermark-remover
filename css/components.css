@@ -119,6 +119,7 @@
     cursor: pointer;
     background: var(--border);
     color: var(--text);
+    /* 蘋果風格平滑過渡動畫曲線 */
     transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 

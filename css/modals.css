@@ -37,7 +37,9 @@
     width: 100%;
     max-width: 440px;
     box-shadow: 0 30px 70px rgba(var(--shadow-base-rgb), 0.25);
+    /* 初始微縮小，配合 opacity 產生彈出動畫效果 */
     transform: scale(0.95);
+    /* 帶有彈性 (Bounce) 效果的過渡曲線 */
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -175,7 +177,8 @@
 }
 
 .modal-card .preview-modal-title {
-    display: block; /* 覆蓋 .modal-card h3 的 display: flex，避免文字與標籤混排時被切成 flex items 導致排版破裂 */
+    display: block;
+    /* 覆蓋 .modal-card h3 的 display: flex，避免文字與標籤混排時被切成 flex items 導致排版破裂 */
     margin: 0;
     font-size: 1.3rem;
     color: var(--text);

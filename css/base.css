@@ -50,6 +50,7 @@ body {
     background:
         radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.12), transparent 25%),
         radial-gradient(circle at bottom right, rgba(var(--primary-rgb), 0.08), transparent 20%), var(--bg);
+    /* 避免因出現捲軸導致畫面左右跳動 */
     scrollbar-gutter: stable;
 }
 

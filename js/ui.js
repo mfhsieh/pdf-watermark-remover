@@ -1,3 +1,8 @@
+/**
+ * @fileoverview 全域 UI 元素參照與無障礙 (A11y) 控制。
+ * 集中選取並快取所有的 DOM 節點以提升效能，並實作跨元件的焦點陷阱 (Focus Trap) 與鍵盤事件攔截。
+ */
+
 // ==========================================
 // [UI Components] DOM 元素選取與介面控制
 // ==========================================
@@ -39,20 +44,6 @@ const objectPreviewSpinner = document.getElementById('objectPreviewSpinner');
 /** @type {HTMLIFrameElement} 物件預覽 iframe */
 const objectPreviewIframe = document.getElementById('objectPreviewIframe');
 
-// 六大清理策略控制選項
-/** @type {HTMLInputElement} 是否移除表單外部物件 (Form XObject) 的核取方塊 */
-const chkRemoveFormXObject = document.getElementById('removeFormXObject');
-/** @type {HTMLInputElement} 是否移除註解 (Annotations) 的核取方塊 */
-const chkRemoveAnnotations = document.getElementById('removeAnnotations');
-/** @type {HTMLInputElement} 是否移除頁面直接內容 (Direct Content) 的核取方塊 */
-const chkRemoveDirectContent = document.getElementById('removeDirectContent');
-/** @type {HTMLInputElement} 是否移除影像外部物件 (Image XObject) 的核取方塊 */
-const chkRemoveImageXObject = document.getElementById('removeImageXObject');
-/** @type {HTMLInputElement} 是否移除延伸圖形狀態 (ExtGState) 的核取方塊 */
-const chkRemoveExtGState = document.getElementById('removeExtGState');
-/** @type {HTMLInputElement} 是否移除選擇性內容群組 (OCG) 的核取方塊 */
-const chkRemoveOCG = document.getElementById('removeOCG');
-
 // ==========================================
 // [A11y] 全域 Modal Focus Trap (焦點陷阱) 與 Escape 鍵支援
 // ==========================================
@@ -62,7 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastActiveElement = null;
     let currentlyHasActiveModal = false;
 
-    // 透過 MutationObserver 統一監聽所有 Modal 的 class 變化，並自動處理焦點與 inert
+    /**
+     * 透過 MutationObserver 統一監聽所有 Modal 的 class 變化，並自動處理焦點與 inert。
+     * 確保開啟 Modal 時，背景內容無法透過鍵盤或螢幕閱讀器存取 (符合 a11y 無障礙規範)。
+     * @type {MutationCallback}
+     */
     const observer = new MutationObserver(() => {
         const hasActiveModal = Array.from(modals).some((m) => m.classList.contains('active'));
 
@@ -104,7 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
     });
 
-    // 支援 Escape 鍵全局關閉與 Tab 鍵焦點陷阱 (Fallback 相容性)
+    /**
+     * 支援 Escape 鍵全局關閉與 Tab 鍵焦點陷阱 (Focus Trap Fallback)
+     * 確保使用者在 Modal 內使用 Tab 鍵切換焦點時，焦點不會不慎跑出 Modal 外部。
+     * @param {KeyboardEvent} e - 鍵盤按鍵事件
+     */
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
             const activeModal = document.querySelector('.modal-overlay.active');

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview 核心清除與置換引擎。
+ * 負責在瀏覽器端直接操作 PDF 結構，運用「無損置換」與「空串流替換」技術，安全剝離各類浮水印物件，
+ * 並主動清理殘留的參照指令，防止產出的 PDF 損毀。
+ */
+
 // ==========================================
 // [PDF Processor Engine] 核心清除與置換引擎
 // ==========================================
@@ -12,6 +18,7 @@
  * @param {PDFDict} targetDict - 目標字典
  * @param {PDFRef|null} targetRef - 目標字典的參照物件 (如果有)
  * @param {PDFName[]} keysToRemove - 準備移除的鍵名陣列
+ * @returns {void}
  */
 function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove) {
     if (keysToRemove.length === 0) return;
@@ -42,39 +49,28 @@ function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGState
     let modified = false;
     let newText = text;
 
-    for (const key of deletedXObjKeys || []) {
-        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-        if (newText.includes('/' + cleanKey)) {
-            const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+Do\\b', 'g');
-            const replaced = newText.replace(regex, '');
-            if (replaced !== newText) {
-                newText = replaced;
-                modified = true;
+    const replacers = [
+        { keys: deletedXObjKeys, getRegex: (k) => new RegExp('/' + escapeRegex(k) + '\\s+Do\\b', 'g') },
+        { keys: deletedExtGStateKeys, getRegex: (k) => new RegExp('/' + escapeRegex(k) + '\\s+gs\\b', 'g') },
+        {
+            keys: deletedOcgKeys,
+            getRegex: (k) => new RegExp('/OC\\s+/' + escapeRegex(k) + '\\s+BDC[\\s\\S]*?EMC', 'g'),
+        },
+    ];
+
+    replacers.forEach(({ keys, getRegex }) => {
+        for (const key of keys || []) {
+            const cleanKey = key.startsWith('/') ? key.substring(1) : key;
+            if (newText.includes('/' + cleanKey)) {
+                const replaced = newText.replace(getRegex(cleanKey), '');
+                if (replaced !== newText) {
+                    newText = replaced;
+                    modified = true;
+                }
             }
         }
-    }
-    for (const key of deletedExtGStateKeys || []) {
-        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-        if (newText.includes('/' + cleanKey)) {
-            const regex = new RegExp('/' + escapeRegex(cleanKey) + '\\s+gs\\b', 'g');
-            const replaced = newText.replace(regex, '');
-            if (replaced !== newText) {
-                newText = replaced;
-                modified = true;
-            }
-        }
-    }
-    for (const key of deletedOcgKeys || []) {
-        const cleanKey = key.startsWith('/') ? key.substring(1) : key;
-        if (newText.includes('/' + cleanKey)) {
-            const regex = new RegExp('/OC\\s+/' + escapeRegex(cleanKey) + '\\s+BDC[\\s\\S]*?EMC', 'g');
-            const replaced = newText.replace(regex, '');
-            if (replaced !== newText) {
-                newText = replaced;
-                modified = true;
-            }
-        }
-    }
+    });
+
     return { text: newText, modified };
 }
 
@@ -85,12 +81,20 @@ function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGState
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @returns {void}
  */
 function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     const contentsKey = PDFName.of('Contents');
     const contentsRef = page.node.get(contentsKey);
     if (!contentsRef) return;
 
+    /**
+     * 內部輔助函式：處理單一內容流，進行參照指令抹除與重新打包
+     * @param {PDFRef} streamRef - 串流參照
+     * @param {number|null} idxOrKey - 在陣列中的索引，或單一參照的 null
+     * @param {PDFArray|null} contentsArray - 若有多個內容流，此為父陣列
+     * @returns {void}
+     */
     const processStream = (streamRef, idxOrKey, contentsArray) => {
         const stream = pdfDoc.context.lookup(streamRef);
         if (stream instanceof PDFRawStream) {
@@ -159,6 +163,7 @@ function processPdf(pdfDoc, options) {
         const page = pdfDoc.getPage(pageIndex);
         let allDeletedXObjectKeys = [];
 
+        // 1. 複製 Contents 陣列以進行單頁隔離，確保當前頁的修改（如刪除 Do 指令）不會意外影響其他共用此內容流的頁面
         // 複製 Contents 陣列以進行單頁隔離，避免多頁共享時的修改互相干擾
         const contentsKey = PDFName.of('Contents');
         const contents = page.node.lookup(contentsKey);
@@ -172,6 +177,7 @@ function processPdf(pdfDoc, options) {
             continue;
         }
 
+        // 2. 複製 Resources 字典以進行單頁隔離，確保將物件從此頁移除時，不影響其他頁面所需的共用資源
         // 複製 Resources 字典以進行單頁隔離，避免共用資源導致修改影響其他頁面
         if (resources.clone) {
             resources = resources.clone(pdfDoc.context);
@@ -316,6 +322,7 @@ function cleanResourcesRecursively(
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @returns {void}
  */
 function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     const stream = pdfDoc.context.lookup(xObjRef);
@@ -343,6 +350,55 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
 }
 
 /**
+ * 共用清除邏輯：依據條件動態移除 Resources 字典下的特定項目
+ * 適用於 XObject, ExtGState, Properties 等資源字典。
+ *
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFDict} resources - 頁面資源字典
+ * @param {string} dictKeyName - 目標字典的鍵名 (如 'XObject')
+ * @param {Function} shouldDeleteFn - 判斷是否應刪除的回呼函式 (key: PDFName, objRef: PDFRef) => boolean
+ * @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
+ */
+function removeDictEntries(pdfDoc, resources, dictKeyName, shouldDeleteFn) {
+    const dictKey = PDFName.of(dictKeyName);
+    const dictRef = resources.get(dictKey);
+    const dict = pdfDoc.context.lookup(dictRef);
+    if (!(dict instanceof PDFDict)) return { count: 0, deletedKeys: [] };
+
+    const deletedKeys = [];
+    for (const key of dict.keys()) {
+        const objRef = dict.get(key);
+        if (shouldDeleteFn(key, objRef)) {
+            deletedKeys.push(key);
+        }
+    }
+
+    if (deletedKeys.length > 0) {
+        safeRemoveFromDictionary(pdfDoc, resources, dictKey, dict, dictRef, deletedKeys);
+    }
+    return { count: deletedKeys.length, deletedKeys: deletedKeys.map((k) => k.value()) };
+}
+
+/**
+ * 共用清除邏輯：依據條件動態移除 PDF 陣列中的特定項目
+ * 採用反向迴圈確保安全移除元素而不影響未處理的索引。
+ *
+ * @param {PDFArray} pdfArray - 目標 PDF 陣列物件
+ * @param {Function} shouldDeleteFn - 判斷是否應刪除的回呼函式 (item: any) => boolean
+ * @returns {number} 實際刪除的數量
+ */
+function removeArrayItems(pdfArray, shouldDeleteFn) {
+    let count = 0;
+    for (let idx = pdfArray.size() - 1; idx >= 0; idx -= 1) {
+        if (shouldDeleteFn(pdfArray.get(idx))) {
+            pdfArray.remove(idx);
+            count += 1;
+        }
+    }
+    return count;
+}
+
+/**
  *  共用清除邏輯：清除指定的 XObject (支援 Form 與 Image)
  *  根據提供的 Subtype 與欲刪除的參照清單，逐一檢視 Resources 下的 XObject，
  *  若符合條件則將其從資源字典中無損移除。
@@ -354,32 +410,17 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
  *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
 function removeXObjects(pdfDoc, resources, targetSubtype, targetDestroyList) {
-    const xObjectsKey = PDFName.of('XObject');
-    const xObjectsRef = resources.get(xObjectsKey);
-    let xObjects = pdfDoc.context.lookup(xObjectsRef);
-    if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
-
-    let count = 0;
-    const deletedKeys = [];
-    for (const key of xObjects.keys()) {
-        const xObjRef = xObjects.get(key);
-        if (!xObjRef) continue;
-        const refStr = xObjRef.toString();
-        const xObject = pdfDoc.context.lookup(xObjRef);
-        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of('Subtype'))) : null;
-
-        if (subtype instanceof PDFName && subtype.toString() === targetSubtype) {
-            if (targetDestroyList.includes(refStr)) {
-                deletedKeys.push(key);
-            }
-        }
-    }
-
-    if (deletedKeys.length > 0) {
-        safeRemoveFromDictionary(pdfDoc, resources, xObjectsKey, xObjects, xObjectsRef, deletedKeys);
-        count = deletedKeys.length;
-    }
-    return { count, deletedKeys: deletedKeys.map((k) => k.value()) };
+    return removeDictEntries(pdfDoc, resources, 'XObject', (key, objRef) => {
+        if (!objRef) return false;
+        const xObject = pdfDoc.context.lookup(objRef);
+        const subtype =
+            xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of('Subtype'))) : null;
+        return (
+            subtype instanceof PDFName &&
+            subtype.toString() === targetSubtype &&
+            targetDestroyList.includes(objRef.toString())
+        );
+    });
 }
 
 /**
@@ -402,26 +443,11 @@ function removeAnnotations(page) {
         return 0;
     }
 
-    const context = page.node.context;
-    const newAnnots = context.obj([]);
-    let removedCount = 0;
-
-    for (let idx = 0; idx < annots.size(); idx += 1) {
-        const annotRef = annots.get(idx);
-        const annotRefStr = annotRef.toString();
-
-        if (annotsToDestroy.includes(annotRefStr)) {
-            removedCount += 1;
-        } else {
-            newAnnots.push(annotRef);
-        }
-    }
+    const removedCount = removeArrayItems(annots, (ref) => annotsToDestroy.includes(ref.toString()));
 
     // 更新頁面的註解欄位
-    if (newAnnots.size() === 0) {
+    if (annots.size() === 0) {
         page.node.delete(annotsKey);
-    } else {
-        page.node.set(annotsKey, newAnnots);
     }
 
     return removedCount;
@@ -444,15 +470,7 @@ function removeDirectContent(pdfDoc, page) {
 
     let count = 0;
     if (contents instanceof PDFArray) {
-        for (let idx = contents.size() - 1; idx >= 0; idx -= 1) {
-            const streamRef = contents.get(idx);
-            const streamRefStr = streamRef.toString();
-
-            if (directContentsToDestroy.includes(streamRefStr)) {
-                contents.remove(idx);
-                count += 1;
-            }
-        }
+        count = removeArrayItems(contents, (ref) => directContentsToDestroy.includes(ref.toString()));
 
         // 若陣列清空，可以考慮移除整個 Contents 鍵，但保留空陣列也符合規範
         if (contents.size() === 0) {
@@ -482,26 +500,10 @@ function removeDirectContent(pdfDoc, page) {
  *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
 function removeExtGState(pdfDoc, resources, pageIndex) {
-    const extGStateKey = PDFName.of('ExtGState');
-    const extGStateRef = resources.get(extGStateKey);
-    let extGState = pdfDoc.context.lookup(extGStateRef);
-    if (!(extGState instanceof PDFDict)) return { count: 0, deletedKeys: [] };
-
-    let count = 0;
-    const deletedKeys = [];
-    for (const key of extGState.keys()) {
-        const keyName = key.value();
-        const uniqueKey = `${pageIndex}:${keyName}`;
-        if (extGStatesToDestroy.includes(uniqueKey)) {
-            deletedKeys.push(key);
-        }
-    }
-
-    if (deletedKeys.length > 0) {
-        safeRemoveFromDictionary(pdfDoc, resources, extGStateKey, extGState, extGStateRef, deletedKeys);
-        count = deletedKeys.length;
-    }
-    return { count, deletedKeys: deletedKeys.map((k) => k.value()) };
+    return removeDictEntries(pdfDoc, resources, 'ExtGState', (key) => {
+        const uniqueKey = `${pageIndex}:${key.value()}`;
+        return extGStatesToDestroy.includes(uniqueKey);
+    });
 }
 
 /**
@@ -514,90 +516,43 @@ function removeExtGState(pdfDoc, resources, pageIndex) {
  */
 
 function removeOCGs(pdfDoc, resources) {
-    let count = 0;
-    const deletedPropertiesKeys = [];
-    const deletedXObjectKeys = [];
-
     // 1. 清理 Properties 字典中的 OCG 參照
-    const propertiesKey = PDFName.of('Properties');
-    const propertiesRef = resources.get(propertiesKey);
-    if (propertiesRef) {
-        let properties = pdfDoc.context.lookup(propertiesRef);
-        if (properties instanceof PDFDict) {
-            for (const key of properties.keys()) {
-                const ocgRef = properties.get(key);
-                if (!ocgRef) continue;
-                if (ocgsToDestroy.includes(ocgRef.toString())) {
-                    deletedPropertiesKeys.push(key);
-                }
-            }
-
-            if (deletedPropertiesKeys.length > 0) {
-                safeRemoveFromDictionary(
-                    pdfDoc,
-                    resources,
-                    propertiesKey,
-                    properties,
-                    propertiesRef,
-                    deletedPropertiesKeys
-                );
-                count += deletedPropertiesKeys.length;
-            }
-        }
-    }
+    const propRes = removeDictEntries(pdfDoc, resources, 'Properties', (key, objRef) => {
+        return objRef && ocgsToDestroy.includes(objRef.toString());
+    });
 
     // 2. 清理 XObject 中帶有 /OC 且關聯到待刪除 OCG 的物件
-    const xobjKey = PDFName.of('XObject');
-    const xobjRef = resources.get(xobjKey);
-    if (xobjRef) {
-        let xobjects = pdfDoc.context.lookup(xobjRef);
-        if (xobjects instanceof PDFDict) {
-            const keysToDelete = [];
-            for (const key of xobjects.keys()) {
-                const xobj = pdfDoc.context.lookup(xobjects.get(key));
-                if (xobj instanceof PDFRawStream && xobj.dict.has(PDFName.of('OC'))) {
-                    const ocRef = xobj.dict.get(PDFName.of('OC'));
-                    const ocStr = ocRef.toString();
-                    let shouldDelete = false;
+    const xobjRes = removeDictEntries(pdfDoc, resources, 'XObject', (key, objRef) => {
+        if (!objRef) return false;
+        const xobj = pdfDoc.context.lookup(objRef);
+        if (xobj instanceof PDFRawStream && xobj.dict.has(PDFName.of('OC'))) {
+            const ocRef = xobj.dict.get(PDFName.of('OC'));
+            const ocStr = ocRef.toString();
 
-                    // 直接關聯到 OCG
-                    if (ocgsToDestroy.includes(ocStr)) {
-                        shouldDelete = true;
-                    } else {
-                        // 可能是 OCMD (Optional Content Membership Dictionary)
-                        const ocObj = pdfDoc.context.lookup(ocRef);
-                        if (ocObj instanceof PDFDict && ocObj.has(PDFName.of('OCGs'))) {
-                            const ocgsInMD = ocObj.get(PDFName.of('OCGs'));
-                            if (ocgsInMD instanceof PDFArray) {
-                                for (let i = 0; i < ocgsInMD.size(); i++) {
-                                    if (ocgsToDestroy.includes(ocgsInMD.get(i).toString())) {
-                                        shouldDelete = true;
-                                        break;
-                                    }
-                                }
-                            } else if (ocgsInMD && ocgsToDestroy.includes(ocgsInMD.toString())) {
-                                shouldDelete = true;
-                            }
-                        }
+            // 直接關聯到 OCG
+            if (ocgsToDestroy.includes(ocStr)) return true;
+
+            // 可能是 OCMD (Optional Content Membership Dictionary)
+            const ocObj = pdfDoc.context.lookup(ocRef);
+            if (ocObj instanceof PDFDict && ocObj.has(PDFName.of('OCGs'))) {
+                const ocgsInMD = ocObj.get(PDFName.of('OCGs'));
+                if (ocgsInMD instanceof PDFArray) {
+                    for (let i = 0; i < ocgsInMD.size(); i++) {
+                        if (ocgsToDestroy.includes(ocgsInMD.get(i).toString())) return true;
                     }
-
-                    if (shouldDelete) {
-                        keysToDelete.push(key);
-                    }
+                } else if (ocgsInMD && ocgsToDestroy.includes(ocgsInMD.toString())) {
+                    return true;
                 }
-            }
-
-            if (keysToDelete.length > 0) {
-                safeRemoveFromDictionary(pdfDoc, resources, xobjKey, xobjects, xobjRef, keysToDelete);
-                for (const key of keysToDelete) {
-                    deletedXObjectKeys.push(key.value());
-                }
-                count += keysToDelete.length;
             }
         }
-    }
+        return false;
+    });
 
-    return { count, deletedPropertiesKeys: deletedPropertiesKeys.map((k) => k.value()), deletedXObjectKeys };
+    return {
+        count: propRes.count + xobjRes.count,
+        deletedPropertiesKeys: propRes.deletedKeys,
+        deletedXObjectKeys: xobjRes.deletedKeys,
+    };
 }
 /**
  *  策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
@@ -618,16 +573,8 @@ function removeOCG(pdfDoc) {
     const ocgs = pdfDoc.context.lookup(ocgsRef);
     if (!(ocgs instanceof PDFArray)) return 0;
 
-    let count = 0;
-
     // 1. 從 OCGs 陣列中徹底移除
-    for (let idx = ocgs.size() - 1; idx >= 0; idx -= 1) {
-        const ocgRef = ocgs.get(idx);
-        if (ocgsToDestroy.includes(ocgRef.toString())) {
-            ocgs.remove(idx);
-            count += 1;
-        }
-    }
+    let count = removeArrayItems(ocgs, (ref) => ocgsToDestroy.includes(ref.toString()));
 
     // 2. 從 D (Default View) 字典的 OFF 與 ON 陣列中移除
     const dDictRef = ocProperties.get(PDFName.of('D'));
@@ -635,19 +582,11 @@ function removeOCG(pdfDoc) {
     if (dDict instanceof PDFDict) {
         const offArray = pdfDoc.context.lookup(dDict.get(PDFName.of('OFF')));
         if (offArray instanceof PDFArray) {
-            for (let idx = offArray.size() - 1; idx >= 0; idx -= 1) {
-                if (ocgsToDestroy.includes(offArray.get(idx).toString())) {
-                    offArray.remove(idx);
-                }
-            }
+            removeArrayItems(offArray, (ref) => ocgsToDestroy.includes(ref.toString()));
         }
         const onArray = pdfDoc.context.lookup(dDict.get(PDFName.of('ON')));
         if (onArray instanceof PDFArray) {
-            for (let idx = onArray.size() - 1; idx >= 0; idx -= 1) {
-                if (ocgsToDestroy.includes(onArray.get(idx).toString())) {
-                    onArray.remove(idx);
-                }
-            }
+            removeArrayItems(onArray, (ref) => ocgsToDestroy.includes(ref.toString()));
         }
     }
 
@@ -655,4 +594,5 @@ function removeOCG(pdfDoc) {
     if (ocgs.size() === 0) {
         catalogDict.delete(PDFName.of('OCProperties'));
     }
+    return count;
 }

@@ -30,6 +30,7 @@ header h1 {
     white-space: nowrap;
 }
 
+/* 版本號標籤 (配合 build-zip.sh 腳本動態/手動更新) */
 .version-badge {
     display: inline-flex;
     font-size: 0.72rem;
