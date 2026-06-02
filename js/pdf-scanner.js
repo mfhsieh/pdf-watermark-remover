@@ -775,12 +775,13 @@ function scanOCG(scanDoc) {
             const nameObject = ocg.lookup(PDFName.of('Name'));
             if (nameObject instanceof PDFString || nameObject instanceof PDFHexString) {
                 const name = nameObject.decodeText();
-                const entry = { name: name, ref: ocgRef };
-                detectedOCGs.set(ocgRefStr, entry);
-
-                if (isSuspectOCG(entry)) {
-                    if (!ocgsToDestroy.includes(ocgRefStr)) ocgsToDestroy.push(ocgRefStr);
-                }
+                registerSuspectEntry(
+                    detectedOCGs,
+                    ocgRefStr,
+                    { name: name, ref: ocgRef },
+                    isSuspectOCG,
+                    ocgsToDestroy
+                );
             }
         }
     }
@@ -805,17 +806,13 @@ function scanAnnotations(scanDoc, page, pageIndex) {
                 const subtypeStr = subtype.toString().replace(/^\//, '');
                 const annotRefStr = annotRef.toString();
 
-                const entry = {
-                    subtype: subtypeStr,
-                    page: pageIndex + 1,
-                    ref: annotRef,
-                    annotIndex: idx,
-                };
-                detectedAnnotations.set(annotRefStr, entry);
-
-                if (isSuspectAnnotation(entry)) {
-                    if (!annotsToDestroy.includes(annotRefStr)) annotsToDestroy.push(annotRefStr);
-                }
+                registerSuspectEntry(
+                    detectedAnnotations,
+                    annotRefStr,
+                    { subtype: subtypeStr, page: pageIndex + 1, ref: annotRef, annotIndex: idx },
+                    isSuspectAnnotation,
+                    annotsToDestroy
+                );
             }
         }
     }
@@ -842,6 +839,21 @@ function registerOrUpdateXObject(detectedMap, refStr, pageIndex, createEntryFn, 
         if (entry && !entry.pages.includes(pageIndex + 1)) {
             entry.pages.push(pageIndex + 1);
         }
+    }
+}
+
+/**
+ * 輔助函式：註冊偵測到的物件並判斷是否為浮水印 (供單頁/全域物件共用)
+ * @param {Map} detectedMap - 目標偵測 Map
+ * @param {string} key - 物件鍵值或識別碼
+ * @param {Object} entry - 物件資料實體
+ * @param {Function} isSuspectFn - 判斷是否為浮水印的回呼函式
+ * @param {string[]} destroyList - 待刪除清單
+ */
+function registerSuspectEntry(detectedMap, key, entry, isSuspectFn, destroyList) {
+    detectedMap.set(key, entry);
+    if (isSuspectFn(entry)) {
+        if (!destroyList.includes(key)) destroyList.push(key);
     }
 }
 
@@ -964,18 +976,20 @@ function scanResources(scanDoc, page, pageIndex) {
                     const detailText = details.length > 0 ? details.join(', ') : '無透明度細節設定';
                     const uniqueKey = `${pageIndex}:${keyName}`;
 
-                    detectedExtGStates.set(uniqueKey, {
-                        keyName: keyName,
-                        detailText: detailText,
-                        page: pageIndex + 1,
-                        ref: gsObj,
-                        caVal: caVal,
-                        CAVal: CAVal,
-                    });
-
-                    if (isSuspectExtGState(detectedExtGStates.get(uniqueKey))) {
-                        if (!extGStatesToDestroy.includes(uniqueKey)) extGStatesToDestroy.push(uniqueKey);
-                    }
+                    registerSuspectEntry(
+                        detectedExtGStates,
+                        uniqueKey,
+                        {
+                            keyName: keyName,
+                            detailText: detailText,
+                            page: pageIndex + 1,
+                            ref: gsObj,
+                            caVal: caVal,
+                            CAVal: CAVal,
+                        },
+                        isSuspectExtGState,
+                        extGStatesToDestroy
+                    );
                 }
             }
         }
@@ -1015,16 +1029,18 @@ function scanDirectContent(scanDoc, page, pageIndex) {
                     const data = getDecodedStreamContents(stream);
                     const rawStr = decodeBinaryToText(data);
 
-                    detectedDirectContents.set(refStr, {
-                        page: pageIndex + 1,
-                        ref: streamRef,
-                        rawText: rawStr,
-                        streamIndex: entry.index,
-                    });
-
-                    if (isSuspectContentText(rawStr)) {
-                        if (!directContentsToDestroy.includes(refStr)) directContentsToDestroy.push(refStr);
-                    }
+                    registerSuspectEntry(
+                        detectedDirectContents,
+                        refStr,
+                        {
+                            page: pageIndex + 1,
+                            ref: streamRef,
+                            rawText: rawStr,
+                            streamIndex: entry.index,
+                        },
+                        isSuspectDirectContent,
+                        directContentsToDestroy
+                    );
                 } catch (e) {
                     console.error('Direct content parse error', e);
                 }
