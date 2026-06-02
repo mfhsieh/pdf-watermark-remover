@@ -122,22 +122,20 @@ class WatermarkStrategyModal {
             const controlsRow = document.createElement('div');
             controlsRow.className = 'modal-select-controls';
 
-            const selectAllBtn = document.createElement('a');
-            selectAllBtn.href = '#';
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.type = 'button';
             selectAllBtn.textContent = '☑️ 全選';
             selectAllBtn.className = 'modal-select-btn select-all';
             selectAllBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
                 checkboxes.forEach((cb) => (cb.checked = true));
             });
 
-            const deselectAllBtn = document.createElement('a');
-            deselectAllBtn.href = '#';
+            const deselectAllBtn = document.createElement('button');
+            deselectAllBtn.type = 'button';
             deselectAllBtn.textContent = '✖️ 全不選';
             deselectAllBtn.className = 'modal-select-btn deselect-all';
             deselectAllBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
                 checkboxes.forEach((cb) => (cb.checked = false));
             });
@@ -584,6 +582,16 @@ async function openObjectPreview(strategyType, key, entry) {
     // 顯示載入動畫，隱藏 iframe（全部透過 CSS class 控制）
     objectPreviewSpinner.classList.remove('hidden');
     objectPreviewIframe.classList.add('hidden');
+
+    // 若目前已有載入預覽，在覆蓋前先主動釋放該 Blob URL 防止記憶體洩漏
+    const currentSrc = objectPreviewIframe.src;
+    if (currentSrc && currentSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(currentSrc);
+        const cacheIdx = previewUrlCache.indexOf(currentSrc);
+        if (cacheIdx > -1) {
+            previewUrlCache.splice(cacheIdx, 1);
+        }
+    }
     objectPreviewIframe.removeAttribute('src');
     objectPreviewModal.classList.add('active');
 

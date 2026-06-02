@@ -905,6 +905,11 @@ async function performBackgroundScan(scanDoc) {
         scanAnnotations(scanDoc, page, i);
         scanResources(scanDoc, page, i);
         scanDirectContent(scanDoc, page, i);
+
+        // 每處理 5 頁讓出一次主執行緒 (Time Slicing)，避免大檔掃描時瀏覽器畫面凍結
+        if (i > 0 && i % 5 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
     }
 
     // --- 啟發式高頻率出現智慧偵測 (Heuristic Auto-Detect) ---
