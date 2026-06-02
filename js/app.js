@@ -190,15 +190,13 @@ function updateFileAreaDisplay() {
 
 /**
  * 取得目前畫面中 checkbox 勾選的清理選項
- * @returns {{removeFormXObject: boolean, removeAnnotations: boolean, removeDirectContent: boolean, removeImageXObject: boolean, removeExtGState: boolean, removeOCG: boolean}} 清理選項物件
+ * @returns {Object<string, boolean>} 清理選項物件
  */
 function getOptions() {
-    return {
-        removeFormXObject: chkRemoveFormXObject.checked,
-        removeAnnotations: chkRemoveAnnotations.checked,
-        removeDirectContent: chkRemoveDirectContent.checked,
-        removeImageXObject: chkRemoveImageXObject.checked,
-        removeExtGState: chkRemoveExtGState.checked,
-        removeOCG: chkRemoveOCG.checked,
-    };
+    const options = {};
+    STRATEGY_REGISTRY.forEach(strategy => {
+        const chk = document.getElementById(strategy.checkboxId);
+        options[strategy.checkboxId] = chk ? chk.checked : false;
+    });
+    return options;
 }
