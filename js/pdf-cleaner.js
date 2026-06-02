@@ -221,12 +221,12 @@ function cleanResourcesRecursively(
     let count = 0;
 
     if (options.removeFormXObject) {
-        const res = removeFormXObjects(pdfDoc, resources);
+        const res = removeXObjects(pdfDoc, resources, '/Form', formXObjectsToDestroy);
         count += res.count;
         if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
     }
     if (options.removeImageXObject) {
-        const res = removeImageXObjects(pdfDoc, resources, pageIndex);
+        const res = removeXObjects(pdfDoc, resources, '/Image', imagesToDestroy);
         count += res.count;
         if (res.deletedKeys) allDeletedXObjectKeys.push(...res.deletedKeys);
     }
@@ -325,16 +325,17 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
 }
 
 /**
- *  策略一：清除 Form XObject 浮水印
- *  Form XObject 是 PDF 用來儲存可重複使用之圖形或背景向量文字的獨立封裝物件。
- *  大部分的文字浮水印和灰色對角斜線浮水印都屬於此類別。
- *  逐一檢視 Resources 下的所有 XObject，若符合條件則將其從資源字典中移除。
+ *  共用清除邏輯：清除指定的 XObject (支援 Form 與 Image)
+ *  根據提供的 Subtype 與欲刪除的參照清單，逐一檢視 Resources 下的 XObject，
+ *  若符合條件則將其從資源字典中無損移除。
  *
  *  @param {PDFDocument} pdfDoc - PDF 文件物件
  *  @param {PDFDict} resources - 頁面資源字典
+ *  @param {string} targetSubtype - 目標 XObject 的子類型 (如 '/Form' 或 '/Image')
+ *  @param {string[]} targetDestroyList - 待刪除的目標物件參照字串陣列
  *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
  */
-function removeFormXObjects(pdfDoc, resources) {
+function removeXObjects(pdfDoc, resources, targetSubtype, targetDestroyList) {
     const xObjectsKey = PDFName.of('XObject');
     const xObjectsRef = resources.get(xObjectsKey);
     let xObjects = pdfDoc.context.lookup(xObjectsRef);
@@ -347,11 +348,10 @@ function removeFormXObjects(pdfDoc, resources) {
         if (!xObjRef) continue;
         const refStr = xObjRef.toString();
         const xObject = pdfDoc.context.lookup(xObjRef);
-        // 直接從已查詢好的 xObject 取 Subtype，不重複呼叫 context.lookup
-        const subtype = xObject instanceof PDFRawStream ? xObject.dict.get(PDFName.of('Subtype')) : null;
+        const subtype = xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of('Subtype'))) : null;
 
-        if (subtype instanceof PDFName && subtype.toString() === '/Form') {
-            if (formXObjectsToDestroy.includes(refStr)) {
+        if (subtype instanceof PDFName && subtype.toString() === targetSubtype) {
+            if (targetDestroyList.includes(refStr)) {
                 deletedKeys.push(key);
             }
         }
@@ -637,44 +637,4 @@ function removeOCG(pdfDoc) {
     if (ocgs.size() === 0) {
         catalogDict.delete(PDFName.of('OCProperties'));
     }
-
-    return count;
-}
-
-/**
- *  策略四：清除圖片型浮水印 (Image XObject)
- *  當浮水印是由圖片（如公司 LOGO、透明圖片章）組成時，其在資源樹中為 /Image。
- *  我們會檢查圖片元件的命名與頁面索引的結合鍵是否在 imagesToDestroy 中。
- *  若符合，則將其從資源字典中移除。
- *
- *  @param {PDFDocument} pdfDoc - 文件物件
- *  @param {PDFDict} resources - 頁面資源字典
- *  @returns {{count: number, deletedKeys: string[]}} 清除統計與被刪除的鍵名清單
- */
-function removeImageXObjects(pdfDoc, resources) {
-    let xObjects = pdfDoc.context.lookup(resources.get(PDFName.of('XObject')));
-    if (!(xObjects instanceof PDFDict)) return { count: 0, deletedKeys: [] };
-
-    let count = 0;
-    const deletedKeys = [];
-    for (const key of xObjects.keys()) {
-        const xObject = pdfDoc.context.lookup(xObjects.get(key));
-        const subtype =
-            xObject instanceof PDFRawStream ? pdfDoc.context.lookup(xObject.dict.get(PDFName.of('Subtype'))) : null;
-
-        if (subtype instanceof PDFName && subtype.toString() === '/Image') {
-            const xObjRef = xObjects.get(key);
-            if (xObjRef && imagesToDestroy.includes(xObjRef.toString())) {
-                deletedKeys.push(key);
-            }
-        }
-    }
-
-    if (deletedKeys.length > 0) {
-        const xObjectsKey = PDFName.of('XObject');
-        const xObjectsRef = resources.get(xObjectsKey);
-        safeRemoveFromDictionary(pdfDoc, resources, xObjectsKey, xObjects, xObjectsRef, deletedKeys);
-        count = deletedKeys.length;
-    }
-    return { count, deletedKeys: deletedKeys.map((k) => k.value()) };
 }

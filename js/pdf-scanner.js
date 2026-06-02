@@ -284,6 +284,19 @@ function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
 }
 
 /**
+ * 儲存預覽 PDF 文件並建立 Blob URL 以供即時預覽，同時將其加入快取清單以防記憶體洩漏
+ * @param {PDFDocument} previewDoc - 已產生好預覽畫面的 PDF 文件物件
+ * @returns {Promise<string>} Blob URL 網址
+ */
+async function saveAndCreatePreviewUrl(previewDoc) {
+    const pdfBytes = await previewDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    previewUrlCache.push(url);
+    return url;
+}
+
+/**
  * 生成 Form XObject 的即時預覽 URL
  * @param {string} keyName - 資源鍵名
  * @param {number} pageIndex - 頁面索引 (0-indexed)
@@ -369,11 +382,7 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
     const contentStreamRef = previewDoc.context.register(contentStream);
     page.node.set(PDFName.of('Contents'), contentStreamRef);
 
-    const pdfBytes = await previewDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    previewUrlCache.push(url);
-    return url;
+    return await saveAndCreatePreviewUrl(previewDoc);
 }
 
 /**
@@ -443,11 +452,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
     const contentStreamRef = previewDoc.context.register(contentStream);
     page.node.set(PDFName.of('Contents'), contentStreamRef);
 
-    const pdfBytes = await previewDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    previewUrlCache.push(url);
-    return url;
+    return await saveAndCreatePreviewUrl(previewDoc);
 }
 
 /**
@@ -505,11 +510,7 @@ async function generateOCGPreviewUrl(ocgRefStr) {
         }
     }
 
-    const pdfBytes = await srcDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    previewUrlCache.push(url);
-    return url;
+    return await saveAndCreatePreviewUrl(srcDoc);
 }
 
 /**
@@ -572,11 +573,7 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
         const contentStreamRef = previewDoc.context.register(contentStream);
         pageNode.set(PDFName.of('Contents'), contentStreamRef);
 
-        const pdfBytes = await previewDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        previewUrlCache.push(url);
-        return url;
+        return await saveAndCreatePreviewUrl(previewDoc);
     } catch (error) {
         console.error('生成註解預覽時發生錯誤:', error);
         throw error;
@@ -615,11 +612,7 @@ async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIn
         page.node.set(contentsKey, newContents);
     }
 
-    const pdfBytes = await previewDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    previewUrlCache.push(url);
-    return url;
+    return await saveAndCreatePreviewUrl(previewDoc);
 }
 
 /**
