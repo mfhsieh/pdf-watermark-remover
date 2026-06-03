@@ -28,7 +28,8 @@ class WatermarkStrategyModal {
         this.desc = document.getElementById(config.descId);
 
         this.checkboxName = config.checkboxName;
-        this.emptyText = config.emptyText || '未偵測到任何物件。';
+        this.emptyIcon = config.emptyIcon || '📭';
+        this.emptyMessage = config.emptyMessage || '未偵測到任何物件。';
         this.mainCheckboxId = config.mainCheckboxId;
 
         this.getDetectedMap = config.getDetectedMap;
@@ -112,11 +113,17 @@ class WatermarkStrategyModal {
 
         if (map.size === 0) {
             if (this.desc) this.desc.classList.add('hidden');
-            this.listContainer.innerHTML = `
-                        <div class="no-annots-card">
-                            ${this.emptyText}
-                        </div>
-                    `;
+            const card = document.createElement('div');
+            card.className = 'no-annots-card';
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'no-annots-icon';
+            iconDiv.textContent = this.emptyIcon;
+            const textP = document.createElement('p');
+            textP.className = 'no-annots-text';
+            textP.textContent = this.emptyMessage;
+            card.appendChild(iconDiv);
+            card.appendChild(textP);
+            this.listContainer.appendChild(card);
             if (this.resetBtn) this.resetBtn.disabled = true;
             if (this.applyBtn) this.applyBtn.disabled = true;
         } else {
@@ -259,7 +266,8 @@ new WatermarkStrategyModal({
     listContainerId: 'formXObjectListContainer',
     descId: 'formXObjectModalDesc',
     checkboxName: 'formXObjectItem',
-    emptyText: `<div class="no-annots-card"><div class="no-annots-icon">📄</div><p class="no-annots-text">未解析出可選擇的「表單外部物件」內容。</p></div>`,
+    emptyIcon: '📄',
+    emptyMessage: '未解析出可選擇的「表單外部物件」內容。',
     mainCheckboxId: 'removeFormXObject',
     getDetectedMap: () => detectedFormXObjects,
     getDestroyList: () => formXObjectsToDestroy,
@@ -292,7 +300,8 @@ new WatermarkStrategyModal({
     listContainerId: 'annotsSubtypesContainer',
     descId: 'annotsModalDesc',
     checkboxName: 'annotItem',
-    emptyText: `<div class="no-annots-card"><div class="no-annots-icon">📄</div><p class="no-annots-text">當前 PDF 檔案中未偵測到任何「註解」，無需進行設定。</p></div>`,
+    emptyIcon: '📄',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「註解」，無需進行設定。',
     mainCheckboxId: 'removeAnnotations',
     getDetectedMap: () => detectedAnnotations,
     getDestroyList: () => annotsToDestroy,
@@ -330,7 +339,8 @@ new WatermarkStrategyModal({
     listContainerId: 'directContentListContainer',
     descId: 'triggerWordsModalDesc',
     checkboxName: 'directContentItem',
-    emptyText: '📭 當前 PDF 檔案中未偵測到任何「頁面直接內容」。',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「頁面直接內容」。',
     mainCheckboxId: 'removeDirectContent',
     getDetectedMap: () => detectedDirectContents,
     getDestroyList: () => directContentsToDestroy,
@@ -354,7 +364,8 @@ new WatermarkStrategyModal({
     listContainerId: 'imageXObjectListContainer',
     descId: 'imageXObjectModalDesc',
     checkboxName: 'imageXObjectItem',
-    emptyText: '📭 當前 PDF 檔案中未偵測到任何「影像外部物件」。',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「影像外部物件」。',
     mainCheckboxId: 'removeImageXObject',
     getDetectedMap: () => detectedImages,
     getDestroyList: () => imagesToDestroy,
@@ -393,7 +404,8 @@ new WatermarkStrategyModal({
     listContainerId: 'extGStateListContainer',
     descId: 'extGStateModalDesc',
     checkboxName: 'extGStateItem',
-    emptyText: '📭 當前 PDF 檔案中未偵測到任何「延伸圖形狀態」。',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「延伸圖形狀態」。',
     mainCheckboxId: 'removeExtGState',
     getDetectedMap: () => detectedExtGStates,
     getDestroyList: () => extGStatesToDestroy,
@@ -418,7 +430,8 @@ new WatermarkStrategyModal({
     listContainerId: 'ocgListContainer',
     descId: 'ocgModalDesc',
     checkboxName: 'ocgItem',
-    emptyText: '📭 當前 PDF 檔案中未偵測到任何「選擇性內容群組」。',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「選擇性內容群組」。',
     mainCheckboxId: 'removeOCG',
     getDetectedMap: () => detectedOCGs,
     getDestroyList: () => ocgsToDestroy,

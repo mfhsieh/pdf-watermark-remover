@@ -8,6 +8,22 @@
 // ==========================================
 
 /**
+ * 驗證檔案是否為 PDF (透過檢查 Magic Number)
+ * @param {File} file 
+ * @returns {Promise<boolean>}
+ */
+async function verifyPdfMagicNumber(file) {
+    if (!file) return false;
+    try {
+        const buffer = await file.slice(0, 5).arrayBuffer();
+        const header = String.fromCharCode(...new Uint8Array(buffer));
+        return header === '%PDF-';
+    } catch (err) {
+        return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    }
+}
+
+/**
  * 共用輔助函式：當使用者選取檔案後，統一執行 UI 更新與背景掃描
  * @param {File} file - 使用者選取的 PDF 檔案
  * @returns {void}
@@ -24,9 +40,16 @@ function handleFileSelected(file) {
     });
 }
 // 監聽傳統點擊選擇檔案事件
-fileInput.addEventListener('change', (event) => {
+fileInput.addEventListener('change', async (event) => {
     if (event.target.files.length > 0) {
-        handleFileSelected(event.target.files[0]);
+        const file = event.target.files[0];
+        if (await verifyPdfMagicNumber(file)) {
+            handleFileSelected(file);
+        } else {
+            clearStatusMessages();
+            addStatusMessage('僅支援 PDF 檔案格式。', 'error');
+            fileInput.value = ''; // 清除不合法的檔案
+        }
     }
 });
 
@@ -50,13 +73,13 @@ fileArea.addEventListener('dragleave', () => {
 });
 
 // 監聽檔案釋放拖曳事件
-fileArea.addEventListener('drop', (event) => {
+fileArea.addEventListener('drop', async (event) => {
     event.preventDefault();
     fileArea.classList.remove('dragging');
 
     const file = event.dataTransfer.files[0];
-    // 加入副檔名判斷 Fallback，避免部分 OS 拖曳時遺失 MIME Type
-    if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+    // 加入 Magic Number 判斷，避免部分 OS 拖曳時遺失 MIME Type，且比副檔名更可靠
+    if (await verifyPdfMagicNumber(file)) {
         // 嘗試將拖曳檔案與 input 同步（相容性處理，部分舊瀏覽器 input.files 為唯讀）
         try {
             fileInput.files = event.dataTransfer.files;
@@ -119,6 +142,10 @@ processButton.addEventListener('click', async () => {
             addStatusMessage('未偵測到可清除的浮水印物件。請嘗試使用更多選項或更換檔案。', 'info');
         } else {
             addStatusMessage(`已成功置換或修改了 ${result.modifiedObjects} 個可疑浮水印物件。`, 'success');
+        }
+
+        if (result.rebuildErrors && result.rebuildErrors > 0) {
+            addStatusMessage(`⚠️ 警告：有 ${result.rebuildErrors} 個內容串流重構失敗，部分清除結果可能不完整。`, 'error');
         }
 
         // 5. 將重構後的 PDF 文件儲存回二進位陣列 (Uint8Array)

@@ -25,45 +25,52 @@ let lastSuccessPassword = null;
 
 // 2. 表單外部物件 (Form XObject) 狀態管理
 /** @type {Map<string, string>} 偵測到的表單外部物件 (key = raw stream text, value = extracted display string) */
-let detectedFormXObjects = new Map();
+const detectedFormXObjects = new Map();
 /** @type {string[]} 儲存使用者勾選要刪除的 raw stream text */
-let formXObjectsToDestroy = [];
+const formXObjectsToDestroy = [];
 
 // 3. 註解 (Annotation) 狀態管理
 /** @type {Map<string, any>} 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr） */
-let detectedAnnotations = new Map();
+const detectedAnnotations = new Map();
 /** @type {string[]} 要刪除的特定註解參照 (annotRefStr) 清單 */
-let annotsToDestroy = [];
+const annotsToDestroy = [];
 
 // 4. 頁面直接內容 (Direct Content) 狀態管理
 /** @type {Map<string, {page: number, ref: any, rawText: string, streamIndex: number}>} 頁面直接內容狀態（key = streamRefStr） */
-let detectedDirectContents = new Map();
+const detectedDirectContents = new Map();
 /** @type {string[]} 儲存選定要清空的頁面直接內容參照字串 */
-let directContentsToDestroy = [];
+const directContentsToDestroy = [];
 
 // 5. 影像外部物件 (Image XObject) 狀態管理
 /** @type {Map<string, {keyName: string, pages: number[], ref: any, rawStream: string, width: number, height: number, filterStr: string}>} 影像外部物件狀態（key = refStr） */
-let detectedImages = new Map();
+const detectedImages = new Map();
 /** @type {string[]} 儲存選定要清除的影像外部物件鍵值 */
-let imagesToDestroy = [];
+const imagesToDestroy = [];
 
 // 6. 延伸圖形狀態 (ExtGState) 狀態管理
 /** @type {Map<string, {keyName: string, page: number, ref: any, detailText: string, caVal: number, CAVal: number}>} 延伸圖形狀態（key = `${page}:${name}`） */
-let detectedExtGStates = new Map();
+const detectedExtGStates = new Map();
 /** @type {string[]} 儲存選定要清除的延伸圖形狀態鍵值 */
-let extGStatesToDestroy = [];
+const extGStatesToDestroy = [];
 
 // 7. 選擇性內容群組 (OCG) 狀態管理
 /** @type {Map<string, {name: string, ref: any}>} 選擇性內容群組狀態（key = ocgRefStr） */
-let detectedOCGs = new Map();
+const detectedOCGs = new Map();
 /** @type {string[]} 儲存選定要隱藏的 OCG 參照字串 */
-let ocgsToDestroy = [];
+const ocgsToDestroy = [];
 
 /**
  * 全域策略註冊表 (Strategy Registry)
  * 將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
  * 供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。
  * @type {Array<{map: Map, destroyList: Array, checkboxId: string, rowId: string}>}
+ */
+/**
+ * STRATEGY_REGISTRY 將各種清理策略封裝註冊。
+ * 注意：由於是以參照(Reference)方式綁定 `map` 與 `destroyList`，
+ * 這些陣列和 Map 必須定義為 `const`，在清空時使用 `.clear()` 或 `.length = 0`，
+ * 絕對不可重新賦值（如 `map = new Map()`），否則會導致此處的參照斷裂。
+ * @readonly
  */
 const STRATEGY_REGISTRY = (window.STRATEGY_REGISTRY = [
     {
