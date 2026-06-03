@@ -14,6 +14,7 @@ find . -type d \( -name .git -o -name node_modules -o -name dist -o -name tmp \)
 *(盤點後請先告知使用者預計審查的檔案清單與數量)*
 
 ## 2. 核心審查面向
+- **自動化靜態分析**：先執行 `./bin/lint-all.sh`，確保沒有殘留的未使用變數 (Unused Variables) 或是嚴重語法問題。
 - **安全性 (最高優先)**：XSS 風險、未過濾輸入、`eval()` 濫用、硬編碼機敏資訊。
 - **品質與架構**：邏輯清晰度、DRY 原則、命名語意、效能瓶頸、全域變數污染。
 - **穩定性與其他**：錯誤處理、a11y (語意化/aria)、Shell 腳本 (`set -e`)、文件同步。

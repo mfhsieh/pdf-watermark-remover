@@ -82,11 +82,11 @@
 ### `pdf-cleaner.js`
 真正修改 PDF 位元組的引擎，遵循「無損置換」原則。
 - **核心流程 `processPdf(pdfDoc, options)`：**
-  根據選項，依序呼叫對應的移除邏輯，並確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。針對不規範的 `PDFRef` 也已具備安全容錯機制。
+  根據選項，依序呼叫對應的移除邏輯。過程中採用了**時間切片 (Time Slicing)**，每處理 10 頁便讓出主執行緒，防止大型文件清除時畫面凍結。同時確保以「單頁隔離」的方式（如 `clone()` 字典）進行修改，避免破壞其他頁面共用的資源樹。針對不規範的 `PDFRef` 也已具備安全容錯機制。
 - **高階共用刪除引擎 (`removeDictEntries` / `removeArrayItems`)：**
   將所有的資源字典 (Dictionary) 屬性移除與陣列 (Array) 元素移除邏輯抽象化。接收高階函式 (Callback) 作為刪除條件判定，並採用反向迴圈確保陣列物理移除時不會發生索引錯位。
 - **安全移除資源字典 `safeRemoveFromDictionary()`：**
-  以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。
+  以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。並具備智慧判斷，若原物件為間接參照 (`PDFRef`)，會自動註冊新參照，徹底解決了清除共用資源時可能導致 PDF 底層樹狀結構引用斷裂的隱患。
 - **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
   若將 XObject 抽掉，原本呼叫該物件的指令若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式除了以正則徹底抹除殘留呼叫外，更新增了**快速字串比對**，在執行昂貴的正則替換前先做預先過濾，大幅降低了大檔的處理時間。同時也支援了巢狀 `Resources` 的遞迴清理 (`cleanResourcesRecursively`)。
   > **Trade-off (效能/穩定性取捨)**：為了確保修改後的 Content Stream 結構穩定性並避免 Acrobat 報錯，重新寫入的內容流會捨棄原有的壓縮演算法 (如 `FlateDecode` Filter)。這會使得處理後的 PDF 體積微幅增加，但大幅提升了檔案的相容性與修復成功率。
@@ -97,11 +97,14 @@
   提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 將六大策略資料綁定。**動態生成的 DOM 結構嚴格遵循 HTML5 規範（使用獨立外層 `<div>` 容器分離 `<label>` 與 `<button>`），確保螢幕閱讀器與鍵盤焦點行為正確無誤。**
 - **即時預覽系統 (`openObjectPreview` & `closeObjectPreview`)：**
   捨棄冗長的 `if...else`，改用**策略模式 (Strategy Pattern)** 的 `previewHandlers` 字典來分派預覽載入。切換預覽時會主動攔截並清除前一次的 Blob URL，徹底防堵記憶體洩漏 (Memory Leak)。
+- **技術債 (Technical Debt) 註明：**
+  已於原始碼頂部明確記錄其對於全域狀態 (`window.State`) 的高度相依性，作為未來若引入建置工具時，優先進行解耦與單元測試重構的明確方向。
 
 ### `ui.js`
 不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
 - **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
 - **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"` 與 `aria-hidden="true"`，防止鍵盤焦點與螢幕閱讀器穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈確保相容性，且針對包含 `textarea` 與 `select` 的設定型彈窗最佳化焦點優先權，避免開啟時發生不正常的畫面位移。
+- **技術債 (Technical Debt) 註明：** 與 `ui-modals.js` 相同，已標示並記錄其受限於 `file://` 執行環境而導致的模組耦合問題。
 
 ### `app.js`
 系統的生命週期進入點。
@@ -124,11 +127,12 @@
    - **Blob URL 防洩漏機制**：在物件預覽 (`openObjectPreview`) 與檔案切換 (`resetAllState`) 時，主動執行 `URL.revokeObjectURL()`，徹底防堵大型 PDF 產生的記憶體洩漏 (Memory Leak)。
    - **閉包與作用域優化**：將共用輔助函式（如 `escapeHTML`）提升至模組頂層，避免在頻繁觸發的事件中重複宣告閉包，降低垃圾回收 (GC) 負擔。
 2. **進階效能優化 (Performance)**
-   - **時間切片 (Time Slicing)**：背景掃描巨型 PDF 時 (`performBackgroundScan`)，透過非同步微任務讓出主執行緒，確保畫面不卡頓。
+   - **時間切片 (Time Slicing)**：在背景掃描巨型 PDF (`performBackgroundScan`) 與執行實際清除 (`processPdf`) 雙重環節中，均實作了每處理 10 頁即透過非同步微任務讓出主執行緒的機制，徹底解決大型檔案處理時的瀏覽器畫面凍結問題。
    - **WeakMap 解碼快取**：實作 `streamDecodeCache`，避免在特徵比對與矩陣解析時對相同的二進位串流重複進行昂貴的 FlateDecode 解壓縮。
    - **零冗餘代碼 (Zero Dead Code)**：極限縮減迴圈內不必要的陣列宣告與重複的 DOM 樣式變更，並去除無效的物件屬性，達到最佳化執行效率。
 3. **無障礙體驗設計 (a11y)**
    - **焦點陷阱 (Focus Trap)**：全面實作 Modal 的鍵盤導覽 (Tab / Shift+Tab) 限制，並運用 `inert` 屬性動態隱藏背景 DOM，確保螢幕閱讀器與鍵盤使用者獲得完美體驗。
+   - **語意化標籤 (Semantic ARIA)**：針對動態生成或未配對 `<label>` 的控制項（如密碼輸入框），主動補齊 `aria-label` 屬性，確保符合 WCAG 無障礙規範。
 4. **極致的狀態同步與文件覆蓋率 (State & Documentation)**
    - **單一資料來源 (SSOT) 陣列突變**：在 UI 勾選更新狀態時，利用原地突變 (`destroyList.length = 0`) 取代重新賦值，徹底解決 Modal 視窗與底層 `STRATEGY_REGISTRY` 之間的記憶體參照脫鉤問題。
    - **100% JSDoc 覆蓋率**：所有模組、類別、函式與內部輔助閉包皆具備嚴格的 `@param`、`@returns` 等 JSDoc 標籤，保證自動化 API 文件生成的零死角。

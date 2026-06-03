@@ -1,3 +1,14 @@
+/**
+ * @fileoverview UI 快照 (Snapshot) 與無障礙/排版驗證測試腳本
+ *
+ * 職責：
+ * 1. 橋接 WSL2 與 Windows 系統，強制啟動具有視覺介面 (Headful) 的 Windows 原生 Chrome 瀏覽器。
+ * 2. 自動執行使用者操作流程 (上傳、掃描、點擊各設定 Modal)，並在每個關鍵節點進行 Full-Page 截圖。
+ * 3. 包含預覽項目輪播 (Carousel) 展示邏輯，在介面自動化操作過程中，自動點開預覽畫面供開發者肉眼即時查看。
+ * 4. 確保 Modals 動畫過渡、焦點陷阱 (Focus Trap) 等 UI 行為正常，並將最終截圖結果存入 snap-files 目錄。
+ *
+ * 執行指令： npm run snap [檔名]
+ */
 import fs from 'fs';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
@@ -9,15 +20,22 @@ import { exec, execSync } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 定義快照輸出目錄，並確保其存在
+// 定義快照輸出目錄
 const snapFilesDir = path.resolve(__dirname, 'snap-files');
-if (!fs.existsSync(snapFilesDir)) fs.mkdirSync(snapFilesDir, { recursive: true });
 
-// 跨系統 WSL2 <-> Windows 檔案路徑橋接：動態將 Linux 本地路徑映射為 Windows UNC 共享格式
-// 自動取得當前 WSL 發行版名稱 (如 Ubuntu, Debian 等)，解決名稱硬編碼問題
-const distro = process.env.WSL_DISTRO_NAME || 'Ubuntu';
-const localPDF = path.resolve(__dirname, 'e2e-files/sample1.pdf');
-const winPDF = `\\\\wsl.localhost\\${distro}` + localPDF.replace(/\//g, '\\');
+// 取得使用者指定的測試檔案，若無則預設測試 sample1 到 sample4
+const args = process.argv.slice(2);
+const targetFileNames = args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf'];
+
+// 如果是預設全部測試，則清空輸出目錄避免舊截圖殘留；若是指定檔案測試，則僅確保目錄存在
+if (args.length === 0) {
+    if (fs.existsSync(snapFilesDir)) {
+        fs.rmSync(snapFilesDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(snapFilesDir, { recursive: true });
+} else {
+    if (!fs.existsSync(snapFilesDir)) fs.mkdirSync(snapFilesDir, { recursive: true });
+}
 
 try {
     // 跨系統 WSL -> Windows 自動拉起 Chrome 除錯瀏覽器
@@ -27,15 +45,20 @@ try {
             'powershell.exe -Command \'$p = Get-CimInstance Win32_Process | Where-Object {$_.Name -eq "chrome.exe" -and $_.CommandLine -like "*chrome-debug-wsl*"}; if ($p) { $p | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }\'',
             { stdio: 'ignore' }
         );
+        // 清理暫存資料夾，避免長期執行吃掉硬碟空間
+        execSync(
+            'powershell.exe -Command "if (Test-Path \\"$env:TEMP\\chrome-debug-wsl\\") { Remove-Item -Recurse -Force \\"$env:TEMP\\chrome-debug-wsl\\" -ErrorAction SilentlyContinue }"',
+            { stdio: 'ignore' }
+        );
         console.log('   └─ 清理完成');
     } catch {}
 
     console.log('💡 溫馨提示：執行此腳本前，請確保已在背景啟動 Live Server (Port: 5500)');
     console.log('🚀 正在 Windows 端啟動除錯 Chrome 瀏覽器並開啟除錯埠...');
     const targetUrl = 'http://127.0.0.1:5500/index.html';
-    // 使用非同步 exec 以防 cmd.exe 阻塞測試腳本執行
+    // 使用非同步 exec 以防 cmd.exe 阻塞測試腳本執行。加入 window-size 參數使實體視窗與 Puppeteer 截圖寬度一致
     exec(
-        `cmd.exe /c start chrome --remote-debugging-port=9222 --user-data-dir="%TEMP%\\chrome-debug-wsl" "${targetUrl}"`,
+        `cmd.exe /c start chrome --remote-debugging-port=9222 --window-size=1280,1020 --user-data-dir="%TEMP%\\chrome-debug-wsl" "${targetUrl}"`,
         (err) => {
             if (err) console.debug('啟動 Chrome 警告（可忽略）:', err.message);
         }
@@ -63,107 +86,144 @@ try {
     const browser = await puppeteer.connect({ browserWSEndpoint: data.webSocketDebuggerUrl, defaultViewport: null });
     const [page] = await browser.pages();
 
-    if (!page.url().includes('5500')) {
-        console.log('🌐 導航至 http://127.0.0.1:5500/index.html ...');
-        await page.goto('http://127.0.0.1:5500/index.html', { waitUntil: 'networkidle0' });
-    } else {
-        console.log('🌐 已連接至現有的 5500 頁面');
-    }
+    for (const targetFileName of targetFileNames) {
+        console.log(`\n========================================`);
+        console.log(`📸 正在快照測試: ${targetFileName}`);
+        console.log(`========================================`);
 
-    await page.setCacheEnabled(false);
-    await page.reload({ waitUntil: 'networkidle0' });
-    await page.setViewport({ width: 1280, height: 900 });
+        const baseName = path.basename(targetFileName, '.pdf');
 
-    // 1. 初始狀態截圖
-    await page.screenshot({ path: `${snapFilesDir}/ui-01-initial.png`, fullPage: true });
-    console.log('📸 截圖 1: 初始狀態 ✅');
+        // 跨系統 WSL2 <-> Windows 檔案路徑橋接：動態將 Linux 本地路徑映射為 Windows UNC 共享格式
+        const distro = process.env.WSL_DISTRO_NAME || 'Ubuntu';
+        const localPDF = path.resolve(__dirname, 'e2e-files', targetFileName);
+        const winPDF = `\\\\wsl.localhost\\${distro}` + localPDF.replace(/\//g, '\\');
 
-    // 2. 上傳檔案並等待背景掃描完成
-    const fileInput = await page.$('input[type="file"]');
-    if (!fileInput) throw new Error('找不到上傳按鈕');
-    await fileInput.uploadFile(winPDF);
-    console.log('📂 檔案已上傳，等待掃描...');
-
-    await page.waitForFunction(() => document.body.innerText.includes('掃描完成'), { timeout: 30000 });
-    await page.screenshot({ path: `${snapFilesDir}/ui-02-scanned.png`, fullPage: true });
-    console.log('📸 截圖 2: 掃描完成 ✅');
-
-    // 2.5 開啟各個設定彈窗 (Modals) 並截圖
-    const modalsToTest = [
-        {
-            name: 'global',
-            open: '#openGlobalKeywordsModalBtn',
-            close: '#closeGlobalKeywordsModalBtn',
-            active: '#globalKeywordsModal',
-        },
-        {
-            name: 'form-xobject',
-            open: '#openFormXObjectKeywordsModalBtn',
-            close: '#closeFormXObjectKeywordsModalBtn',
-            active: '#formXObjectKeywordsModal',
-        },
-        {
-            name: 'annotations',
-            open: '#openAnnotsSettingsModalBtn',
-            close: '#closeAnnotsSettingsModalBtn',
-            active: '#annotsSettingsModal',
-        },
-        {
-            name: 'direct-content',
-            open: '#openTriggerWordsModalBtn',
-            close: '#closeTriggerWordsModalBtn',
-            active: '#triggerWordsModal',
-        },
-        {
-            name: 'image-xobject',
-            open: '#openImageKeywordsModalBtn',
-            close: '#closeImageKeywordsModalBtn',
-            active: '#imageKeywordsModal',
-        },
-        {
-            name: 'extgstate',
-            open: '#openExtGStateKeywordsModalBtn',
-            close: '#closeExtGStateKeywordsModalBtn',
-            active: '#extGStateKeywordsModal',
-        },
-        {
-            name: 'ocg',
-            open: '#openOCGKeywordsModalBtn',
-            close: '#closeOCGKeywordsModalBtn',
-            active: '#ocgKeywordsModal',
-        },
-    ];
-
-    for (const m of modalsToTest) {
-        const openBtn = await page.$(m.open);
-        if (openBtn) {
-            // 點擊開啟 Modal (使用 DOM 點擊防範 CSS 動態過渡時半透明遮罩導致不可點擊的 Bug)
-            await page.$eval(m.open, (btn) => btn.click());
-            // 等待 Modal active 樣式出現且可見
-            await page.waitForSelector(`${m.active}.active`, { visible: true, timeout: 5000 });
-            // 稍微等待 CSS Transition 平滑過渡完畢 (避免動態縮放殘影)
-            await new Promise((r) => setTimeout(r, 400));
-
-            // 截圖
-            await page.screenshot({ path: `${snapFilesDir}/ui-modal-${m.name}.png` });
-            console.log(`📸 截圖: Modal [${m.name}] 開啟 ✅`);
-
-            // 點擊關閉 (同樣使用 DOM 點擊)
-            await page.$eval(m.close, (btn) => btn.click());
-            // 等待 Modal 隱藏
-            await page.waitForSelector(`${m.active}.active`, { hidden: true, timeout: 5000 });
-            // 等待關閉過渡動畫
-            await new Promise((r) => setTimeout(r, 200));
+        if (!page.url().includes('5500')) {
+            console.log('🌐 導航至 http://127.0.0.1:5500/index.html ...');
+            await page.goto('http://127.0.0.1:5500/index.html', { waitUntil: 'networkidle0' });
+        } else {
+            console.log('🌐 已連接至現有的 5500 頁面');
         }
+
+        await page.setCacheEnabled(false);
+        await page.reload({ waitUntil: 'networkidle0' });
+        await page.setViewport({ width: 1280, height: 900 });
+
+        // 1. 初始狀態截圖
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-01-initial.png`, fullPage: true });
+        console.log('📸 截圖 1: 初始狀態 ✅');
+
+        // 2. 上傳檔案並等待背景掃描完成
+        const fileInput = await page.$('input[type="file"]');
+        if (!fileInput) throw new Error('找不到上傳按鈕');
+        await fileInput.uploadFile(winPDF);
+        console.log('📂 檔案已上傳，等待掃描...');
+
+        await page.waitForFunction(() => document.body.innerText.includes('掃描完成'), { timeout: 30000 });
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-02-scanned.png`, fullPage: true });
+        console.log('📸 截圖 2: 掃描完成 ✅');
+
+        // 2.5 開啟各個設定彈窗 (Modals) 並截圖
+        const modalsToTest = [
+            {
+                name: 'global',
+                open: '#openGlobalKeywordsModalBtn',
+                close: '#closeGlobalKeywordsModalBtn',
+                active: '#globalKeywordsModal',
+            },
+            {
+                name: 'form-xobject',
+                open: '#openFormXObjectKeywordsModalBtn',
+                close: '#closeFormXObjectKeywordsModalBtn',
+                active: '#formXObjectKeywordsModal',
+            },
+            {
+                name: 'annotations',
+                open: '#openAnnotsSettingsModalBtn',
+                close: '#closeAnnotsSettingsModalBtn',
+                active: '#annotsSettingsModal',
+            },
+            {
+                name: 'direct-content',
+                open: '#openTriggerWordsModalBtn',
+                close: '#closeTriggerWordsModalBtn',
+                active: '#triggerWordsModal',
+            },
+            {
+                name: 'image-xobject',
+                open: '#openImageKeywordsModalBtn',
+                close: '#closeImageKeywordsModalBtn',
+                active: '#imageKeywordsModal',
+            },
+            {
+                name: 'extgstate',
+                open: '#openExtGStateKeywordsModalBtn',
+                close: '#closeExtGStateKeywordsModalBtn',
+                active: '#extGStateKeywordsModal',
+            },
+            {
+                name: 'ocg',
+                open: '#openOCGKeywordsModalBtn',
+                close: '#closeOCGKeywordsModalBtn',
+                active: '#ocgKeywordsModal',
+            },
+        ];
+
+        for (const m of modalsToTest) {
+            const openBtn = await page.$(m.open);
+            if (openBtn) {
+                // 點擊開啟 Modal
+                await page.$eval(m.open, (btn) => btn.click());
+                await page.waitForSelector(`${m.active}.active`, { visible: true, timeout: 5000 });
+                await new Promise((r) => setTimeout(r, 400));
+
+                // 截圖
+                await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-modal-${m.name}.png` });
+                console.log(`📸 截圖: Modal [${m.name}] 開啟 ✅`);
+
+                // 新增：遍歷子項 (預覽按鈕) 並開啟給肉眼觀看 (不截圖)
+                if (m.name !== 'global') {
+                    const previewBtns = await page.$$(`${m.active} .preview-item-btn`);
+                    if (previewBtns.length > 0) {
+                        console.log(`  👁️ 輪播展示 ${previewBtns.length} 個預覽項目 (僅供肉眼即時觀看)...`);
+                        for (let i = 0; i < previewBtns.length; i++) {
+                            // 重新選取按鈕陣列以避免 DOM 參照遺失
+                            const btns = await page.$$(`${m.active} .preview-item-btn`);
+                            if (btns[i]) {
+                                await btns[i].click();
+                                await page.waitForSelector('#objectPreviewModal.active', { visible: true });
+                                await page.waitForSelector('#objectPreviewIframe:not(.hidden)', {
+                                    visible: true,
+                                    timeout: 20000,
+                                });
+
+                                // 停留 800 毫秒供肉眼查看
+                                await new Promise((r) => setTimeout(r, 800));
+
+                                // 點擊關閉預覽 Modal
+                                await page.$eval('#closeObjectPreviewModalBtn', (btn) => btn.click());
+                                await page.waitForSelector('#objectPreviewModal.active', { hidden: true });
+                                await new Promise((r) => setTimeout(r, 300));
+                            }
+                        }
+                    }
+                }
+
+                // 點擊關閉
+                await page.$eval(m.close, (btn) => btn.click());
+                await page.waitForSelector(`${m.active}.active`, { hidden: true, timeout: 5000 });
+                await new Promise((r) => setTimeout(r, 200));
+            }
+        }
+
+        // 3. 點擊清除並等待處理完成
+        await page.$eval('#processButton', (btn) => btn.click());
+        console.log('🚀 已點擊清除按鈕，等待處理...');
+
+        await page.waitForFunction(() => document.body.innerText.includes('清除已完成'), { timeout: 30000 });
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-03-done.png`, fullPage: true });
+        console.log('📸 截圖 3: 清除完成 ✅');
     }
-
-    // 3. 點擊清除並等待處理完成
-    await page.$eval('#processButton', (btn) => btn.click());
-    console.log('🚀 已點擊清除按鈕，等待處理...');
-
-    await page.waitForFunction(() => document.body.innerText.includes('清除已完成'), { timeout: 30000 });
-    await page.screenshot({ path: `${snapFilesDir}/ui-03-done.png`, fullPage: true });
-    console.log('📸 截圖 3: 清除完成 ✅');
 
     console.log('\n🎉 E2E 自動化測試與截圖已全部圓滿完成！');
     browser.disconnect();

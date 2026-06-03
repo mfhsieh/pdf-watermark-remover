@@ -18,7 +18,7 @@ async function verifyPdfMagicNumber(file) {
         const buffer = await file.slice(0, 5).arrayBuffer();
         const header = String.fromCharCode(...new Uint8Array(buffer));
         return header === '%PDF-';
-    } catch (err) {
+    } catch {
         return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     }
 }

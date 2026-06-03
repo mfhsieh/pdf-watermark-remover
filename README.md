@@ -98,12 +98,13 @@
 
 | 指令 | 說明 |
 |------|------|
-| `npm run e2e`  | 執行端到端 (E2E) 測試，以 `test/e2e.mjs` 自動進行無頭瀏覽器操作與結果驗證。 |
-| `npm run e2e-preview` | 執行預覽抓取測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔。 |
-| `npm run snap` | 執行視覺與狀態的 Snapshot 快照測試 (`test/snap.mjs`)。 |
+| `npm run e2e`  | 執行端到端 (E2E) 測試 (`test/e2e.mjs`)，進行無頭瀏覽器操作與結果驗證。 |
+| `npm run e2e-preview` | 執行預覽測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔，供後續檢查。 |
+| `npm run snap` | 執行視覺快照測試 (`test/snap.mjs`)，輪播各項畫面，確保 UI 行為正常。 |
 | `npm run docs` | 自動將 `js/` 目錄下的所有原始碼註釋，產生並更新 `doc/API_Reference.md` 文件。 |
 | `npm run lint` | 執行 ESLint 語法檢查，確保程式碼品質。 |
 | `npm run format`| 執行 Prettier，一鍵將所有 HTML/CSS/JS 程式碼自動排版。 |
+| `./bin/lint-all.sh` | 全域變數分析腳本，將各 JS 模組合併後執行 ESLint，以捕捉跨模組宣告卻未使用的多餘變數。 |
 
 ---
 
@@ -149,6 +150,9 @@
 
 ## 📦 Release Notes
 
+- **v2.4.0 (2026-06-04)**
+  - 🧪 **自動化測試**：增加與強化相關測試腳本 (`snap.mjs`, `lint-all.sh` 等)，提升自動化驗證能力。
+  - ✨ **常規更新**：依 AI 程式碼審查建議調整。
 - **v2.3.5 (2026-06-03)**
   - 🧪 **自動化測試**：新增 `e2e-preview.mjs` 自動化腳本，支援自動抓取並匯出各策略之預覽 PDF 檔。
   - ✨ **常規更新**：進行 js 重構、修正 bug 及微調介面。

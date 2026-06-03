@@ -1,3 +1,13 @@
+/**
+ * @fileoverview 端到端 (E2E) 核心自動化測試腳本
+ *
+ * 職責：
+ * 1. 利用 Puppeteer 啟動無頭瀏覽器，自動化模擬使用者上傳、設定與下載 PDF 檔案的完整流程。
+ * 2. 結合 pdf-lib 進行結果驗證，解析清除前後的 PDF 內部結構 (Form, Image, ExtGState, Annotations)，確保浮水印物件數量確實減少。
+ * 3. 包含例外流程覆蓋率測試，如非 PDF 檔案攔截與密碼錯誤次數上限驗證。
+ *
+ * 執行指令： npm run test (或 node test/e2e.mjs)
+ */
 import puppeteer from 'puppeteer-core';
 import path from 'path';
 import fs from 'fs';

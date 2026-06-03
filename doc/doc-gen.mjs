@@ -3,6 +3,17 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+/**
+ * @fileoverview 自動化 API 文件生成腳本 (API Documentation Generator)
+ *
+ * 職責：
+ * 1. 負責掃描專案 `js/` 目錄下的所有核心 JavaScript 檔案。
+ * 2. 透過 `jsdoc-to-markdown` 套件，將原始碼中的 JSDoc 註解自動轉換為 Markdown 格式。
+ * 3. 產出並覆蓋 `doc/API_Reference.md` 檔案，確保團隊的 API 文件永遠與程式碼同步。
+ *
+ * 執行指令： npm run docs (或 node doc/doc-gen.mjs)
+ */
+
 // 取得目前檔案的絕對路徑
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

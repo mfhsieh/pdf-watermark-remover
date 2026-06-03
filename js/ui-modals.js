@@ -1,5 +1,10 @@
 /**
  * @fileoverview 彈出視窗與策略設定 UI 邏輯。
+ *
+ * TODO: [Technical Debt] 全域變數與狀態相依性過高
+ * 此模組承載了極大的 UI 狀態控制邏輯，且高度依賴 `window.State` 與其他全域函數。
+ * 因應專案目前需維持 `file://` 離線執行的最高指導原則而無法使用原生 ESM `import/export`，此架構目前是可接受的最佳解。
+ * 未來若專案允許引入建置工具 (如 Vite/Webpack)，應優先對這兩支檔案進行模組化解耦，以便進行單元測試。
  * 透過 WatermarkStrategyModal 類別封裝六項清除策略的彈窗操作，動態渲染勾選清單，
  * 並實作物件即時預覽彈窗 (Object Preview Modal) 的生命週期與記憶體釋放管理。
  */
@@ -139,7 +144,7 @@ class WatermarkStrategyModal {
             selectAllBtn.type = 'button';
             selectAllBtn.textContent = '☑️ 全選';
             selectAllBtn.className = 'modal-select-btn select-all';
-            selectAllBtn.addEventListener('click', (e) => {
+            selectAllBtn.addEventListener('click', () => {
                 const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
                 checkboxes.forEach((cb) => (cb.checked = true));
             });
@@ -148,7 +153,7 @@ class WatermarkStrategyModal {
             deselectAllBtn.type = 'button';
             deselectAllBtn.textContent = '✖️ 全不選';
             deselectAllBtn.className = 'modal-select-btn deselect-all';
-            deselectAllBtn.addEventListener('click', (e) => {
+            deselectAllBtn.addEventListener('click', () => {
                 const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
                 checkboxes.forEach((cb) => (cb.checked = false));
             });
