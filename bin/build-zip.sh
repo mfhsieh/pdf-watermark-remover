@@ -40,12 +40,6 @@ else
     exit 1
 fi
 
-# 檢查是否打包成功
-if [ $? -eq 0 ]; then
-    echo "🎉 打包完成！檔案已儲存至: $OUTPUT_PATH"
-    # 列出檔案大小
-    ls -lh "$OUTPUT_PATH"
-else
-    echo "❌ 打包失敗。"
-    exit 1
-fi
+echo "🎉 打包完成！檔案已儲存至: $OUTPUT_PATH"
+# 列出檔案大小
+ls -lh "$OUTPUT_PATH"

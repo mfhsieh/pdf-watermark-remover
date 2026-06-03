@@ -262,14 +262,18 @@ function ensurePreviewHighlightExtGState(previewDoc, page, extGStateName) {
  * @param {number} height - 矩形高度
  * @returns {string} 繪製矩形紅框的 PDF 內容流指令字串
  */
-function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
+function buildHighlightCommand(previewDoc, page, pathCmd) {
     const config = PREVIEW_HIGHLIGHT_CONFIG;
     const extGStateName = 'GsPreviewHighlight';
 
     ensurePreviewHighlightExtGState(previewDoc, page, extGStateName);
 
     const [r, g, b] = config.color;
-    return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${x} ${y} ${width} ${height} re\nB\nQ`;
+    return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${pathCmd}\nB\nQ`;
+}
+
+function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
+    return buildHighlightCommand(previewDoc, page, `${x} ${y} ${width} ${height} re`);
 }
 
 /**
@@ -280,15 +284,9 @@ function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
  * @returns {string} 繪製多邊形紅框的 PDF 內容流指令字串
  */
 function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
-    const config = PREVIEW_HIGHLIGHT_CONFIG;
-    const extGStateName = 'GsPreviewHighlight';
-
-    ensurePreviewHighlightExtGState(previewDoc, page, extGStateName);
-
     const formatNum = (n) => Number(n.toFixed(6)).toString();
     const path = `${formatNum(pts[0].x)} ${formatNum(pts[0].y)} m\n${formatNum(pts[1].x)} ${formatNum(pts[1].y)} l\n${formatNum(pts[2].x)} ${formatNum(pts[2].y)} l\n${formatNum(pts[3].x)} ${formatNum(pts[3].y)} l\nh`;
-    const [r, g, b] = config.color;
-    return `q /${extGStateName} gs\n${r} ${g} ${b} rg\n${r} ${g} ${b} RG\n${config.borderWidth} w\n${path}\nB\nQ`;
+    return buildHighlightCommand(previewDoc, page, path);
 }
 
 /**

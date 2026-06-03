@@ -587,17 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * 輔助函式：安全地跳脫 HTML 特殊字元，防止 XSS
- * @param {string} str - 原始字串
- * @returns {string} 跳脫後的字串
- */
-function escapeHTML(str) {
-    return str.replace(
-        /[&<>'"]/g,
-        (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[tag]
-    );
-}
 
-/**
  * 開啟物件即時預覽彈窗
  * @param {string} strategyType - 策略類型 (如 'formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem')
  * @param {string} key - 物件鍵值或識別碼

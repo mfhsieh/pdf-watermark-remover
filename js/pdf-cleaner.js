@@ -25,14 +25,14 @@ let currentRebuildErrors = 0;
 function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove) {
     if (keysToRemove.length === 0) return;
 
-    let dictToModify = targetDict;
-    if (dictToModify.clone) {
-        dictToModify = dictToModify.clone(pdfDoc.context);
-        if (targetRef && typeof targetRef.clone === 'function' && !resources.has(dictKey)) {
-            resources.set(dictKey, dictToModify);
-        } else {
-            resources.set(dictKey, pdfDoc.context.register(dictToModify));
-        }
+    // 複製以確保安全修改 (單頁隔離)，避免破壞跨頁共用資源
+    const dictToModify = targetDict.clone(pdfDoc.context);
+
+    // 如果原先已經是個參照 (ref)，且尚未被替換過，我們直接覆蓋參照或建立新參照
+    if (targetRef && !resources.has(dictKey)) {
+        resources.set(dictKey, dictToModify);
+    } else {
+        resources.set(dictKey, pdfDoc.context.register(dictToModify));
     }
     for (const key of keysToRemove) {
         dictToModify.delete(key);

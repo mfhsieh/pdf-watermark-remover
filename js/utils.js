@@ -19,6 +19,18 @@ const {
 } = PDFLib;
 
 /**
+ * 將使用者輸入字串進行 HTML 跳脫，防止 XSS (Cross-Site Scripting) 攻擊
+ * @param {string} str - 原始字串
+ * @returns {string} 跳脫後的字串
+ */
+function escapeHTML(str) {
+    return str.replace(
+        /[&<>'"]/g,
+        (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[tag]
+    );
+}
+
+/**
  * 將字串中的正則表達式特殊字元進行跳脫，以安全地嵌入 RegExp 建構式
  * @param {string} str - 需要跳脫的原始字串
  * @returns {string} 跳脫後的字串
