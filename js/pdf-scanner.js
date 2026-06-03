@@ -1076,21 +1076,6 @@ async function performBackgroundScan(scanDoc) {
         applyHeuristicThreshold(detectedFormXObjects, formXObjectsToDestroy, threshold, pageCount);
         applyHeuristicThreshold(detectedImages, imagesToDestroy, threshold, pageCount);
     }
-
-    console.log(
-        '[Scanner] 背景掃描完成 — 註解:',
-        detectedAnnotations.size,
-        '，直接內容:',
-        detectedDirectContents.size,
-        '，FormXObj:',
-        detectedFormXObjects.size,
-        '，Image:',
-        detectedImages.size,
-        '，ExtGState:',
-        detectedExtGStates.size,
-        '，OCG:',
-        detectedOCGs.size
-    );
 }
 
 /**

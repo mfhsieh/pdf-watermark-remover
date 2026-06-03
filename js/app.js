@@ -139,7 +139,7 @@ processButton.addEventListener('click', async () => {
 
         // 3. 開始重構 PDF 物件樹
         addStatusMessage('開始掃描並重構 PDF 物件樹，套用清除策略...', 'info');
-        const result = processPdf(pdfDoc, options);
+        const result = await processPdf(pdfDoc, options);
 
         // 4. 更新狀態列文字
         if (result.modifiedObjects === 0) {

@@ -172,7 +172,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
  * @param {Object} options - 包含 6 大清理策略勾選狀態的布林值物件
  * @returns {Object} 包含 modifiedObjects (已被修改/置換的物件總數) 的統計物件
  */
-function processPdf(pdfDoc, options) {
+async function processPdf(pdfDoc, options) {
     let modifiedObjects = 0;
     currentRebuildErrors = 0;
 
@@ -192,6 +192,11 @@ function processPdf(pdfDoc, options) {
 
     // 循序遍歷處理每一頁，確保修改的隔離性
     for (let pageIndex = 0; pageIndex < pdfDoc.getPageCount(); pageIndex += 1) {
+        // 每處理 10 頁讓出一次主執行緒 (Time Slicing)，避免大檔處理時瀏覽器畫面凍結
+        if (pageIndex > 0 && pageIndex % 10 === 0) {
+            await new Promise((r) => setTimeout(r, 0));
+        }
+
         const page = pdfDoc.getPage(pageIndex);
         let allDeletedXObjectKeys = [];
 

@@ -301,7 +301,7 @@ try {
                 // 點擊送出
                 await page.click('#modalSubmitButton');
                 // 若這不是最後一次，等待 modal 短暫消失或重新出現錯誤提示，避免太快連續點擊
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise((r) => setTimeout(r, 500));
             }
 
             await page.waitForFunction(
