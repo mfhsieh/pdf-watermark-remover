@@ -264,6 +264,64 @@ try {
     // 假設預設邏輯會自動偵測並至少減少一些物件，這裡我們只驗證腳本能否順利跑完不報錯。
     await processFile('sample4.pdf', null, {});
 
+    // 測試案例 5 & 6：錯誤路徑覆蓋 (非 PDF 與 密碼錯誤)
+    const testErrorPaths = async () => {
+        console.log(`\n⏳ 測試錯誤路徑 (非 PDF 檔案與密碼錯誤) 中...`);
+        const page = await browser.newPage();
+
+        try {
+            await page.goto(indexUrl, { waitUntil: 'networkidle0' });
+
+            // 1. 測試上傳非 PDF 檔案
+            const txtFilePath = path.resolve(testFilesDir, 'sample.txt');
+            const fileInput = await page.$('#fileInput');
+            await fileInput.uploadFile(txtFilePath);
+
+            await page.waitForFunction(
+                () => {
+                    const msgs = document.querySelectorAll('.status-line.error');
+                    return Array.from(msgs).some((m) => m.textContent.includes('僅支援 PDF 檔案格式。'));
+                },
+                { timeout: 5000 }
+            );
+            console.log(`✅ 非 PDF 檔案攔截測試通過`);
+
+            // 2. 測試密碼嘗試超過次數 (使用 sample-encrypted.pdf)
+            await page.goto(indexUrl, { waitUntil: 'networkidle0' }); // reload
+            const encFilePath = path.resolve(testFilesDir, 'sample-encrypted.pdf');
+            const fileInput2 = await page.$('#fileInput');
+
+            // 攔截並自動輸入錯誤密碼 (密碼嘗試次數上限為 5 次)
+            await fileInput2.uploadFile(encFilePath);
+            for (let i = 0; i < 5; i++) {
+                // 等待密碼 Modal 顯示
+                await page.waitForSelector('#passwordModal.active', { timeout: 10000 });
+                // 輸入錯誤密碼
+                await page.type('#pdfPasswordInput', 'wrong-password');
+                // 點擊送出
+                await page.click('#modalSubmitButton');
+                // 若這不是最後一次，等待 modal 短暫消失或重新出現錯誤提示，避免太快連續點擊
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            await page.waitForFunction(
+                () => {
+                    const msgs = document.querySelectorAll('.status-line.error');
+                    return Array.from(msgs).some(
+                        (m) =>
+                            m.textContent.includes('密碼嘗試次數過多') || m.textContent.includes('連續輸入錯誤密碼達')
+                    );
+                },
+                { timeout: 10000 }
+            );
+            console.log(`✅ 密碼嘗試超過上限攔截測試通過`);
+        } finally {
+            await page.close();
+        }
+    };
+
+    await testErrorPaths();
+
     console.log('\n🎉 所有 E2E 測試與驗證均順利通過！');
 } catch (e) {
     console.error('\n❌ E2E 測試失敗:', e);
