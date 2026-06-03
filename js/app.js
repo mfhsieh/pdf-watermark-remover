@@ -34,10 +34,14 @@ function handleFileSelected(file) {
     clearStatusMessages();
     addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
     // 捕捉非同步背景處理時可能發生的未預期錯誤，避免 Unhandled Promise Rejection
-    showOriginalPreview(selectedFile).catch((err) => {
-        console.error('預覽載入失敗:', err);
-        addStatusMessage(`預覽載入失敗: ${err.message}`, 'error');
-    });
+    prepareScanContext(selectedFile)
+        .then(({ previewBytes, needsPassword, decryptedSuccessfully }) => {
+            renderPreview(previewBytes, needsPassword, decryptedSuccessfully);
+        })
+        .catch((err) => {
+            console.error('預覽載入失敗:', err);
+            addStatusMessage(`預覽載入失敗: ${err.message}`, 'error');
+        });
 }
 // 監聽傳統點擊選擇檔案事件
 fileInput.addEventListener('change', async (event) => {

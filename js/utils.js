@@ -183,7 +183,8 @@ function encodeTextToBinary(text) {
  */
 function compileToBig5Latin1(str) {
     try {
-        const encoder = new TextEncoder('big5', { NONSTANDARD_allowLegacyEncoding: true });
+        const EncoderClass = window.PolyfillTextEncoder || window.TextEncoder;
+        const encoder = new EncoderClass('big5', { NONSTANDARD_allowLegacyEncoding: true });
         const bytes = encoder.encode(str);
         let result = '';
         for (let i = 0; i < bytes.length; i++) {

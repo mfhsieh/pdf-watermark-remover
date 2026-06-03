@@ -358,7 +358,7 @@ function formatMatrixToCm(matrix) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
-    const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
     const srcPage = srcDoc.getPage(pageIndex);
     // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
     const cleanKeyName = keyName.replace(/^\//, '');
@@ -427,7 +427,7 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
-    const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
     const cleanKeyName = keyName.replace(/^\//, '');
 
     let targetRefStr = null;
@@ -476,7 +476,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateOCGPreviewUrl(ocgRefStr) {
-    const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
     // srcDoc.catalog 直接回傳 PDFDict，不需再 context.lookup()
     const catalog = srcDoc.catalog;
     const ocProperties = srcDoc.context.lookup(catalog.get(PDFName.of('OCProperties')));
@@ -537,7 +537,7 @@ async function generateOCGPreviewUrl(ocgRefStr) {
  */
 async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
     try {
-        const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+        const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
         const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
         const pageNode = page.node;
 
@@ -596,7 +596,7 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
  * @returns {Promise<string>} Blob URL
  */
 async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
-    const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
     const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
     const contentsKey = PDFName.of('Contents');
@@ -691,7 +691,8 @@ async function loadAndDecryptPdf(file) {
         if (!decryptedSuccessfully) {
             addStatusMessage('🔒 此 PDF 設有開啟密碼，請輸入密碼以繼續。', 'info');
             let attempts = 0;
-            while (true) {
+            const MAX_ATTEMPTS = 5;
+            while (attempts < MAX_ATTEMPTS) {
                 const pwd = await promptForPassword(attempts > 0);
                 if (pwd === null) {
                     addStatusMessage('已取消密碼輸入。如需繼續處理，請重新選擇 PDF 並輸入密碼。', 'info');
@@ -713,6 +714,13 @@ async function loadAndDecryptPdf(file) {
                 } catch {
                     // 密碼錯誤，繼續迴圈
                 }
+            }
+            
+            if (!decryptedSuccessfully && attempts >= MAX_ATTEMPTS) {
+                addStatusMessage(`您已連續輸入錯誤密碼達 ${MAX_ATTEMPTS} 次，為保護效能與避免暴力破解，請重新選擇檔案再試。`, 'error');
+                // 關閉輸入彈窗（若仍顯示）
+                const pwdModal = document.getElementById('passwordModal');
+                if (pwdModal) pwdModal.classList.remove('active');
             }
         }
     }
@@ -1087,7 +1095,7 @@ async function performBackgroundScan(scanDoc) {
  * 並將解密後的位元組與密碼快取，最後顯示預覽。
  * @param {File} file - 使用者上傳的原始 PDF 檔案
  */
-async function showOriginalPreview(file) {
+async function prepareScanContext(file) {
     // 0. 主動清空並重置所有舊狀態（含密碼快取）
     resetAllState();
 
@@ -1096,8 +1104,9 @@ async function showOriginalPreview(file) {
     // 進行背景高速掃描以找出 PDF 中可能包含浮水印的物件
     if (!needsPassword || decryptedSuccessfully) {
         try {
-            const scanDoc = await PDFDocument.load(previewBytes, { updateMetadata: false });
-            await performBackgroundScan(scanDoc);
+            // 將 scanDoc 快取至全域變數，供物件預覽時直接取用，節省反覆解析的時間
+            cachedPdfDocument = await PDFDocument.load(previewBytes, { updateMetadata: false });
+            await performBackgroundScan(cachedPdfDocument);
         } catch (scanErr) {
             console.error('背景掃描失敗', scanErr);
         }
@@ -1108,8 +1117,18 @@ async function showOriginalPreview(file) {
         updateScanResultUI(optionsContainer);
     }
 
+    return { previewBytes, needsPassword, decryptedSuccessfully };
+}
+
+/**
+ * 將解密後的 PDF 內容轉為 Blob 並顯示於畫面上的預覽 iframe 中。
+ * @param {Uint8Array} bytes - 欲預覽的 PDF 位元組陣列
+ * @param {boolean} needsPassword - 原檔案是否需要密碼
+ * @param {boolean} decryptedSuccessfully - 是否已成功解密
+ */
+function renderPreview(bytes, needsPassword, decryptedSuccessfully) {
     // 3. 建立 Blob URL 並顯示預覽
-    const blob = new Blob([previewBytes], { type: 'application/pdf' });
+    const blob = new Blob([bytes], { type: 'application/pdf' });
 
     // 4. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
     previewContainer.classList.remove('hidden');

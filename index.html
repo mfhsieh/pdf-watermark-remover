@@ -42,6 +42,8 @@
             integrity="sha384-BTzPyRUxY7isgCNE5C8X79LqCUgMGkEvC8q+Jh3LvNIFCdDrLI1pD90gDySSEAOc"
             crossorigin="anonymous"
         ></script>
+        <!-- 還原原生 TextEncoder，避免影響 pdf-lib 與其他依賴 -->
+        <script src="js/polyfill-config-after.js"></script>
 
         <!-- ========================================== -->
         <!-- [Stylesheets] 自訂 UI 樣式表                 -->

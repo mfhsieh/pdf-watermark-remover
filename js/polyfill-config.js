@@ -7,5 +7,10 @@
 // [Polyfill Config] 早期環境相容性設定
 // ==========================================
 // 為了讓舊版 text-encoding 可以順利掛載全域的 TextEncoder / TextDecoder
+// 先將原生的保留起來，後續再還原
+window.NativeTextEncoder = window.TextEncoder;
+window.NativeTextDecoder = window.TextDecoder;
+
+// 暫時設為 undefined，騙過 polyfill 讓它強制掛載
 window.TextEncoder = undefined;
 window.TextDecoder = undefined;

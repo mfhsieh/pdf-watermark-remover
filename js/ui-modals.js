@@ -576,7 +576,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (typeof selectedFile !== 'undefined' && selectedFile) {
             addStatusMessage('🔄 設定已變更，正在重新掃描 PDF...', 'info');
-            showOriginalPreview(selectedFile);
+            prepareScanContext(selectedFile).then(({ previewBytes, needsPassword, decryptedSuccessfully }) => {
+                renderPreview(previewBytes, needsPassword, decryptedSuccessfully);
+            });
         }
     });
 });

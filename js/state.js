@@ -18,6 +18,8 @@ let processedUrl = null;
 let cachedPassword = null;
 /** @type {Uint8Array | null} 使用密碼解密後的 PDF 位元組快取（換檔時清除） */
 let cachedDecryptedBytes = null;
+/** @type {PDFDocument | null} 解析完成的原始 PDFDocument 實例快取（提升預覽效能） */
+let cachedPdfDocument = null;
 /** @type {string[]} 預覽 Blob URL 快取（換檔時清除） */
 let previewUrlCache = [];
 /** @type {string | null} 跨檔案成功解密的開啟密碼暫存（執行期記憶體快取，不落地儲存） */
@@ -309,9 +311,11 @@ function resetAllState() {
     processedPreviewBox.classList.add('hidden');
     processedPreview.removeAttribute('src');
 
-    // 4. 清除密碼快取與解密後的位元組快取
+    originalUrl = null;
+    processedUrl = null;
     cachedPassword = null;
     cachedDecryptedBytes = null;
+    cachedPdfDocument = null;
 
     // 5. 隱藏開始處理按鈕
     processButton.classList.add('hidden');

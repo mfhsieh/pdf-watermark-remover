@@ -13,7 +13,9 @@
     "snap": "node test/snap.mjs",
     "lint": "eslint js/ test/ doc/",
     "format": "prettier --write \"js/**/*.js\" \"test/**/*.mjs\" \"doc/**/*.mjs\" \"css/**/*.css\" \"*.html\"",
-    "docs": "node doc/doc-gen.mjs"
+    "docs": "node doc/doc-gen.mjs",
+    "sync-version": "bash bin/sync-version.sh",
+    "version": "npm run sync-version && git add index.html"
   },
   "repository": {
     "type": "git",
