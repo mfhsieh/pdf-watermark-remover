@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetHeuristicBtn = document.getElementById('resetHeuristicBtn');
     if (resetHeuristicBtn) {
         resetHeuristicBtn.addEventListener('click', () => {
-            if (confirm('確定要將「高頻率出現智慧偵測門檻」回復為預設值嗎？')) {
+            if (confirm('確定要將「高頻特徵門檻」回復為預設值嗎？')) {
                 heuristicInput.value = DEFAULT_HEURISTIC_THRESHOLD;
                 if (heuristicSlider) heuristicSlider.value = DEFAULT_HEURISTIC_THRESHOLD;
             }
