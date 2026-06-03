@@ -358,7 +358,7 @@ function formatMatrixToCm(matrix) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
-    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
     const srcPage = srcDoc.getPage(pageIndex);
     // 安全清除可能重複的前綴斜線，防止產出 //Fm0 破壞 PDF 資源定址
     const cleanKeyName = keyName.replace(/^\//, '');
@@ -427,7 +427,7 @@ async function generateFormXObjectPreviewUrl(keyName, pageIndex) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
-    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
     const cleanKeyName = keyName.replace(/^\//, '');
 
     let targetRefStr = null;
@@ -476,7 +476,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
  * @returns {Promise<string>} Blob URL
  */
 async function generateOCGPreviewUrl(ocgRefStr) {
-    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
     // srcDoc.catalog 直接回傳 PDFDict，不需再 context.lookup()
     const catalog = srcDoc.catalog;
     const ocProperties = srcDoc.context.lookup(catalog.get(PDFName.of('OCProperties')));
@@ -537,7 +537,7 @@ async function generateOCGPreviewUrl(ocgRefStr) {
  */
 async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) {
     try {
-        const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
+        const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
         const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
         const pageNode = page.node;
 
@@ -545,12 +545,12 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
         let targetRect = null;
         if (annots instanceof PDFArray) {
             const newAnnots = previewDoc.context.obj([]);
-            for (let idx = 0; idx < annots.size(); idx++) {
-                const ref = annots.get(idx);
-                if (idx === annotIndex) {
-                    newAnnots.push(ref);
+            for (let i = 0; i < annots.size(); i++) {
+                const annotRef = annots.get(i);
+                if (i === annotIndex) {
+                    newAnnots.push(annotRef);
                     // 取得這個註解的 Rect 以便後續高亮標示
-                    const annotDict = previewDoc.context.lookup(ref);
+                    const annotDict = previewDoc.context.lookup(annotRef);
                     if (annotDict instanceof PDFDict) {
                         const rect = annotDict.lookup(PDFName.of('Rect'));
                         if (rect instanceof PDFArray && rect.size() === 4) {
@@ -596,17 +596,17 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
  * @returns {Promise<string>} Blob URL
  */
 async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
-    const srcDoc = cachedPdfDocument || await PDFDocument.load(cachedDecryptedBytes);
+    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
     const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
     const contentsKey = PDFName.of('Contents');
     const contents = previewDoc.context.lookup(page.node.get(contentsKey));
     if (contents instanceof PDFArray) {
         const newContents = previewDoc.context.obj([]);
-        for (let idx = 0; idx < contents.size(); idx++) {
-            const ref = contents.get(idx);
-            if (idx === streamIndex) {
-                newContents.push(ref);
+        for (let i = 0; i < contents.size(); i++) {
+            const streamRef = contents.get(i);
+            if (i === streamIndex) {
+                newContents.push(streamRef);
             }
         }
         page.node.set(contentsKey, newContents);
@@ -715,9 +715,12 @@ async function loadAndDecryptPdf(file) {
                     // 密碼錯誤，繼續迴圈
                 }
             }
-            
+
             if (!decryptedSuccessfully && attempts >= MAX_ATTEMPTS) {
-                addStatusMessage(`您已連續輸入錯誤密碼達 ${MAX_ATTEMPTS} 次，為保護效能與避免暴力破解，請重新選擇檔案再試。`, 'error');
+                addStatusMessage(
+                    `您已連續輸入錯誤密碼達 ${MAX_ATTEMPTS} 次，為保護效能與避免暴力破解，請重新選擇檔案再試。`,
+                    'error'
+                );
                 // 關閉輸入彈窗（若仍顯示）
                 const pwdModal = document.getElementById('passwordModal');
                 if (pwdModal) pwdModal.classList.remove('active');
@@ -745,8 +748,8 @@ function scanOCG(scanDoc) {
     const ocgs = scanDoc.context.lookup(ocgsRef);
     if (!(ocgs instanceof PDFArray)) return;
 
-    for (let idx = 0; idx < ocgs.size(); idx += 1) {
-        const ocgRef = ocgs.get(idx);
+    for (let i = 0; i < ocgs.size(); i += 1) {
+        const ocgRef = ocgs.get(i);
         const ocgRefStr = ocgRef.toString();
         const ocg = scanDoc.context.lookup(ocgRef);
         if (ocg instanceof PDFDict) {
@@ -769,8 +772,8 @@ function scanAnnotations(scanDoc, page, pageIndex) {
     const annots = page.node.lookup(PDFName.of('Annots'));
     if (!(annots instanceof PDFArray)) return;
 
-    for (let idx = 0; idx < annots.size(); idx++) {
-        const annotRef = annots.get(idx);
+    for (let i = 0; i < annots.size(); i++) {
+        const annotRef = annots.get(i);
         const annot = scanDoc.context.lookup(annotRef);
         if (annot instanceof PDFDict) {
             const subtype = scanDoc.context.lookup(annot.get(PDFName.of('Subtype')));
@@ -781,7 +784,7 @@ function scanAnnotations(scanDoc, page, pageIndex) {
                 registerSuspectEntry(
                     detectedAnnotations,
                     annotRefStr,
-                    { subtype: subtypeStr, page: pageIndex + 1, ref: annotRef, annotIndex: idx },
+                    { subtype: subtypeStr, page: pageIndex + 1, ref: annotRef, annotIndex: i },
                     isSuspectAnnotation,
                     annotsToDestroy
                 );
@@ -988,8 +991,8 @@ function scanDirectContent(scanDoc, page, pageIndex) {
 
     const streams = [];
     if (contents instanceof PDFArray) {
-        for (let idx = 0; idx < contents.size(); idx++) {
-            streams.push({ item: scanDoc.context.lookup(contents.get(idx)), index: idx });
+        for (let i = 0; i < contents.size(); i++) {
+            streams.push({ item: scanDoc.context.lookup(contents.get(i)), index: i });
         }
     } else {
         streams.push({ item: contents, index: null });

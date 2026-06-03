@@ -9,7 +9,7 @@
 
 /**
  * 驗證檔案是否為 PDF (透過檢查 Magic Number)
- * @param {File} file 
+ * @param {File} file
  * @returns {Promise<boolean>}
  */
 async function verifyPdfMagicNumber(file) {
@@ -149,7 +149,10 @@ processButton.addEventListener('click', async () => {
         }
 
         if (result.rebuildErrors && result.rebuildErrors > 0) {
-            addStatusMessage(`⚠️ 警告：有 ${result.rebuildErrors} 個內容串流重構失敗，部分清除結果可能不完整。`, 'error');
+            addStatusMessage(
+                `⚠️ 警告：有 ${result.rebuildErrors} 個內容串流重構失敗，部分清除結果可能不完整。`,
+                'error'
+            );
         }
 
         // 5. 將重構後的 PDF 文件儲存回二進位陣列 (Uint8Array)

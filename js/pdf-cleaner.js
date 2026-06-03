@@ -152,8 +152,8 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
 
     const contentsObj = pdfDoc.context.lookup(contentsRef);
     if (contentsObj instanceof PDFArray) {
-        for (let idx = 0; idx < contentsObj.size(); idx += 1) {
-            processStream(contentsObj.get(idx), idx, contentsObj);
+        for (let i = 0; i < contentsObj.size(); i += 1) {
+            processStream(contentsObj.get(i), i, contentsObj);
         }
     } else {
         processStream(contentsRef, null, null);
@@ -414,9 +414,9 @@ function removeDictEntries(pdfDoc, resources, dictKeyName, shouldDeleteFn) {
  */
 function removeArrayItems(pdfArray, shouldDeleteFn) {
     let count = 0;
-    for (let idx = pdfArray.size() - 1; idx >= 0; idx -= 1) {
-        if (shouldDeleteFn(pdfArray.get(idx))) {
-            pdfArray.remove(idx);
+    for (let i = pdfArray.size() - 1; i >= 0; i -= 1) {
+        if (shouldDeleteFn(pdfArray.get(i))) {
+            pdfArray.remove(i);
             count += 1;
         }
     }
