@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeModal) {
                 // 選取 Modal 內所有可獲取焦點的元素
                 const focusableElements = activeModal.querySelectorAll(
-                    'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+                    'button:not([disabled]), [href], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
                 );
                 if (focusableElements.length > 0) {
                     const firstElement = focusableElements[0];

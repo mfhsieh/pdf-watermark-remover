@@ -152,9 +152,10 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
 
     const qpdf = window._qpdfWasmModule;
 
-    // 定義虛擬檔案系統中的虛擬輸入與輸出路徑
-    const inputPath = '/decrypt_input.pdf';
-    const outputPath = '/decrypt_output.pdf';
+    // 產生獨立的虛擬檔案路徑，防止併發執行時產生 Race Condition 檔案覆蓋
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    const inputPath = `/decrypt_input_${uniqueId}.pdf`;
+    const outputPath = `/decrypt_output_${uniqueId}.pdf`;
 
     // 將 PDF 二進位位元組寫入 WebAssembly 虛擬檔案系統中
     qpdf.FS.writeFile(inputPath, pdfBytes);
@@ -176,21 +177,11 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
         // 從虛擬檔案系統中讀取解密成功後的文件二進位位元組
         const decryptedBytes = qpdf.FS.readFile(outputPath);
 
-        // 主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
-        try {
-            qpdf.FS.unlink(inputPath);
-        } catch (e) {
-            console.debug('FS.unlink inputPath 失敗（可忽略）', e);
-        }
-        try {
-            qpdf.FS.unlink(outputPath);
-        } catch (e) {
-            console.debug('FS.unlink outputPath 失敗（可忽略）', e);
-        }
-
         return new Uint8Array(decryptedBytes);
     } catch (err) {
-        // 發生任何異常時，亦必須在 catch 中進行檔案釋放與記憶體垃圾回收
+        throw err;
+    } finally {
+        // 無論成功或發生異常，皆主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
         try {
             qpdf.FS.unlink(inputPath);
         } catch (e) {
@@ -201,7 +192,6 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
         } catch (e) {
             console.debug('FS.unlink outputPath 失敗（可忽略）', e);
         }
-        throw err;
     }
 }
 
@@ -211,6 +201,12 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
  * @returns {Promise<string | null>} 回傳解決為密碼字串或 null (取消)
  */
 function promptForPassword(isRetry = false) {
+    // 防呆機制：若已經有密碼彈窗正在等待，先強制移除舊的監聽器
+    // 避免使用者快速拖曳多個檔案時，產生 Event Listener 疊加與 Promise 競爭狀態。
+    if (window._currentPasswordPromptCleanup) {
+        window._currentPasswordPromptCleanup();
+    }
+
     return new Promise((resolve) => {
         const modal = document.getElementById('passwordModal');
         const input = document.getElementById('pdfPasswordInput');
@@ -239,7 +235,9 @@ function promptForPassword(isRetry = false) {
             submitBtn.removeEventListener('click', onSubmit);
             cancelBtn.removeEventListener('click', onCancel);
             input.removeEventListener('keydown', onKeyDown);
+            window._currentPasswordPromptCleanup = null;
         }
+        window._currentPasswordPromptCleanup = cleanup;
 
         /**
          * 內部輔助函式：處理送出密碼邏輯

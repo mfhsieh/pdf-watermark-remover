@@ -75,6 +75,37 @@ function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGState
 }
 
 /**
+ * 共用串流重構邏輯：解碼二進位串流，抹除已刪除資源的參照指令，並重構為新的 PDFRawStream。
+ * 若內容有被修改，則回傳重構後的新串流，否則回傳 null。
+ * @param {PDFDocument} pdfDoc - PDF 文件物件
+ * @param {PDFRawStream} stream - 原始二進位串流
+ * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
+ * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
+ * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @returns {PDFRawStream|null} 重構後的新串流物件
+ */
+function rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+    try {
+        const bytes = getDecodedStreamContents(stream);
+        const text = decodeBinaryToText(bytes);
+        const result = removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+
+        if (result.modified) {
+            const arr = encodeTextToBinary(result.text);
+            // Trade-off: 複製原字典並移除壓縮濾鏡與長度，讓 pdf-lib 重新封裝時重新計算
+            // 捨棄原本的壓縮演算法以換取修改後的結構穩定性，避免 Acrobat 報錯損毀。
+            const newDict = stream.dict.clone(pdfDoc.context);
+            newDict.delete(PDFName.of('Filter'));
+            newDict.delete(PDFName.of('Length'));
+            return pdfDoc.context.stream(arr, newDict);
+        }
+    } catch (e) {
+        console.error('Failed to rebuild stream', e);
+    }
+    return null;
+}
+
+/**
  * 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
  * @param {PDFDocument} pdfDoc - PDF 文件物件
  * @param {PDFPage} page - 頁面物件
@@ -98,32 +129,14 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
     const processStream = (streamRef, idxOrKey, contentsArray) => {
         const stream = pdfDoc.context.lookup(streamRef);
         if (stream instanceof PDFRawStream) {
-            try {
-                const bytes = getDecodedStreamContents(stream);
-                let text = decodeBinaryToText(bytes);
-
-                const result = removeDeletedReferencesFromText(
-                    text,
-                    deletedXObjKeys,
-                    deletedExtGStateKeys,
-                    deletedOcgKeys
-                );
-
-                if (result.modified) {
-                    const arr = encodeTextToBinary(result.text);
-                    // Trade-off: 此處以空字典建立新串流，捨棄了原有的壓縮 (如 FlateDecode Filter)。
-                    // 雖然會使處理後的 PDF 體積微幅增加，但能確保修改後內容流的結構穩定性，避免 Acrobat 報錯。
-                    const emptyDict = pdfDoc.context.obj({});
-                    const newStream = pdfDoc.context.stream(arr, emptyDict);
-                    const newRef = pdfDoc.context.register(newStream);
-                    if (contentsArray) {
-                        contentsArray.set(idxOrKey, newRef);
-                    } else {
-                        page.node.set(contentsKey, newRef);
-                    }
+            const newStream = rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+            if (newStream) {
+                const newRef = pdfDoc.context.register(newStream);
+                if (contentsArray) {
+                    contentsArray.set(idxOrKey, newRef);
+                } else {
+                    page.node.set(contentsKey, newRef);
                 }
-            } catch (e) {
-                console.error('Failed to clean stream', e);
             }
         }
     };
@@ -327,25 +340,10 @@ function cleanResourcesRecursively(
 function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
     const stream = pdfDoc.context.lookup(xObjRef);
     if (!(stream instanceof PDFRawStream)) return;
-    try {
-        const bytes = getDecodedStreamContents(stream);
-        let text = decodeBinaryToText(bytes);
 
-        const result = removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
-
-        if (result.modified) {
-            const arr = encodeTextToBinary(result.text);
-            const newDict = stream.dict.clone(pdfDoc.context);
-            // Trade-off: 移除原本的 Filter 與 Length，讓 pdf-lib 重新儲存時能正確處理內容長度。
-            // 捨棄原本的壓縮演算法以換取修改後的結構穩定性，避免 Acrobat 報錯損毀。
-            newDict.delete(PDFLib.PDFName.of('Filter'));
-            newDict.delete(PDFLib.PDFName.of('Length'));
-
-            const newStream = pdfDoc.context.stream(arr, newDict);
-            pdfDoc.context.assign(xObjRef, newStream); // 替換原始參照
-        }
-    } catch (e) {
-        console.error('Failed to clean Form XObject stream', e);
+    const newStream = rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+    if (newStream) {
+        pdfDoc.context.assign(xObjRef, newStream); // 替換原始參照
     }
 }
 

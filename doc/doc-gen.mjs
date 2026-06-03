@@ -20,7 +20,7 @@ async function generateDocs() {
 
     // 使用 Glob Pattern 抓取 js 目錄下所有 JS 檔案，
     // 確保未來新增模組時，不需手動更新此處的檔案清單。
-    const files = path.resolve(rootDir, 'js/**/*.js');
+    const files = path.resolve(rootDir, 'js').replace(/\\/g, '/') + '/**/*.js';
 
     try {
         // 呼叫 jsdoc-to-markdown 解析程式碼並渲染為 Markdown

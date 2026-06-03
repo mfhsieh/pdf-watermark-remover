@@ -115,7 +115,22 @@
 
 ---
 
-## 5. 自動化 API 文件生成
+## 5. 專案技術亮點與架構優勢
+
+本專案在架構設計上，除了解決核心的 PDF 浮水印清除需求外，更在安全性、效能與使用者體驗上導入了多項現代前端最佳實踐：
+
+1. **極致的安全性與記憶體管理 (Security & Memory Safety)**
+   - **純前端零信任架構**：完全在瀏覽器記憶體內執行，不依賴任何後端伺服器，輔以嚴格的 CSP (Content Security Policy) 防護。
+   - **Blob URL 防洩漏機制**：在物件預覽 (`openObjectPreview`) 與檔案切換 (`resetAllState`) 時，主動執行 `URL.revokeObjectURL()`，徹底防堵大型 PDF 產生的記憶體洩漏 (Memory Leak)。
+2. **進階效能優化 (Performance)**
+   - **時間切片 (Time Slicing)**：背景掃描巨型 PDF 時 (`performBackgroundScan`)，透過非同步微任務讓出主執行緒，確保畫面不卡頓。
+   - **WeakMap 解碼快取**：實作 `streamDecodeCache`，避免在特徵比對與矩陣解析時對相同的二進位串流重複進行昂貴的 FlateDecode 解壓縮。
+3. **無障礙體驗設計 (a11y)**
+   - **焦點陷阱 (Focus Trap)**：全面實作 Modal 的鍵盤導覽 (Tab / Shift+Tab) 限制，並運用 `inert` 屬性動態隱藏背景 DOM，確保螢幕閱讀器與鍵盤使用者獲得完美體驗。
+
+---
+
+## 6. 自動化 API 文件生成
 
 本專案所有的 JavaScript 模組皆嚴格遵守 JSDoc 規範撰寫註解（包含 `@fileoverview`, `@param`, `@returns`, `@type` 等標籤）。
 開發者可透過專案內建的 npm script 指令，自動掃描所有 `.js` 檔案並產出或更新 `API_Reference.md`：

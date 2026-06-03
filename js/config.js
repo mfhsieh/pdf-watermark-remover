@@ -121,8 +121,10 @@ function loadGlobalKeywords() {
         const savedThreshold = localStorage.getItem('TRANSPARENCY_THRESHOLD');
         const savedHeuristicThreshold = localStorage.getItem('HEURISTIC_THRESHOLD');
 
-        WATERMARK_KEY_KEYWORDS = savedKeys ? JSON.parse(savedKeys) : [...DEFAULT_KEY_KEYWORDS];
-        WATERMARK_CONTENT_KEYWORDS = savedContents ? JSON.parse(savedContents) : [...DEFAULT_CONTENT_KEYWORDS];
+        const parsedKeys = savedKeys ? JSON.parse(savedKeys) : null;
+        const parsedContents = savedContents ? JSON.parse(savedContents) : null;
+        WATERMARK_KEY_KEYWORDS = Array.isArray(parsedKeys) ? parsedKeys : [...DEFAULT_KEY_KEYWORDS];
+        WATERMARK_CONTENT_KEYWORDS = Array.isArray(parsedContents) ? parsedContents : [...DEFAULT_CONTENT_KEYWORDS];
         TRANSPARENCY_THRESHOLD =
             savedThreshold !== null && !isNaN(parseFloat(savedThreshold))
                 ? parseFloat(savedThreshold)

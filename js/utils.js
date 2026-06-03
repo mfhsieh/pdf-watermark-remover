@@ -54,9 +54,12 @@ function isSuspectContentText(text) {
     const expandedText = decodeHexStringsInText(text);
     const lower = expandedText.toLowerCase();
     return FINAL_CONTENT_KEYWORDS.some((kw) => {
-        if (kw === kw.toLowerCase()) {
-            return lower.includes(kw);
+        // 若為純 ASCII（如英文關鍵字），轉小寫進行不區分大小寫的寬鬆比對
+        if (/^[\x00-\x7F]*$/.test(kw)) {
+            return lower.includes(kw.toLowerCase());
         }
+        // 非 ASCII（包含中文原字串、或二進位特徵位元組），進行嚴格精確比對
+        // 避免 toLowerCase() 破壞二進位特徵值
         return expandedText.includes(kw);
     });
 }
@@ -225,17 +228,15 @@ function decodeHexStringsInText(text) {
             paddedHex += '0';
         }
 
-        // 驗證是否為純十六進制字元
-        if (!/^[0-9a-fA-F]+$/.test(paddedHex)) continue;
-
         try {
-            let decodedStr = '';
+            const decodedChars = [];
             // 將每兩個十六進位字元視為一個位元組進行解碼，並組合成 Latin1 字串
             for (let i = 0; i < paddedHex.length; i += 2) {
                 const byteVal = parseInt(paddedHex.substring(i, i + 2), 16);
-                decodedStr += String.fromCharCode(byteVal);
+                if (isNaN(byteVal)) break; // 遇到非十六進位字元提早中斷，取代耗時的 Regex 測試
+                decodedChars.push(String.fromCharCode(byteVal));
             }
-            expandedText += ' ' + decodedStr;
+            expandedText += ' ' + decodedChars.join('');
         } catch (e) {
             console.debug('hex string 解碼失敗（可忽略）', e);
         }

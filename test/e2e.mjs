@@ -75,7 +75,8 @@ async function countFeatures(pdfBytes) {
 /**
  * 執行端到端 (E2E) 測試主程式 (利用 ESM Top-level Await 頂層執行)
  */
-// 確保下載目錄存在，若無則建立
+// 在測試開始前強制清空並重建下載目錄，避免前次測試殘留的 .crdownload 導致輪詢卡死
+if (fs.existsSync(removedDir)) fs.rmSync(removedDir, { recursive: true, force: true });
 if (!fs.existsSync(removedDir)) fs.mkdirSync(removedDir, { recursive: true });
 
 console.log('🚀 開始執行 PDF 浮水印清除工具 E2E 測試...');

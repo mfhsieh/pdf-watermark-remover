@@ -455,3 +455,15 @@
     color: var(--danger);
     font-weight: 600;
 }
+
+.annot-checkbox-label {
+    cursor: default;
+}
+
+.annot-checkbox-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    cursor: pointer;
+}

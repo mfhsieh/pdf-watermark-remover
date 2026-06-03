@@ -33,7 +33,6 @@ class WatermarkStrategyModal {
 
         this.getDetectedMap = config.getDetectedMap;
         this.getDestroyList = config.getDestroyList;
-        this.setDestroyList = config.setDestroyList;
         this.getSuspectState = config.getSuspectState;
         this.getSortCompare = config.getSortCompare;
         this.renderLabel = config.renderLabel;
@@ -75,14 +74,15 @@ class WatermarkStrategyModal {
         // 套用設定
         this.applyBtn.addEventListener('click', () => {
             const checkboxes = this.listContainer.querySelectorAll(`input[name="${this.checkboxName}"]`);
-            const destroyList = [];
+            // 直接取得共用的記憶體陣列參照，並就地清空 (維持 Reference 連結不變)
+            const destroyList = this.getDestroyList();
+            destroyList.length = 0;
             checkboxes.forEach((cb) => {
                 if (cb.checked) {
                     const val = cb.dataset.rawText !== undefined ? cb.dataset.rawText : cb.value;
                     destroyList.push(val);
                 }
             });
-            this.setDestroyList(destroyList);
 
             // 自動連動主策略 checkbox：有選項就勾選，否則取消
             const mainCheckbox = document.getElementById(this.mainCheckboxId);
@@ -156,14 +156,9 @@ class WatermarkStrategyModal {
                 // 建立外層容器取代原本的 label 承載 flex 排版，避免 button 放在 label 內違反 HTML5 規範
                 const wrapper = document.createElement('div');
                 wrapper.className = 'annot-checkbox-label';
-                wrapper.style.cursor = 'default';
 
                 const label = document.createElement('label');
-                label.style.display = 'flex';
-                label.style.alignItems = 'center';
-                label.style.gap = '8px';
-                label.style.flex = '1';
-                label.style.cursor = 'pointer';
+                label.className = 'annot-checkbox-inner';
 
                 const input = document.createElement('input');
                 input.type = 'checkbox';
@@ -271,9 +266,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeFormXObject',
     getDetectedMap: () => detectedFormXObjects,
     getDestroyList: () => formXObjectsToDestroy,
-    setDestroyList: (list) => {
-        formXObjectsToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectFormXObject(entry, entry.rawStr),
     getSortCompare: () => 0, // 無特定排序需求
     renderLabel: (labelEl, key, entry) => {
@@ -307,9 +299,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeAnnotations',
     getDetectedMap: () => detectedAnnotations,
     getDestroyList: () => annotsToDestroy,
-    setDestroyList: (list) => {
-        annotsToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectAnnotation(entry),
     getSortCompare: (a, b) => {
         const annotA = a[1];
@@ -348,9 +337,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeDirectContent',
     getDetectedMap: () => detectedDirectContents,
     getDestroyList: () => directContentsToDestroy,
-    setDestroyList: (list) => {
-        directContentsToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectDirectContent(entry),
     getSortCompare: (a, b) => a[1].page - b[1].page,
     renderLabel: (labelEl, key, entry) => {
@@ -375,9 +361,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeImageXObject',
     getDetectedMap: () => detectedImages,
     getDestroyList: () => imagesToDestroy,
-    setDestroyList: (list) => {
-        imagesToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectImageXObject(entry),
     getSortCompare: (a, b) => {
         const pageA = a[1].pages && a[1].pages.length > 0 ? a[1].pages[0] : 0;
@@ -417,9 +400,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeExtGState',
     getDetectedMap: () => detectedExtGStates,
     getDestroyList: () => extGStatesToDestroy,
-    setDestroyList: (list) => {
-        extGStatesToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectExtGState(entry),
     getSortCompare: (a, b) =>
         a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
@@ -445,9 +425,6 @@ new WatermarkStrategyModal({
     mainCheckboxId: 'removeOCG',
     getDetectedMap: () => detectedOCGs,
     getDestroyList: () => ocgsToDestroy,
-    setDestroyList: (list) => {
-        ocgsToDestroy = list;
-    },
     getSuspectState: (key, entry) => isSuspectOCG(entry),
     getSortCompare: (a, b) => a[1].name.localeCompare(b[1].name),
     renderLabel: (labelEl, key, entry) => {

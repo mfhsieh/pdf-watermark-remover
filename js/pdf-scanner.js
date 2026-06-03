@@ -112,21 +112,24 @@ function getCTMForXObject(
 
         const tokenRegex = /(q|Q|cm|Do|\/[A-Za-z0-9_.\-#]+|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)/g;
         let match;
-        let tokens = [];
-        while ((match = tokenRegex.exec(text)) !== null) tokens.push(match[0]);
+        let buffer = [];
 
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
+        while ((match = tokenRegex.exec(text)) !== null) {
+            const token = match[0];
+            buffer.push(token);
+            if (buffer.length > 7) buffer.shift(); // 僅保留最近的 7 個 tokens 以節省記憶體
+
+            const i = buffer.length - 1;
             if (token === 'q') stack.push([...ctm]);
             else if (token === 'Q') {
                 if (stack.length > 0) ctm = stack.pop();
             } else if (token === 'cm' && i >= 6) {
-                const m1 = parseFloat(tokens[i - 6]),
-                    m2 = parseFloat(tokens[i - 5]),
-                    m3 = parseFloat(tokens[i - 4]);
-                const m4 = parseFloat(tokens[i - 3]),
-                    m5 = parseFloat(tokens[i - 2]),
-                    m6 = parseFloat(tokens[i - 1]);
+                const m1 = parseFloat(buffer[i - 6]),
+                    m2 = parseFloat(buffer[i - 5]),
+                    m3 = parseFloat(buffer[i - 4]);
+                const m4 = parseFloat(buffer[i - 3]),
+                    m5 = parseFloat(buffer[i - 2]),
+                    m6 = parseFloat(buffer[i - 1]);
                 if (!isNaN(m1) && !isNaN(m6)) {
                     ctm = [
                         m1 * ctm[0] + m2 * ctm[2],
@@ -137,8 +140,8 @@ function getCTMForXObject(
                         m5 * ctm[1] + m6 * ctm[3] + ctm[5],
                     ];
                 }
-            } else if (token === 'Do' && i >= 1 && tokens[i - 1].startsWith('/')) {
-                const name = tokens[i - 1].substring(1);
+            } else if (token === 'Do' && i >= 1 && buffer[i - 1].startsWith('/')) {
+                const name = buffer[i - 1].substring(1);
                 let objRef = null;
                 if (resourcesDict instanceof PDFDict) {
                     const xobjNode = resourcesDict.get(PDFName.of('XObject'));

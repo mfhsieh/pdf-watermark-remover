@@ -77,12 +77,7 @@
                 <div class="options hidden" id="optionsContainer">
                     <div class="options-heading-row">
                         <h2>選擇清除策略</h2>
-                        <button
-                            id="openGlobalKeywordsModalBtn"
-                            class="icon-btn"
-                            title="全域關鍵字設定"
-                            aria-label="全域關鍵字設定"
-                        >
+                        <button id="openGlobalKeywordsModalBtn" class="icon-btn" title="全域設定" aria-label="全域設定">
                             📝
                         </button>
                     </div>
@@ -178,12 +173,12 @@
                     <!-- 原始 PDF 預覽窗格 -->
                     <div class="preview-box">
                         <h3>原始 PDF 預覽</h3>
-                        <iframe id="originalPreview" class="preview-iframe"></iframe>
+                        <iframe id="originalPreview" class="preview-iframe" title="原始 PDF 預覽"></iframe>
                     </div>
                     <!-- 處理後 PDF 預覽窗格（預設隱藏，待處理完畢後與下載按鈕一同顯現） -->
                     <div class="preview-box hidden" id="processedPreviewBox">
                         <h3>處理後 PDF 預覽</h3>
-                        <iframe id="processedPreview" class="preview-iframe"></iframe>
+                        <iframe id="processedPreview" class="preview-iframe" title="處理後 PDF 預覽"></iframe>
                     </div>
                 </div>
             </section>
@@ -196,10 +191,13 @@
                         <h2>📖 快速使用指南</h2>
                         <ol>
                             <li><strong>上傳檔案</strong>：拖曳 PDF 至上方虛線框，系統即在背景極速掃描。</li>
-                            <li><strong>關鍵字設定 (可選)</strong>：遇到特殊浮水印時，點擊「📝」手動新增自訂特徵。</li>
+                            <li>
+                                <strong>全域設定 (選項)</strong
+                                >：點擊「📝」可手動新增自訂關鍵字，或調整透明度與頻率等特徵門檻。
+                            </li>
                             <li>
                                 <strong>確認勾選</strong
-                                >：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙」進行細部調整。
+                                >：系統會自動預選疑似浮水印的物件。您可點擊「⚙️」展開各策略的子項清單進行細部調整。
                             </li>
                             <li>
                                 <strong>個體預覽</strong>：有疑慮時，點擊「👁️」預覽並查看紅框標示位置，確保不誤刪正文。
@@ -373,7 +371,7 @@
             </footer>
         </div>
 
-        <!-- 全域關鍵字設定 Modal -->
+        <!-- 全域設定 Modal -->
         <div
             id="globalKeywordsModal"
             class="modal-overlay"
@@ -780,7 +778,12 @@
                     </div>
 
                     <!-- PDF 預覽 Iframe（預設隱藏，預覽生成後顯現） -->
-                    <iframe id="objectPreviewIframe" class="preview-modal-iframe hidden" src=""></iframe>
+                    <iframe
+                        id="objectPreviewIframe"
+                        class="preview-modal-iframe hidden"
+                        src=""
+                        title="物件預覽"
+                    ></iframe>
                 </div>
 
                 <!-- 底部關閉按鈕 -->
