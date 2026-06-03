@@ -101,7 +101,7 @@
 將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
 供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。</p>
 </dd>
-<dt><a href="#annotSubtypeMeta">annotSubtypeMeta</a> : <code>Object.&lt;string, {label: string, defaultDestroy: boolean, color: string}&gt;</code></dt>
+<dt><a href="#annotSubtypeMeta">annotSubtypeMeta</a> : <code>Object.&lt;string, {label: string, color: string}&gt;</code></dt>
 <dd><p>註解 (Annotation) 子類型元資料設定</p>
 </dd>
 <dt><a href="#fileInput">fileInput</a> : <code>HTMLInputElement</code></dt>
@@ -187,6 +187,10 @@
 </dd>
 <dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>Object</code></dt>
 <dd><p>共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)</p>
+</dd>
+<dt><a href="#rebuildStreamWithoutReferences">rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>PDFRawStream</code> | <code>null</code></dt>
+<dd><p>共用串流重構邏輯：解碼二進位串流，抹除已刪除資源的參照指令，並重構為新的 PDFRawStream。
+若內容有被修改，則回傳重構後的新串流，否則回傳 null。</p>
 </dd>
 <dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>void</code></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
@@ -345,6 +349,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#appendHeuristicBadge">appendHeuristicBadge(parentEl)</a></dt>
 <dd><p>輔助函式：為 UI 標籤加上高頻偵測的視覺徽章
 共用於 Form XObject 與 Image XObject</p>
+</dd>
+<dt><a href="#escapeHTML">escapeHTML(str)</a> ⇒ <code>string</code></dt>
+<dd><p>輔助函式：安全地跳脫 HTML 特殊字元，防止 XSS</p>
 </dd>
 <dt><a href="#openObjectPreview">openObjectPreview(strategyType, key, entry)</a> ⇒ <code>Promise.&lt;void&gt;</code></dt>
 <dd><p>開啟物件即時預覽彈窗</p>
@@ -609,7 +616,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 **Kind**: global constant  
 <a name="annotSubtypeMeta"></a>
 
-## annotSubtypeMeta : <code>Object.&lt;string, {label: string, defaultDestroy: boolean, color: string}&gt;</code>
+## annotSubtypeMeta : <code>Object.&lt;string, {label: string, color: string}&gt;</code>
 註解 (Annotation) 子類型元資料設定
 
 **Kind**: global constant  
@@ -805,6 +812,23 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Description |
 | --- | --- | --- |
 | text | <code>string</code> | 原始內容流文字 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+
+<a name="rebuildStreamWithoutReferences"></a>
+
+## rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>PDFRawStream</code> \| <code>null</code>
+共用串流重構邏輯：解碼二進位串流，抹除已刪除資源的參照指令，並重構為新的 PDFRawStream。
+若內容有被修改，則回傳重構後的新串流，否則回傳 null。
+
+**Kind**: global function  
+**Returns**: <code>PDFRawStream</code> \| <code>null</code> - 重構後的新串流物件  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
+| stream | <code>PDFRawStream</code> | 原始二進位串流 |
 | deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
 | deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
 | deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
@@ -1304,6 +1328,17 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | page | <code>PDFPage</code> | 目標頁面物件 |
 | pageIndex | <code>number</code> | 頁面索引 (0-based) |
 
+<a name="scanResources..traverseResources"></a>
+
+### scanResources~traverseResources(resourcesNode) ⇒ <code>void</code>
+內部遞迴函式：深入遍歷 Resources 節點，找出並註冊可疑的 XObject 與 ExtGState 物件
+
+**Kind**: inner method of [<code>scanResources</code>](#scanResources)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| resourcesNode | <code>PDFObject</code> \| <code>PDFDict</code> | 欲掃描的 Resources 節點 |
+
 <a name="scanDirectContent"></a>
 
 ## scanDirectContent(scanDoc, page, pageIndex)
@@ -1425,6 +1460,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Description |
 | --- | --- | --- |
 | parentEl | <code>HTMLElement</code> | 要附加徽章的父元素 |
+
+<a name="escapeHTML"></a>
+
+## escapeHTML(str) ⇒ <code>string</code>
+輔助函式：安全地跳脫 HTML 特殊字元，防止 XSS
+
+**Kind**: global function  
+**Returns**: <code>string</code> - 跳脫後的字串  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| str | <code>string</code> | 原始字串 |
 
 <a name="openObjectPreview"></a>
 

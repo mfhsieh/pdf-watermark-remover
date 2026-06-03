@@ -83,12 +83,6 @@ function buildFinalContentKeywords() {
         // 1. 保留原始英文或已解碼的 Unicode 中文 (用於註解中繼資料等已處理過的文字)
         rawKeywords.push(trimmed);
 
-        // 英文或包含大小寫的字串，額外推入小寫版以進行不區分大小寫的比對
-        const lower = trimmed.toLowerCase();
-        if (lower !== trimmed) {
-            rawKeywords.push(lower);
-        }
-
         // 2. 非 ASCII 字元與中文字的多重編碼轉譯
         if (/[^\x00-\x7F]/.test(trimmed)) {
             // (A) 只要包含非 ASCII 字元（如特殊符號 ★、©、日韓文），皆動態生成標準 UTF-16BE Latin1 特徵碼以相容 Unicode

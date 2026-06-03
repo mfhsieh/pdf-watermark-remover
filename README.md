@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.3.4-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.3.5-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.3.4.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.3.5.zip)
 
 ## 📌 專案簡介
 
@@ -99,6 +99,7 @@
 | 指令 | 說明 |
 |------|------|
 | `npm run e2e`  | 執行端到端 (E2E) 測試，以 `test/e2e.mjs` 自動進行無頭瀏覽器操作與結果驗證。 |
+| `npm run e2e:preview` | 執行預覽抓取測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔。 |
 | `npm run snap` | 執行視覺與狀態的 Snapshot 快照測試 (`test/snap.mjs`)。 |
 | `npm run docs` | 自動將 `js/` 目錄下的所有原始碼註釋，產生並更新 `doc/API_Reference.md` 文件。 |
 | `npm run lint` | 執行 ESLint 語法檢查，確保程式碼品質。 |
@@ -148,6 +149,9 @@
 
 ## 📦 Release Notes
 
+- **v2.3.5 (2026-06-03)**
+  - 🧪 **自動化測試**：新增 `e2e-preview.mjs` 自動化腳本，支援自動抓取並匯出各策略之預覽 PDF 檔。
+  - ✨ **常規更新**：進行 js 重構、修正 bug 及微調介面。
 - **v2.3.4 (2026-06-02)**
   - ✨ **常規更新**：進行 js 重構、修正 bug 及微調介面。
 - **v2.3.2 (2026-06-01)**

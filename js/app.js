@@ -17,7 +17,6 @@ function handleFileSelected(file) {
     updateFileAreaDisplay();
     clearStatusMessages();
     addStatusMessage(`已選擇檔案：${selectedFile.name}，大小 ${formatBytes(selectedFile.size)}`, 'info');
-    downloadArea.classList.add('hidden');
     // 捕捉非同步背景處理時可能發生的未預期錯誤，避免 Unhandled Promise Rejection
     showOriginalPreview(selectedFile).catch((err) => {
         console.error('預覽載入失敗:', err);
@@ -106,7 +105,6 @@ processButton.addEventListener('click', async () => {
         }
 
         const pdfDoc = await PDFDocument.load(cachedDecryptedBytes, { updateMetadata: false });
-        pdfDoc.getPageCount();
 
         // 2. 取得目前畫面中 checkbox 勾選的清理選項
         addStatusMessage('載入浮水印清除選項設定...', 'info');

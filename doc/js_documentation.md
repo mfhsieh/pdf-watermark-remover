@@ -26,7 +26,7 @@
 | `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件（支援巢狀遞迴掃描）以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
 | `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」與正則防禦技術來移除浮水印，防止 PDF 損毀。 |
 | `app.js` | 流程控制與事件綁定 | 程式的進入點。負責綁定拖曳、點擊等事件，統一檔案處理流程 (`handleFileSelected`)，並串接上述模組完成完整流程。 |
-| `polyfill-config.js` | 相容性補丁 | 定義 `window.TEXT_ENCODING_NO_POLYFILL` 等環境變數，確保 `text-encoding` 函式庫在現代瀏覽器中正常運作。 |
+| `polyfill-config.js` | 相容性補丁 | 將 `window.TextEncoder` 與 `TextDecoder` 強制設為 `undefined`，確保舊版 `text-encoding` 函式庫在現代瀏覽器中正常掛載。 |
 
 ---
 
@@ -122,11 +122,16 @@
 1. **極致的安全性與記憶體管理 (Security & Memory Safety)**
    - **純前端零信任架構**：完全在瀏覽器記憶體內執行，不依賴任何後端伺服器，輔以嚴格的 CSP (Content Security Policy) 防護。
    - **Blob URL 防洩漏機制**：在物件預覽 (`openObjectPreview`) 與檔案切換 (`resetAllState`) 時，主動執行 `URL.revokeObjectURL()`，徹底防堵大型 PDF 產生的記憶體洩漏 (Memory Leak)。
+   - **閉包與作用域優化**：將共用輔助函式（如 `escapeHTML`）提升至模組頂層，避免在頻繁觸發的事件中重複宣告閉包，降低垃圾回收 (GC) 負擔。
 2. **進階效能優化 (Performance)**
    - **時間切片 (Time Slicing)**：背景掃描巨型 PDF 時 (`performBackgroundScan`)，透過非同步微任務讓出主執行緒，確保畫面不卡頓。
    - **WeakMap 解碼快取**：實作 `streamDecodeCache`，避免在特徵比對與矩陣解析時對相同的二進位串流重複進行昂貴的 FlateDecode 解壓縮。
+   - **零冗餘代碼 (Zero Dead Code)**：極限縮減迴圈內不必要的陣列宣告與重複的 DOM 樣式變更，並去除無效的物件屬性，達到最佳化執行效率。
 3. **無障礙體驗設計 (a11y)**
    - **焦點陷阱 (Focus Trap)**：全面實作 Modal 的鍵盤導覽 (Tab / Shift+Tab) 限制，並運用 `inert` 屬性動態隱藏背景 DOM，確保螢幕閱讀器與鍵盤使用者獲得完美體驗。
+4. **極致的狀態同步與文件覆蓋率 (State & Documentation)**
+   - **單一資料來源 (SSOT) 陣列突變**：在 UI 勾選更新狀態時，利用原地突變 (`destroyList.length = 0`) 取代重新賦值，徹底解決 Modal 視窗與底層 `STRATEGY_REGISTRY` 之間的記憶體參照脫鉤問題。
+   - **100% JSDoc 覆蓋率**：所有模組、類別、函式與內部輔助閉包皆具備嚴格的 `@param`、`@returns` 等 JSDoc 標籤，保證自動化 API 文件生成的零死角。
 
 ---
 

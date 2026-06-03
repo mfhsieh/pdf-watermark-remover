@@ -17,9 +17,7 @@ if (!fs.existsSync(previewsDir)) fs.mkdirSync(previewsDir, { recursive: true });
 
 // 取得使用者指定的測試檔案 (預設為 sample1.pdf)
 const targetFileName = process.argv[2] || 'sample1.pdf';
-const targetFilePath = path.isAbsolute(targetFileName)
-    ? targetFileName
-    : path.resolve(testFilesDir, targetFileName);
+const targetFilePath = path.isAbsolute(targetFileName) ? targetFileName : path.resolve(testFilesDir, targetFileName);
 
 if (!fs.existsSync(targetFilePath)) {
     console.error(`❌ 找不到指定的測試檔案: ${targetFilePath}`);
@@ -28,12 +26,48 @@ if (!fs.existsSync(targetFilePath)) {
 
 // 定義 6 大策略的 Modal 選擇器資訊
 const strategies = [
-    { rowId: '#optionRowFormXObject', openBtn: '#openFormXObjectKeywordsModalBtn', closeBtn: '#closeFormXObjectKeywordsModalBtn', modalId: '#formXObjectKeywordsModal', name: 'FormXObject' },
-    { rowId: '#optionRowAnnotations', openBtn: '#openAnnotsSettingsModalBtn', closeBtn: '#closeAnnotsSettingsModalBtn', modalId: '#annotsSettingsModal', name: 'Annotation' },
-    { rowId: '#optionRowDirectContent', openBtn: '#openTriggerWordsModalBtn', closeBtn: '#closeTriggerWordsModalBtn', modalId: '#triggerWordsModal', name: 'DirectContent' },
-    { rowId: '#optionRowImageXObject', openBtn: '#openImageKeywordsModalBtn', closeBtn: '#closeImageKeywordsModalBtn', modalId: '#imageKeywordsModal', name: 'ImageXObject' },
-    { rowId: '#optionRowExtGState', openBtn: '#openExtGStateKeywordsModalBtn', closeBtn: '#closeExtGStateKeywordsModalBtn', modalId: '#extGStateKeywordsModal', name: 'ExtGState' },
-    { rowId: '#optionRowOCG', openBtn: '#openOCGKeywordsModalBtn', closeBtn: '#closeOCGKeywordsModalBtn', modalId: '#ocgKeywordsModal', name: 'OCG' },
+    {
+        rowId: '#optionRowFormXObject',
+        openBtn: '#openFormXObjectKeywordsModalBtn',
+        closeBtn: '#closeFormXObjectKeywordsModalBtn',
+        modalId: '#formXObjectKeywordsModal',
+        name: 'FormXObject',
+    },
+    {
+        rowId: '#optionRowAnnotations',
+        openBtn: '#openAnnotsSettingsModalBtn',
+        closeBtn: '#closeAnnotsSettingsModalBtn',
+        modalId: '#annotsSettingsModal',
+        name: 'Annotation',
+    },
+    {
+        rowId: '#optionRowDirectContent',
+        openBtn: '#openTriggerWordsModalBtn',
+        closeBtn: '#closeTriggerWordsModalBtn',
+        modalId: '#triggerWordsModal',
+        name: 'DirectContent',
+    },
+    {
+        rowId: '#optionRowImageXObject',
+        openBtn: '#openImageKeywordsModalBtn',
+        closeBtn: '#closeImageKeywordsModalBtn',
+        modalId: '#imageKeywordsModal',
+        name: 'ImageXObject',
+    },
+    {
+        rowId: '#optionRowExtGState',
+        openBtn: '#openExtGStateKeywordsModalBtn',
+        closeBtn: '#closeExtGStateKeywordsModalBtn',
+        modalId: '#extGStateKeywordsModal',
+        name: 'ExtGState',
+    },
+    {
+        rowId: '#optionRowOCG',
+        openBtn: '#openOCGKeywordsModalBtn',
+        closeBtn: '#closeOCGKeywordsModalBtn',
+        modalId: '#ocgKeywordsModal',
+        name: 'OCG',
+    },
 ];
 
 console.log(`🚀 開始執行預覽抓取測試：${path.basename(targetFilePath)}`);
@@ -74,7 +108,7 @@ try {
     // 逐一檢查六個策略
     for (const st of strategies) {
         // 1. 判斷該策略是否有偵測到物件 (如果沒偵測到，row 會被加上 hidden)
-        const isRowHidden = await page.$eval(st.rowId, el => el.classList.contains('hidden'));
+        const isRowHidden = await page.$eval(st.rowId, (el) => el.classList.contains('hidden'));
         if (isRowHidden) {
             console.log(`[${st.name}] 📭 無偵測到項目，跳過。`);
             continue;
@@ -83,7 +117,7 @@ try {
         // 2. 點擊開啟 Modal
         await page.click(st.openBtn);
         await page.waitForSelector(`${st.modalId}.active`, { visible: true });
-        await new Promise(r => setTimeout(r, 400)); // 等待過渡動畫
+        await new Promise((r) => setTimeout(r, 400)); // 等待過渡動畫
 
         // 3. 尋找該 Modal 內所有的預覽按鈕
         const previewBtns = await page.$$(`${st.modalId} .preview-item-btn`);
@@ -102,7 +136,7 @@ try {
             await page.waitForSelector('#objectPreviewIframe:not(.hidden)', { visible: true, timeout: 20000 });
 
             // 取出 iframe 的 blob URL
-            const iframeSrc = await page.$eval('#objectPreviewIframe', el => el.src);
+            const iframeSrc = await page.$eval('#objectPreviewIframe', (el) => el.src);
 
             if (iframeSrc && iframeSrc.startsWith('blob:')) {
                 // ★ 核心技巧：在瀏覽器內使用 fetch 取出 Blob，轉為 Base64 後回傳給 Node.js
@@ -132,17 +166,16 @@ try {
             // 關閉預覽 Modal
             await page.click('#closeObjectPreviewModalBtn');
             await page.waitForSelector('#objectPreviewModal.active', { hidden: true });
-            await new Promise(r => setTimeout(r, 300)); // 等待釋放資源與動畫
+            await new Promise((r) => setTimeout(r, 300)); // 等待釋放資源與動畫
         }
 
         // 4. 關閉該策略的 Modal
         await page.click(st.closeBtn);
         await page.waitForSelector(`${st.modalId}.active`, { hidden: true });
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 300));
     }
 
     console.log('\n🎉 所有預覽皆已成功截取並儲存至：', previewsDir);
-
 } catch (e) {
     console.error('\n❌ E2E 預覽截取腳本發生錯誤:', e);
 } finally {

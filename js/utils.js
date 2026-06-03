@@ -35,7 +35,7 @@ function escapeRegex(str) {
 function isSuspectKeyName(text) {
     if (!text) return false;
     const lower = text.toLowerCase();
-    return WATERMARK_KEY_KEYWORDS.some((kw) => lower.includes(kw));
+    return WATERMARK_KEY_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()));
 }
 
 /**

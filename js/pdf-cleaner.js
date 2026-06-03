@@ -129,7 +129,13 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
     const processStream = (streamRef, idxOrKey, contentsArray) => {
         const stream = pdfDoc.context.lookup(streamRef);
         if (stream instanceof PDFRawStream) {
-            const newStream = rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+            const newStream = rebuildStreamWithoutReferences(
+                pdfDoc,
+                stream,
+                deletedXObjKeys,
+                deletedExtGStateKeys,
+                deletedOcgKeys
+            );
             if (newStream) {
                 const newRef = pdfDoc.context.register(newStream);
                 if (contentsArray) {
@@ -177,7 +183,6 @@ function processPdf(pdfDoc, options) {
         let allDeletedXObjectKeys = [];
 
         // 1. 複製 Contents 陣列以進行單頁隔離，確保當前頁的修改（如刪除 Do 指令）不會意外影響其他共用此內容流的頁面
-        // 複製 Contents 陣列以進行單頁隔離，避免多頁共享時的修改互相干擾
         const contentsKey = PDFName.of('Contents');
         const contents = page.node.lookup(contentsKey);
         if (contents instanceof PDFArray) {
@@ -191,7 +196,6 @@ function processPdf(pdfDoc, options) {
         }
 
         // 2. 複製 Resources 字典以進行單頁隔離，確保將物件從此頁移除時，不影響其他頁面所需的共用資源
-        // 複製 Resources 字典以進行單頁隔離，避免共用資源導致修改影響其他頁面
         if (resources.clone) {
             resources = resources.clone(pdfDoc.context);
             page.node.set(PDFName.of('Resources'), resources);
@@ -341,7 +345,13 @@ function cleanFormXObjectStream(pdfDoc, xObjRef, deletedXObjKeys, deletedExtGSta
     const stream = pdfDoc.context.lookup(xObjRef);
     if (!(stream instanceof PDFRawStream)) return;
 
-    const newStream = rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+    const newStream = rebuildStreamWithoutReferences(
+        pdfDoc,
+        stream,
+        deletedXObjKeys,
+        deletedExtGStateKeys,
+        deletedOcgKeys
+    );
     if (newStream) {
         pdfDoc.context.assign(xObjRef, newStream); // 替換原始參照
     }

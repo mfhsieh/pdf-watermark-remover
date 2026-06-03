@@ -599,7 +599,7 @@ async function generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex) 
  */
 async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex) {
     const srcDoc = await PDFDocument.load(cachedDecryptedBytes);
-    const { previewDoc, page, pageResources } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
+    const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
 
     const contentsKey = PDFName.of('Contents');
     const contents = previewDoc.context.lookup(page.node.get(contentsKey));
@@ -728,7 +728,6 @@ async function loadAndDecryptPdf(file) {
  */
 function scanOCG(scanDoc) {
     const catalogDict = scanDoc.catalog;
-    if (!catalogDict.has(PDFName.of('OCProperties'))) return;
 
     const ocPropertiesRef = catalogDict.get(PDFName.of('OCProperties'));
     const ocProperties = scanDoc.context.lookup(ocPropertiesRef);
@@ -833,6 +832,11 @@ function registerSuspectEntry(detectedMap, key, entry, isSuspectFn, destroyList)
 function scanResources(scanDoc, page, pageIndex) {
     const scannedRefs = new Set();
 
+    /**
+     * 內部遞迴函式：深入遍歷 Resources 節點，找出並註冊可疑的 XObject 與 ExtGState 物件
+     * @param {PDFObject|PDFDict} resourcesNode - 欲掃描的 Resources 節點
+     * @returns {void}
+     */
     function traverseResources(resourcesNode) {
         if (!resourcesNode) return;
         const resources = scanDoc.context.lookup(resourcesNode);
@@ -972,7 +976,8 @@ function scanResources(scanDoc, page, pageIndex) {
  * @param {number} pageIndex - 頁面索引 (0-based)
  */
 function scanDirectContent(scanDoc, page, pageIndex) {
-    const contents = scanDoc.context.lookup(page.node.lookup(PDFName.of('Contents')));
+    // page.node.lookup 已會自動解析 PDFRef，無需再外包一層 scanDoc.context.lookup (減少冗餘查詢)
+    const contents = page.node.lookup(PDFName.of('Contents'));
     if (!contents) return;
 
     const streams = [];
@@ -1103,8 +1108,6 @@ async function showOriginalPreview(file) {
     // 更新 UI 選項顯示狀態
     if (!needsPassword || decryptedSuccessfully) {
         updateScanResultUI(optionsContainer);
-    } else {
-        if (optionsContainer) optionsContainer.classList.add('hidden');
     }
 
     // 3. 建立 Blob URL 並顯示預覽
@@ -1112,7 +1115,6 @@ async function showOriginalPreview(file) {
 
     // 4. 顯示預覽容器，並隱藏上一次的「處理後」預覽窗格
     previewContainer.classList.remove('hidden');
-    processedPreviewBox.classList.add('hidden');
 
     originalUrl = URL.createObjectURL(blob);
     originalPreview.src = originalUrl;

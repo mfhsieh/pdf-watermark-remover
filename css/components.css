@@ -202,9 +202,8 @@
 }
 
 /* 物件預覽按鈕（👁️）共用基底樣式
-           .preview-item-btn 用於清單項目旁；.small-preview-btn 僅縮小尺寸供 OCG 等場景使用 */
-.preview-item-btn,
-.small-preview-btn {
+           .preview-item-btn 用於清單項目旁 */
+.preview-item-btn {
     background: rgba(var(--primary-rgb), 0.04);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -220,20 +219,10 @@
     white-space: nowrap;
     flex-shrink: 0;
     vertical-align: middle;
-}
-
-/* 預覽按鈕 - 大尺寸（清單項目旁，推至最右側） */
-.preview-item-btn {
     font-size: 0.85rem;
 }
 
-/* 預覽按鈕 - 小尺寸（目前未使用，保留供未來擴展） */
-.small-preview-btn {
-    font-size: 0.8rem;
-}
-
-.preview-item-btn:hover,
-.small-preview-btn:hover {
+.preview-item-btn:hover {
     background: var(--primary);
     border-color: var(--primary);
     color: #ffffff;
@@ -241,8 +230,7 @@
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
-.preview-item-btn:active,
-.small-preview-btn:active {
+.preview-item-btn:active {
     transform: scale(0.95);
 }
 

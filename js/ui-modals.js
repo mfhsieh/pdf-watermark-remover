@@ -65,7 +65,7 @@ class WatermarkStrategyModal {
                 const key = cb.dataset.rawText !== undefined ? cb.dataset.rawText : cb.value;
                 const entry = map.get(key);
                 if (entry) {
-                    cb.checked = this.getSuspectState(key, entry, cb);
+                    cb.checked = this.getSuspectState(key, entry);
                 }
             });
             addStatusMessage(this.resetMsg, 'info');
@@ -150,6 +150,10 @@ class WatermarkStrategyModal {
             controlsRow.appendChild(deselectAllBtn);
             this.listContainer.before(controlsRow);
 
+            // 針對支援即時預覽的清理類型，預先判定以減少迴圈內的重複陣列宣告
+            const previewTypes = ['formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem'];
+            const supportPreview = previewTypes.includes(this.checkboxName);
+
             const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
             let index = 0;
             sortedEntries.forEach(([key, entry]) => {
@@ -180,15 +184,8 @@ class WatermarkStrategyModal {
                 this.renderLabel(label, key, entry, isChecked);
                 wrapper.appendChild(label);
 
-                // 針對支援即時預覽的清理類型，動態追加「👁️ 預覽」微按鈕
-                const previewTypes = [
-                    'formXObjectItem',
-                    'imageXObjectItem',
-                    'directContentItem',
-                    'annotItem',
-                    'ocgItem',
-                ];
-                if (previewTypes.includes(this.checkboxName)) {
+                // 若支援預覽，則動態追加「👁️ 預覽」微按鈕
+                if (supportPreview) {
                     const previewBtn = document.createElement('button');
                     previewBtn.type = 'button';
                     previewBtn.className = 'preview-item-btn';
@@ -230,26 +227,26 @@ function appendHeuristicBadge(parentEl) {
 // ==========================================
 /**
  * 註解 (Annotation) 子類型元資料設定
- * @type {Object.<string, {label: string, defaultDestroy: boolean, color: string}>}
+ * @type {Object.<string, {label: string, color: string}>}
  */
 const annotSubtypeMeta = {
-    Watermark: { label: '浮水印 (Watermark)', defaultDestroy: true, color: 'inherit' },
-    Stamp: { label: '蓋印與圖章 (Stamp)', defaultDestroy: true, color: 'inherit' },
-    Text: { label: '文字附註 (Text)', defaultDestroy: false, color: 'inherit' },
-    Popup: { label: '彈出說明視窗 (Popup)', defaultDestroy: false, color: 'inherit' },
-    FreeText: { label: '打字機文字 (FreeText)', defaultDestroy: false, color: 'inherit' },
-    Highlight: { label: '螢光筆標註 (Highlight)', defaultDestroy: false, color: 'inherit' },
-    Underline: { label: '底線標註 (Underline)', defaultDestroy: false, color: 'inherit' },
-    StrikeOut: { label: '刪除線標註 (StrikeOut)', defaultDestroy: false, color: 'inherit' },
-    Squiggly: { label: '波浪線標註 (Squiggly)', defaultDestroy: false, color: 'inherit' },
-    Ink: { label: '手繪塗鴉 (Ink)', defaultDestroy: false, color: 'inherit' },
-    Line: { label: '線條與箭頭標註 (Line)', defaultDestroy: false, color: 'inherit' },
-    Square: { label: '矩形框標註 (Square)', defaultDestroy: false, color: 'inherit' },
-    Circle: { label: '圓形框標註 (Circle)', defaultDestroy: false, color: 'inherit' },
-    Polygon: { label: '多邊形標註 (Polygon)', defaultDestroy: false, color: 'inherit' },
-    PolyLine: { label: '折線標註 (PolyLine)', defaultDestroy: false, color: 'inherit' },
-    Link: { label: '網頁與目錄超連結 (Link)', defaultDestroy: false, color: 'var(--primary)' },
-    Widget: { label: '表單欄位與電子簽章 (Widget)', defaultDestroy: false, color: 'var(--primary)' },
+    Watermark: { label: '浮水印 (Watermark)', color: 'inherit' },
+    Stamp: { label: '蓋印與圖章 (Stamp)', color: 'inherit' },
+    Text: { label: '文字附註 (Text)', color: 'inherit' },
+    Popup: { label: '彈出說明視窗 (Popup)', color: 'inherit' },
+    FreeText: { label: '打字機文字 (FreeText)', color: 'inherit' },
+    Highlight: { label: '螢光筆標註 (Highlight)', color: 'inherit' },
+    Underline: { label: '底線標註 (Underline)', color: 'inherit' },
+    StrikeOut: { label: '刪除線標註 (StrikeOut)', color: 'inherit' },
+    Squiggly: { label: '波浪線標註 (Squiggly)', color: 'inherit' },
+    Ink: { label: '手繪塗鴉 (Ink)', color: 'inherit' },
+    Line: { label: '線條與箭頭標註 (Line)', color: 'inherit' },
+    Square: { label: '矩形框標註 (Square)', color: 'inherit' },
+    Circle: { label: '圓形框標註 (Circle)', color: 'inherit' },
+    Polygon: { label: '多邊形標註 (Polygon)', color: 'inherit' },
+    PolyLine: { label: '折線標註 (PolyLine)', color: 'inherit' },
+    Link: { label: '網頁與目錄超連結 (Link)', color: 'var(--primary)' },
+    Widget: { label: '表單欄位與電子簽章 (Widget)', color: 'var(--primary)' },
 };
 
 // 1. 表單外部物件 (Form XObject) Modal
@@ -476,7 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 自動適應文字方塊高度
+    /**
+     * 輔助函式：自動根據內容多寡調整 Textarea 的高度
+     * @param {HTMLTextAreaElement} el - 目標文字方塊元素
+     * @returns {void}
+     */
     function adjustTextareaHeight(el) {
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
@@ -572,6 +573,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 
 /**
+ * 輔助函式：安全地跳脫 HTML 特殊字元，防止 XSS
+ * @param {string} str - 原始字串
+ * @returns {string} 跳脫後的字串
+ */
+function escapeHTML(str) {
+    return str.replace(
+        /[&<>'"]/g,
+        (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[tag]
+    );
+}
+
+/**
  * 開啟物件即時預覽彈窗
  * @param {string} strategyType - 策略類型 (如 'formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem')
  * @param {string} key - 物件鍵值或識別碼
@@ -602,20 +615,6 @@ async function openObjectPreview(strategyType, key, entry) {
         }
 
         let previewUrl = '';
-
-        function escapeHTML(str) {
-            return str.replace(
-                /[&<>'"]/g,
-                (tag) =>
-                    ({
-                        '&': '&amp;',
-                        '<': '&lt;',
-                        '>': '&gt;',
-                        "'": '&#39;',
-                        '"': '&quot;',
-                    })[tag]
-            );
-        }
 
         const previewHandlers = {
             formXObjectItem: async () => {

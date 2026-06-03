@@ -75,8 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeModal && !activeModal.contains(document.activeElement)) {
                     // 優先 focus 第一個 input，否則 focus 第一個可互動按鈕
                     const focusable =
-                        activeModal.querySelector('input:not([type="hidden"]), textarea, select') ||
-                        activeModal.querySelector('button, [href], [tabindex]:not([tabindex="-1"])');
+                        activeModal.querySelector(
+                            'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])'
+                        ) ||
+                        activeModal.querySelector('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
                     if (focusable) focusable.focus();
                 }
             } else {
