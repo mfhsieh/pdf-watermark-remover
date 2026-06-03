@@ -28,11 +28,11 @@ function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, target
     // 複製以確保安全修改 (單頁隔離)，避免破壞跨頁共用資源
     const dictToModify = targetDict.clone(pdfDoc.context);
 
-    // 如果原先已經是個參照 (ref)，且尚未被替換過，我們直接覆蓋參照或建立新參照
-    if (targetRef && !resources.has(dictKey)) {
-        resources.set(dictKey, dictToModify);
-    } else {
+    // 如果原先已經是個參照 (ref)，我們註冊一個新的參照以維持結構；反之則直接寫入字典
+    if (targetRef) {
         resources.set(dictKey, pdfDoc.context.register(dictToModify));
+    } else {
+        resources.set(dictKey, dictToModify);
     }
     for (const key of keysToRemove) {
         dictToModify.delete(key);
