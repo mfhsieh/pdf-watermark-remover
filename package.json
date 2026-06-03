@@ -9,6 +9,7 @@
   },
   "scripts": {
     "e2e": "node test/e2e.mjs",
+    "e2e-preview": "node test/e2e-preview.mjs",
     "snap": "node test/snap.mjs",
     "lint": "eslint js/ test/ doc/",
     "format": "prettier --write \"js/**/*.js\" \"test/**/*.mjs\" \"doc/**/*.mjs\" \"css/**/*.css\" \"*.html\"",

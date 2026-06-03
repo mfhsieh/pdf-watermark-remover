@@ -99,7 +99,7 @@
 | 指令 | 說明 |
 |------|------|
 | `npm run e2e`  | 執行端到端 (E2E) 測試，以 `test/e2e.mjs` 自動進行無頭瀏覽器操作與結果驗證。 |
-| `npm run e2e:preview` | 執行預覽抓取測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔。 |
+| `npm run e2e-preview` | 執行預覽抓取測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔。 |
 | `npm run snap` | 執行視覺與狀態的 Snapshot 快照測試 (`test/snap.mjs`)。 |
 | `npm run docs` | 自動將 `js/` 目錄下的所有原始碼註釋，產生並更新 `doc/API_Reference.md` 文件。 |
 | `npm run lint` | 執行 ESLint 語法檢查，確保程式碼品質。 |
