@@ -366,6 +366,20 @@
     margin: 0;
 }
 
+/* 行內文字超連結 (Inline Text Link) */
+.text-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.text-link:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
 /* 無障礙視覺焦點 (Keyboard Focus) */
 .file-area:focus-visible,
 .button:focus-visible,

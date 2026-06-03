@@ -202,10 +202,20 @@
                                 >：系統會自動預選疑似浮水印的物件。您可點擊各策略的「⚙」進行細部調整。
                             </li>
                             <li>
-                                <strong>單一預覽</strong>：有疑慮時，點擊「👁️」預覽並查看紅框標示位置，確保不誤刪正文。
+                                <strong>個體預覽</strong>：有疑慮時，點擊「👁️」預覽並查看紅框標示位置，確保不誤刪正文。
                             </li>
                             <li><strong>清除下載</strong>：點擊清除後，雙欄對照確認效果無誤，即可下載乾淨檔案。</li>
                         </ol>
+                        <p>
+                            👉 詳細內容可參閱
+                            <a
+                                href="https://github.com/mfhsieh/pdf-watermark-remover/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-link"
+                                >本專案說明文件</a
+                            >。
+                        </p>
                     </div>
 
                     <!-- 欄位二：功能說明 -->
@@ -221,28 +231,28 @@
                                 PDF 底層結構進行清除：
                                 <ul>
                                     <li>
-                                        <strong>「表單外部物件」 (Form XObject)</strong
-                                        >：獨立封裝的複用元件，常見於整頁重複疊加的背景或滿版浮水印。
+                                        <strong>表單外部物件 (Form XObject)</strong
+                                        >：獨立封裝的複用元件（支援深層巢狀結構掃描），常見於整頁重複疊加的背景或滿版浮水印。
                                     </li>
                                     <li>
-                                        <strong>「註解」 (Annotation)</strong>：PDF
-                                        的互動註解、圖示或蓋章（如浮水印標記層）。
+                                        <strong>註解 (Annotation)</strong>：包含浮水印 (Watermark)、蓋印與圖章 (Stamp)
+                                        等附加於頁面上方的互動元件。
                                     </li>
                                     <li>
-                                        <strong>「頁面直接內容」 (Direct Content)</strong
-                                        >：直接寫在頁面內容串流中的文字型浮水印（如「機密」、「限閱」）。
+                                        <strong>頁面直接內容 (Direct Content)</strong>：直接寫入於頁面內容串流 (Content
+                                        Stream) 中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
                                     </li>
                                     <li>
-                                        <strong>「影像外部物件」 (Image XObject)</strong>：以點陣圖（如
+                                        <strong>影像外部物件 (Image XObject)</strong>：以點陣圖（如
                                         JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
                                     </li>
                                     <li>
-                                        <strong>「延伸圖形狀態」 (ExtGState)</strong>：控制透明度（Alpha
-                                        值）與混合模式的狀態物件，常見於半透明背景或斜角文字浮水印。
+                                        <strong>延伸圖形狀態 (ExtGState)</strong>：控制透明度（Alpha
+                                        值）與混合模式狀態的物件，常見於半透明背景或斜角文字浮水印。
                                     </li>
                                     <li>
-                                        <strong>「選擇性內容群組」 (OCG)</strong>：即 PDF
-                                        的「圖層」（Layers），可控制特定背景或浮水印圖層的可見性。
+                                        <strong>選擇性內容群組 (Optional Content Group, OCG)</strong
+                                        >：可控制特定背景或浮水印可見性的圖層。
                                     </li>
                                 </ul>
                             </li>
@@ -251,8 +261,8 @@
                                 >：清除前可點擊預覽圖示查看物件的實際外觀與位置（以紅框標示），降低誤刪的風險。
                             </li>
                             <li>
-                                <strong>權限解鎖與密碼沿用</strong
-                                >：自動解除無開啟密碼的編輯或列印限制；若文件有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
+                                <strong>權限解鎖與密碼沿用</strong>：無開啟密碼 (User Password) 但限制編輯、複製、列印的
+                                PDF，系統會自動在背景解除限制；若文件設有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
                             </li>
                         </ul>
                     </div>
@@ -268,8 +278,8 @@
                                 原始結構，請務必保留原始檔案備份以防萬一。
                             </li>
                             <li>
-                                <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集
-                                (Subset)、自訂編碼 (CMap)
+                                <strong>技術與相容性限制</strong>：由於 PDF 格式極為繁雜，若文件採用特殊字型子集 (Font
+                                Subset)、自訂字元對應表 (CMap)
                                 或文字轉向量路徑，關鍵字可能無法完全命中，請善用預覽功能確認效果。
                             </li>
                             <li>
@@ -421,7 +431,7 @@
                         ></textarea>
                         <p class="keywords-hint">
                             <span class="hint-primary">適用策略：</span>頁面直接內容 (Direct Content)。<br />
-                            <span class="hint-danger">限制：</span>若 PDF 採用自訂字型編碼
+                            <span class="hint-danger">限制：</span>若 PDF 採用字型子集 (Font Subset)、自訂字元對應表
                             (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「👁️ 預覽」功能，眼見為憑。
                         </p>
                     </div>
