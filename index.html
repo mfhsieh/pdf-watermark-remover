@@ -30,6 +30,12 @@
             integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI"
             crossorigin="anonymous"
         ></script>
+        <!-- pako：負責將修改後的內容流進行 zlib 壓縮，以縮小產生的 PDF 體積 -->
+        <script
+            src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"
+            integrity="sha384-rNlaE5fs9dGIjmxWDALQh/RBAaGRYT5ChrzHo6tRfgrZ36iRFAiquP5g41Jsv+0j"
+            crossorigin="anonymous"
+        ></script>
         <!-- 舊環境支援：設定與載入 TextEncoding 以支援 Big5 等非標準編碼 -->
         <script src="js/polyfill-config.js"></script>
         <script
@@ -59,7 +65,7 @@
         <div class="container">
             <!-- 頁面頭部標題區 -->
             <header>
-                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.4.0</span></h1>
+                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.4.1</span></h1>
                 <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
             </header>
 
@@ -263,6 +269,10 @@
                             <li>
                                 <strong>權限解鎖與密碼沿用</strong>：無開啟密碼 (User Password) 但限制編輯、複製、列印的
                                 PDF，系統會自動在背景解除限制；若文件設有開啟密碼，驗證後會暫存於記憶體，方便處理相同密碼的其他檔案。
+                            </li>
+                            <li>
+                                <strong>自動壓縮最佳化</strong>：清除過程後會自動運用 Zlib
+                                演算法將內容流重新壓縮，大幅縮小修改後的 PDF 檔案體積。
                             </li>
                         </ul>
                     </div>

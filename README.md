@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.4.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.4.0.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.4.1.zip)
 
 ## 📌 專案簡介
 
@@ -42,6 +42,7 @@
 ### 5. 資安防護與效能優化
 - **純前端架構與 CSP 防護**：檔案不經任何伺服器上傳，100% 於本地端處理。同時導入嚴格的內容安全策略 (CSP) 並全面禁用危險的 DOM 操作。
 - **預覽記憶體釋放**：關閉預覽彈窗時立即執行 `URL.revokeObjectURL()`，避免頻繁預覽大型檔案造成記憶體積壓。
+- **輸出檔案體積最佳化**：修改後的頁面內容流 (Content Stream) 支援自動透過 `pako` 進行 Zlib/Deflate 重新壓縮，大幅減少輸出的 PDF 體積。
 - **DOM 節點快取**：集中快取主要 DOM 節點，減少重複遍歷的效能耗損。
 
 ---
@@ -81,6 +82,7 @@
 | [pdf-lib](https://pdf-lib.js.org/) | PDF 底層結構解析與重建 |
 | [qpdf-wasm](https://github.com/nicowillis/qpdf-wasm) | PDF 權限限制解除 |
 | [text-encoding](https://github.com/inexorabletash/text-encoding) | Big5 字元編解碼支援 |
+| [pako](https://github.com/nodeca/pako) | Zlib/Deflate 內容流高速壓縮 |
 
 ---
 
@@ -151,8 +153,9 @@
 ## 📦 Release Notes
 
 - **v2.4.0 (2026-06-04)**
+  - ⚡ **效能提升**：引入 `pako` 進行內容流壓縮，大幅縮小修改後的 PDF 檔案體積。
   - 🧪 **自動化測試**：增加與強化相關測試腳本 (`snap.mjs`, `lint-all.sh` 等)，提升自動化驗證能力。
-  - ✨ **常規更新**：依 AI 程式碼審查建議調整。
+  - ✨ **常規更新**：依 AI 程式碼審查建議調整，並修復已知問題。
 - **v2.3.5 (2026-06-03)**
   - 🧪 **自動化測試**：新增 `e2e-preview.mjs` 自動化腳本，支援自動抓取並匯出各策略之預覽 PDF 檔。
   - ✨ **常規更新**：進行 js 重構、修正 bug 及微調介面。
