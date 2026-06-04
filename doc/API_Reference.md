@@ -234,10 +234,10 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。</p>
 </dd>
 <dt><a href="#removeDirectContent">removeDirectContent(pdfDoc, page, directContentsSet)</a> ⇒ <code>number</code></dt>
-<dd><p>策略三：檢查並清空可疑內容流
-某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字（例如：/Tj &quot;CONFIDENTIAL&quot;）。
+<dd><p>策略三：檢查並清空可疑內容串流
+某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj &quot;CONFIDENTIAL&quot;）。
 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
-轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。</p>
+轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。</p>
 </dd>
 <dt><a href="#removeExtGState">removeExtGState(pdfDoc, resources, pageIndex, extGStatesSet)</a> ⇒ <code>Object</code></dt>
 <dd><p>策略五：清理 ExtGState 半透明狀態
@@ -845,7 +845,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 
 | Param | Type | Description |
 | --- | --- | --- |
-| text | <code>string</code> | 原始內容流文字 |
+| text | <code>string</code> | 原始內容串流文字 |
 | deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
 | deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
 | deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
@@ -885,7 +885,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 <a name="cleanContentStreams..processStream"></a>
 
 ### cleanContentStreams~processStream(streamRef, idxOrKey, contentsArray) ⇒ <code>void</code>
-內部輔助函式：處理單一內容流，進行參照指令抹除與重新打包
+內部輔助函式：處理單一內容串流，進行參照指令抹除與重新打包
 
 **Kind**: inner method of [<code>cleanContentStreams</code>](#cleanContentStreams)  
 
@@ -893,7 +893,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 | --- | --- | --- |
 | streamRef | <code>PDFRef</code> | 串流參照 |
 | idxOrKey | <code>number</code> \| <code>null</code> | 在陣列中的索引，或單一參照的 null |
-| contentsArray | <code>PDFArray</code> \| <code>null</code> | 若有多個內容流，此為父陣列 |
+| contentsArray | <code>PDFArray</code> \| <code>null</code> | 若有多個內容串流，此為父陣列 |
 
 <a name="processPdf"></a>
 
@@ -1012,10 +1012,10 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <a name="removeDirectContent"></a>
 
 ## removeDirectContent(pdfDoc, page, directContentsSet) ⇒ <code>number</code>
-策略三：檢查並清空可疑內容流
-某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
+策略三：檢查並清空可疑內容串流
+某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
-轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。
+轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。
 
 **Kind**: global function  
 **Returns**: <code>number</code> - 處理掉的頁面直接內容 (Direct Content) 數量  
@@ -1135,7 +1135,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 產生共用的預覽標示紅框原始繪圖指令 (供 XObject 預覽使用)
 
 **Kind**: global function  
-**Returns**: <code>string</code> - 繪製矩形紅框的 PDF 內容流指令字串  
+**Returns**: <code>string</code> - 繪製矩形紅框的 PDF 內容串流指令字串  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1152,7 +1152,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 產生精準貼合的變換矩陣多邊形紅框 (支援任意旋轉與傾斜預覽)
 
 **Kind**: global function  
-**Returns**: <code>string</code> - 繪製多邊形紅框的 PDF 內容流指令字串  
+**Returns**: <code>string</code> - 繪製多邊形紅框的 PDF 內容串流指令字串  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -1196,7 +1196,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | --- | --- | --- |
 | previewDoc | <code>PDFDocument</code> | 預覽用的 PDF 文件 |
 | page | <code>PDFPage</code> | 目標頁面 |
-| drawCommand | <code>string</code> | PDF 內容流繪製指令 |
+| drawCommand | <code>string</code> | PDF 內容串流繪製指令 |
 
 <a name="formatMatrixToCm"></a>
 
@@ -1598,7 +1598,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 | Param | Type | Description |
 | --- | --- | --- |
-| text | <code>string</code> | 內容流文字（以 Latin1 解碼的二進位字串） |
+| text | <code>string</code> | 內容串流文字（以 Latin1 解碼的二進位字串） |
 
 <a name="isSuspectFormXObject"></a>
 
@@ -1611,7 +1611,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | entry | <code>Object</code> |  | 表單外部物件偵測 Entry |
-| [rawStr] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | 原始內容流文字 (可選) |
+| [rawStr] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | 原始內容串流文字 (可選) |
 
 <a name="isSuspectAnnotation"></a>
 

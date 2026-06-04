@@ -260,7 +260,7 @@ function ensurePreviewHighlightExtGState(previewDoc, page, extGStateName) {
  * @param {number} y - 矩形左下角 Y 座標
  * @param {number} width - 矩形寬度
  * @param {number} height - 矩形高度
- * @returns {string} 繪製矩形紅框的 PDF 內容流指令字串
+ * @returns {string} 繪製矩形紅框的 PDF 內容串流指令字串
  */
 function buildHighlightCommand(previewDoc, page, pathCmd) {
     const config = PREVIEW_HIGHLIGHT_CONFIG;
@@ -281,7 +281,7 @@ function getPreviewHighlightRawCommand(previewDoc, page, x, y, width, height) {
  * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件物件
  * @param {PDFPage} page - 欲繪製紅框的頁面物件
  * @param {Array<{x: number, y: number}>} pts - 多邊形的四個頂點座標陣列 (依序連接)
- * @returns {string} 繪製多邊形紅框的 PDF 內容流指令字串
+ * @returns {string} 繪製多邊形紅框的 PDF 內容串流指令字串
  */
 function getPreviewHighlightPolygonCmd(previewDoc, page, pts) {
     const formatNum = (n) => Number(n.toFixed(6)).toString();
@@ -332,7 +332,7 @@ async function createIsolatedPreviewDoc(srcDoc, pageIndex) {
  * 將預覽繪圖指令套用至頁面，並產出 Blob URL
  * @param {PDFDocument} previewDoc - 預覽用的 PDF 文件
  * @param {PDFPage} page - 目標頁面
- * @param {string} drawCommand - PDF 內容流繪製指令
+ * @param {string} drawCommand - PDF 內容串流繪製指令
  * @returns {Promise<string>} Blob URL
  */
 async function applyPreviewContentAndSave(previewDoc, page, drawCommand) {

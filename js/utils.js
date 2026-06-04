@@ -13,7 +13,7 @@ const {
     PDFName, // 代表 PDF 中的命名實體（以 / 開頭，如 /Type, /Form）
     PDFDict, // 代表 PDF 的字典結構（Dictionary）
     PDFArray, // 代表 PDF 的陣列結構（Array）
-    PDFRawStream, // 代表 PDF 的二進位原始串流（Raw Stream，如內容流、圖片資料）
+    PDFRawStream, // 代表 PDF 的二進位原始串流（Raw Stream，如內容串流、圖片資料）
     PDFString, // 代表 PDF 的常規字串實體
     PDFHexString, // 代表 PDF 的十六進制編碼字串
 } = PDFLib;
@@ -58,7 +58,7 @@ function isSuspectKeyName(text) {
  *   2. UTF-16BE Latin1 / Big5 的二進位特徵碼（不可 toLowerCase，否則會破壞位元組值）
  * 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
  *
- * @param {string} text - 內容流文字（以 Latin1 解碼的二進位字串）
+ * @param {string} text - 內容串流文字（以 Latin1 解碼的二進位字串）
  * @returns {boolean} 若包含浮水印特徵則回傳 true，否則回傳 false
  */
 function isSuspectContentText(text) {
@@ -79,7 +79,7 @@ function isSuspectContentText(text) {
 /**
  * 策略 1: 表單外部物件 (Form XObject) 判定
  * @param {Object} entry - 表單外部物件偵測 Entry
- * @param {string} [rawStr=''] - 原始內容流文字 (可選)
+ * @param {string} [rawStr=''] - 原始內容串流文字 (可選)
  * @returns {boolean} 是否為疑似浮水印
  */
 function isSuspectFormXObject(entry, rawStr = '') {

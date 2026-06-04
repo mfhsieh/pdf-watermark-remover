@@ -415,7 +415,7 @@ new WatermarkStrategyModal({
         labelEl.appendChild(document.createTextNode(labelText));
     },
     applyMsgTemplate: (len) => `已成功套用「頁面直接內容」清理設定！共選定清理 ${len} 個「頁面直接內容」實例。`,
-    resetMsg: '已將當前檔案中的「頁面直接內容」清理選項回復為預設值（預設勾選疑似浮水印的內容流，其餘安全保留）。',
+    resetMsg: '已將當前檔案中的「頁面直接內容」清理選項回復為預設值（預設勾選疑似浮水印的內容串流，其餘安全保留）。',
 });
 
 // 4. 影像外部物件 (Image XObject) Modal

@@ -41,7 +41,7 @@ function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, target
 
 /**
  * 共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
- * @param {string} text - 原始內容流文字
+ * @param {string} text - 原始內容串流文字
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
@@ -136,10 +136,10 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
     if (!contentsRef) return;
 
     /**
-     * 內部輔助函式：處理單一內容流，進行參照指令抹除與重新打包
+     * 內部輔助函式：處理單一內容串流，進行參照指令抹除與重新打包
      * @param {PDFRef} streamRef - 串流參照
      * @param {number|null} idxOrKey - 在陣列中的索引，或單一參照的 null
-     * @param {PDFArray|null} contentsArray - 若有多個內容流，此為父陣列
+     * @param {PDFArray|null} contentsArray - 若有多個內容串流，此為父陣列
      * @returns {void}
      */
     const processStream = (streamRef, idxOrKey, contentsArray) => {
@@ -213,7 +213,7 @@ async function processPdf(pdfDoc, options) {
         const page = pdfDoc.getPage(pageIndex);
         let allDeletedXObjectKeys = [];
 
-        // 1. 複製 Contents 陣列以進行單頁隔離，確保當前頁的修改（如刪除 Do 指令）不會意外影響其他共用此內容流的頁面
+        // 1. 複製 Contents 陣列以進行單頁隔離，確保當前頁的修改（如刪除 Do 指令）不會意外影響其他共用此內容串流的頁面
         const contentsKey = PDFName.of('Contents');
         const contents = page.node.lookup(contentsKey);
         if (contents instanceof PDFArray) {
@@ -498,10 +498,10 @@ function removeAnnotations(page, annotsSet) {
 }
 
 /**
- * 策略三：檢查並清空可疑內容流
- * 某些 PDF 會直接在 Contents 內容流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
+ * 策略三：檢查並清空可疑內容串流
+ * 某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
  * 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
- * 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容流。
+ * 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。
  *
  * @param {PDFDocument} pdfDoc - 文件物件
  * @param {PDFPage} page - 頁面物件
