@@ -10,8 +10,67 @@
  */
 
 // ==========================================
-// [UI Modals] 浮水印清除策略設定彈出視窗
+// [UI Modals] 視窗與彈窗邏輯管理
 // ==========================================
+
+/**
+ * 顯示自訂的確認彈窗 (Custom Confirm Modal)
+ * 取代瀏覽器原生的 confirm()，提供更一致的 UI 體驗
+ * @param {string} message - 要顯示的確認訊息
+ * @returns {Promise<boolean>} 使用者點擊確定回傳 true，取消回傳 false
+ */
+function customConfirm(message) {
+    if (window._currentConfirmPromptCleanup) {
+        window._currentConfirmPromptCleanup();
+    }
+
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmModalMessage');
+        const submitBtn = document.getElementById('confirmModalSubmitButton');
+        const cancelBtn = document.getElementById('confirmModalCancelButton');
+
+        messageEl.textContent = message;
+        modal.classList.add('active');
+
+        function cleanup() {
+            modal.classList.remove('active');
+            submitBtn.removeEventListener('click', onSubmit);
+            cancelBtn.removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKeyDown);
+            window._currentConfirmPromptCleanup = null;
+        }
+        window._currentConfirmPromptCleanup = cleanup;
+
+        function onSubmit() {
+            cleanup();
+            resolve(true);
+        }
+
+        function onCancel() {
+            cleanup();
+            resolve(false);
+        }
+
+        function onKeyDown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                onSubmit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                onCancel();
+            }
+        }
+
+        submitBtn.addEventListener('click', onSubmit);
+        cancelBtn.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKeyDown);
+
+        // 預設讓取消按鈕取得焦點，避免使用者誤觸 Enter
+        cancelBtn.focus();
+    });
+}
+
 /**
  * 浮水印清除策略設定彈出視窗 (Modal) 抽象化通用管理類別
  *
@@ -526,22 +585,22 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('active');
     });
 
-    document.getElementById('resetKeyKeywordsBtn').addEventListener('click', () => {
-        if (confirm('確定要將「資源鍵名與圖層名稱關鍵字」回復為預設值嗎？')) {
+    document.getElementById('resetKeyKeywordsBtn').addEventListener('click', async () => {
+        if (await customConfirm('確定要將「資源鍵名與圖層名稱關鍵字」回復為預設值嗎？')) {
             keyInput.value = DEFAULT_KEY_KEYWORDS.join(', ');
             adjustTextareaHeight(keyInput);
         }
     });
 
-    document.getElementById('resetContentKeywordsBtn').addEventListener('click', () => {
-        if (confirm('確定要將「頁面直接內容關鍵字」回復為預設值嗎？')) {
+    document.getElementById('resetContentKeywordsBtn').addEventListener('click', async () => {
+        if (await customConfirm('確定要將「頁面直接內容關鍵字」回復為預設值嗎？')) {
             contentInput.value = DEFAULT_CONTENT_KEYWORDS.join(', ');
             adjustTextareaHeight(contentInput);
         }
     });
 
-    document.getElementById('resetTransparencyBtn').addEventListener('click', () => {
-        if (confirm('確定要將「高透明度特徵門檻」回復為預設值嗎？')) {
+    document.getElementById('resetTransparencyBtn').addEventListener('click', async () => {
+        if (await customConfirm('確定要將「高透明度特徵門檻」回復為預設值嗎？')) {
             transparencyInput.value = DEFAULT_TRANSPARENCY_THRESHOLD;
             if (transparencySlider) transparencySlider.value = DEFAULT_TRANSPARENCY_THRESHOLD;
         }
@@ -549,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resetHeuristicBtn = document.getElementById('resetHeuristicBtn');
     if (resetHeuristicBtn) {
-        resetHeuristicBtn.addEventListener('click', () => {
-            if (confirm('確定要將「高頻特徵門檻」回復為預設值嗎？')) {
+        resetHeuristicBtn.addEventListener('click', async () => {
+            if (await customConfirm('確定要將「高頻特徵門檻」回復為預設值嗎？')) {
                 heuristicInput.value = DEFAULT_HEURISTIC_THRESHOLD;
                 if (heuristicSlider) heuristicSlider.value = DEFAULT_HEURISTIC_THRESHOLD;
             }

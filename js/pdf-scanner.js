@@ -442,7 +442,7 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
 
     // Fail Fast: 提早檢查，若無法取得矩陣，直接中斷，避免下方耗費記憶體去建立預覽文件
     if (!matrix) {
-        throw new Error('無法解析影像變換矩陣 (CTM)，精準模式失敗，且後備模式已被移除。');
+        throw new Error('無法解析實際座標，無法產生預覽。');
     }
 
     const { previewDoc, page, xObjects } = await createIsolatedPreviewDoc(srcDoc, pageIndex);

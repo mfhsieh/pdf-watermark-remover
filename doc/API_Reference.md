@@ -356,6 +356,10 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#clearPreviewUrlCache">clearPreviewUrlCache()</a> ⇒ <code>void</code></dt>
 <dd><p>釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏</p>
 </dd>
+<dt><a href="#customConfirm">customConfirm(message)</a> ⇒ <code>Promise.&lt;boolean&gt;</code></dt>
+<dd><p>顯示自訂的確認彈窗 (Custom Confirm Modal)
+取代瀏覽器原生的 confirm()，提供更一致的 UI 體驗</p>
+</dd>
 <dt><a href="#appendHeuristicBadge">appendHeuristicBadge(parentEl)</a></dt>
 <dd><p>輔助函式：為 UI 標籤加上高頻偵測的視覺徽章
 共用於 Form XObject 與 Image XObject</p>
@@ -1498,6 +1502,19 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 釋放並清空預覽用的 Blob URL 快取，避免記憶體洩漏
 
 **Kind**: global function  
+<a name="customConfirm"></a>
+
+## customConfirm(message) ⇒ <code>Promise.&lt;boolean&gt;</code>
+顯示自訂的確認彈窗 (Custom Confirm Modal)
+取代瀏覽器原生的 confirm()，提供更一致的 UI 體驗
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - 使用者點擊確定回傳 true，取消回傳 false  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>string</code> | 要顯示的確認訊息 |
+
 <a name="appendHeuristicBadge"></a>
 
 ## appendHeuristicBadge(parentEl)
