@@ -65,7 +65,7 @@
         <div class="container">
             <!-- 頁面頭部標題區 -->
             <header>
-                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.4.1</span></h1>
+                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.4.2</span></h1>
                 <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
             </header>
 
@@ -571,6 +571,24 @@
                 <div class="modal-actions">
                     <button id="modalCancelButton" class="button">取消</button>
                     <button id="modalSubmitButton" class="button button-primary">確認</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自訂確認對話框 Modal -->
+        <div
+            id="confirmModal"
+            class="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmModalTitle"
+        >
+            <div class="modal-card">
+                <h3 id="confirmModalTitle">⚠️ 確認操作</h3>
+                <p id="confirmModalMessage">您確定要執行此操作嗎？</p>
+                <div class="modal-actions">
+                    <button id="confirmModalCancelButton" class="button">取消</button>
+                    <button id="confirmModalSubmitButton" class="button button-danger">確定</button>
                 </div>
             </div>
         </div>

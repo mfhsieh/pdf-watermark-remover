@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.4.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.4.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.4.1.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.4.2.zip)
 
 ## 📌 專案簡介
 
@@ -152,6 +152,8 @@
 
 ## 📦 Release Notes
 
+- **v2.4.2 (2026-06-04)**
+  - ✨ **體驗優化**：精簡 CTM 解析錯誤訊息，並導入客製化的 HTML Modal 取代瀏覽器原生的 `confirm()` 對話框，提升整體 UI 一致性與無障礙體驗。
 - **v2.4.1 (2026-06-04)**
   - ⚡ **效能提升**：引入 `pako` 進行內容流壓縮，大幅縮小修改後的 PDF 檔案體積。
   - 🧪 **自動化測試**：增加與強化相關測試腳本 (`snap.mjs`, `lint-all.sh` 等)，提升自動化驗證能力。
