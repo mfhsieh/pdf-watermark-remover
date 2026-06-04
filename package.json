@@ -1,6 +1,6 @@
 {
   "name": "pdf-watermark-remover",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "PDF 浮水印清除工具，純前端執行，無伺服器上傳，保護您的隱私。",
   "main": "index.js",
   "directories": {

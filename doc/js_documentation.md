@@ -90,7 +90,7 @@
   以複製隔離的手段修改資源字典，直接將需被清除的資源鍵值物理移除，而不會影響原文件共用結構。並具備智慧判斷，若原物件為間接參照 (`PDFRef`)，會自動註冊新參照，徹底解決了清除共用資源時可能導致 PDF 底層樹狀結構引用斷裂的隱患。
 - **安全參照清理 `cleanContentStreams()` 與 `removeDeletedReferencesFromText()`：**
   若將 XObject 抽掉，原本呼叫該物件的指令若繼續存在，會導致 Acrobat Reader 等工具報錯。此函式除了以正則徹底抹除殘留呼叫外，更新增了**快速字串比對**，在執行昂貴的正則替換前先做預先過濾，大幅降低了大檔的處理時間。同時也支援了巢狀 `Resources` 的遞迴清理 (`cleanResourcesRecursively`)。
-  > **Trade-off (效能/穩定性取捨)**：為了確保修改後的 Content Stream 結構穩定性並避免 Acrobat 報錯，重新寫入的內容流會捨棄原有的壓縮演算法 (如 `FlateDecode` Filter)。這會使得處理後的 PDF 體積微幅增加，但大幅提升了檔案的相容性與修復成功率。
+  > **串流壓縮最佳化 (Compression Optimization)**：為了確保修改後的 Content Stream 結構穩定性，我們重新寫入內容流時，若環境支援 `pako` 函式庫，會自動套用 Zlib/Deflate 演算法並掛回 `FlateDecode` Filter，使產出的 PDF 保持輕巧體積。若無支援，則具備優雅降級機制以未壓縮明文儲存，避免阻斷核心流程。
 
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。

@@ -94,12 +94,25 @@ function rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deleted
 
         if (result.modified) {
             const arr = encodeTextToBinary(result.text);
-            // Trade-off: 複製原字典並移除壓縮濾鏡與長度，讓 pdf-lib 重新封裝時重新計算
-            // 捨棄原本的壓縮演算法以換取修改後的結構穩定性，避免 Acrobat 報錯損毀。
+
+            // 如果環境有提供 pako，則重新對資料進行 zlib deflate 壓縮
+            let finalData = arr;
             const newDict = stream.dict.clone(pdfDoc.context);
-            newDict.delete(PDFName.of('Filter'));
+            if (typeof pako !== 'undefined') {
+                try {
+                    finalData = pako.deflate(arr);
+                    newDict.set(PDFName.of('Filter'), PDFName.of('FlateDecode'));
+                } catch (e) {
+                    console.warn('pako compression failed, falling back to uncompressed stream', e);
+                    newDict.delete(PDFName.of('Filter'));
+                }
+            } else {
+                newDict.delete(PDFName.of('Filter'));
+            }
+
+            // 重新由 pdfDoc.context.stream 打包時，pdf-lib 會自行處理長度，或者依賴無 Length
             newDict.delete(PDFName.of('Length'));
-            return pdfDoc.context.stream(arr, newDict);
+            return pdfDoc.context.stream(finalData, newDict);
         }
     } catch (e) {
         console.error('Failed to rebuild stream', e);
