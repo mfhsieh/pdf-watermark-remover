@@ -211,7 +211,6 @@
     flex: 1;
     position: relative;
     width: 100%;
-    height: calc(100% - 130px);
     background: rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -246,18 +245,6 @@
     width: 100%;
     height: 100%;
     border: none;
-}
-
-.preview-modal-footer {
-    margin-top: 15px;
-    display: flex;
-    justify-content: flex-end;
-    width: 100%;
-}
-
-.preview-modal-footer .button {
-    padding: 10px 24px;
-    width: auto;
 }
 
 /* 彈出設定視窗的「全選／全不選」控制列 */

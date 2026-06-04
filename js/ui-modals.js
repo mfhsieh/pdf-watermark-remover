@@ -696,5 +696,4 @@ function closeObjectPreview() {
 // 綁定關閉預覽彈窗事件
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeObjectPreviewModalBtn').addEventListener('click', closeObjectPreview);
-    document.getElementById('closeObjectPreviewBtn').addEventListener('click', closeObjectPreview);
 });

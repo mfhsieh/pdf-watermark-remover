@@ -6,7 +6,14 @@
  * 2. 結合 pdf-lib 進行結果驗證，解析清除前後的 PDF 內部結構 (Form, Image, ExtGState, Annotations)，確保浮水印物件數量確實減少。
  * 3. 包含例外流程覆蓋率測試，如非 PDF 檔案攔截與密碼錯誤次數上限驗證。
  *
- * 執行指令： npm run test (或 node test/e2e.mjs)
+ * 執行指令：
+ *   - npm run e2e                (預設執行完整自動化測試，並自動清空舊資料)
+ *   - npm run e2e [檔名]         (測試單一檔案)
+ *   - npm run e2e -- --clean [檔名] (強制清空目錄後測試單一檔案)
+ *   - npm run e2e -- --clean     (僅清空輸出目錄，不進行測試)
+ * 
+ * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
+ *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */
 import puppeteer from 'puppeteer-core';
 import path from 'path';
@@ -85,6 +92,21 @@ async function countFeatures(pdfBytes) {
 /**
  * 執行端到端 (E2E) 測試主程式 (利用 ESM Top-level Await 頂層執行)
  */
+// 取得使用者指定的參數，過濾掉 --clean 參數
+const rawArgs = process.argv.slice(2);
+const isClean = rawArgs.includes('--clean');
+const args = rawArgs.filter((arg) => arg !== '--clean');
+
+// 如果只有傳入 --clean，沒有指定任何額外參數，則僅清空目錄並結束
+if (isClean && args.length === 0) {
+    if (fs.existsSync(removedDir)) {
+        fs.rmSync(removedDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(removedDir, { recursive: true });
+    console.log('🧹 測試輸出目錄 (removed) 已清空，結束執行。');
+    process.exit(0);
+}
+
 // 在測試開始前強制清空並重建下載目錄，避免前次測試殘留的 .crdownload 導致輪詢卡死
 if (fs.existsSync(removedDir)) fs.rmSync(removedDir, { recursive: true, force: true });
 if (!fs.existsSync(removedDir)) fs.mkdirSync(removedDir, { recursive: true });
@@ -158,8 +180,9 @@ try {
             // 等待處理完成（下載區塊顯示出來）
             await page.waitForSelector('#downloadArea:not(.hidden)', { timeout: 30000 });
 
-            // 預期下載的檔案路徑，若已存在舊檔則先刪除
-            const expectedFile = path.resolve(removedDir, filename.replace('.pdf', '_removed.pdf'));
+            // 預期下載的檔案路徑，若已存在舊檔則先刪除 (使用 basename 確保即使跨目錄也能正確對應瀏覽器下載行為)
+            const baseFilename = path.basename(filename);
+            const expectedFile = path.resolve(removedDir, baseFilename.replace('.pdf', '_removed.pdf'));
             if (fs.existsSync(expectedFile)) {
                 fs.unlinkSync(expectedFile);
             }
@@ -238,41 +261,51 @@ try {
         }
     };
 
-    // 測試案例 1：sample1.pdf - 使用預設選項清除表單外部物件 (Form XObject)
-    await processFile('sample1.pdf', null, { forms: true });
+    // 定義各個預設測試檔案的配置與測試情境
+    const defaultConfigs = {
+        // 測試案例 1：使用預設選項，驗證清除表單外部物件 (Form XObject)
+        'sample1.pdf': { setup: null, expected: { forms: true } },
 
-    // 測試案例 2：sample2.pdf - 模擬使用者打開設定，勾選所有「延伸圖形狀態 (ExtGState)」
-    await processFile(
-        'sample2.pdf',
-        () => {
-            document.getElementById('openExtGStateKeywordsModalBtn').click();
-            const selectAllExt = document.querySelector('#extGStateKeywordsModal .select-all');
-            if (selectAllExt) selectAllExt.click();
-            document.getElementById('applyExtGStateKeywordsBtn').click();
+        // 測試案例 2：模擬使用者打開設定，勾選所有「延伸圖形狀態 (ExtGState)」並驗證其清除效果
+        'sample2.pdf': {
+            setup: () => {
+                document.getElementById('openExtGStateKeywordsModalBtn').click();
+                const selectAllExt = document.querySelector('#extGStateKeywordsModal .select-all');
+                if (selectAllExt) selectAllExt.click();
+                document.getElementById('applyExtGStateKeywordsBtn').click();
+            },
+            expected: { forms: true, extgs: true },
         },
-        { forms: true, extgs: true }
-    );
 
-    // 測試案例 3：sample3.pdf - 模擬使用者打開設定，勾選所有「註解 (Annotation)」與「影像 (Image)」
-    await processFile(
-        'sample3.pdf',
-        () => {
-            document.getElementById('openAnnotsSettingsModalBtn').click();
-            const selectAllAnnots = document.querySelector('#annotsSettingsModal .select-all');
-            if (selectAllAnnots) selectAllAnnots.click();
-            document.getElementById('applyAnnotsSettingsBtn').click();
+        // 測試案例 3：模擬使用者打開設定，勾選所有「註解 (Annotation)」與「影像 (Image)」並驗證其清除效果
+        'sample3.pdf': {
+            setup: () => {
+                document.getElementById('openAnnotsSettingsModalBtn').click();
+                const selectAllAnnots = document.querySelector('#annotsSettingsModal .select-all');
+                if (selectAllAnnots) selectAllAnnots.click();
+                document.getElementById('applyAnnotsSettingsBtn').click();
 
-            document.getElementById('openImageKeywordsModalBtn').click();
-            const selectAllImg = document.querySelector('#imageKeywordsModal .select-all');
-            if (selectAllImg) selectAllImg.click();
-            document.getElementById('applyImageKeywordsBtn').click();
+                document.getElementById('openImageKeywordsModalBtn').click();
+                const selectAllImg = document.querySelector('#imageKeywordsModal .select-all');
+                if (selectAllImg) selectAllImg.click();
+                document.getElementById('applyImageKeywordsBtn').click();
+            },
+            expected: { annots: true, images: true },
         },
-        { annots: true, images: true }
-    );
 
-    // 測試案例 4：sample4.pdf - 使用預設選項
-    // 假設預設邏輯會自動偵測並至少減少一些物件，這裡我們只驗證腳本能否順利跑完不報錯。
-    await processFile('sample4.pdf', null, {});
+        // 測試案例 4：使用預設選項（假設預設邏輯會自動偵測並處理，主要驗證腳本順利執行不報錯）
+        'sample4.pdf': { setup: null, expected: {} },
+    };
+
+    // 取得要測試的檔案名稱，若無參數則測試全部預設項目
+    const targetFiles = args.length > 0 ? args : Object.keys(defaultConfigs);
+    const shouldRunErrorPaths = args.length === 0; // 只有預設完整測試時才跑錯誤路徑
+
+    // 依序測試目標檔案
+    for (const filename of targetFiles) {
+        const config = defaultConfigs[filename] || { setup: null, expected: {} };
+        await processFile(filename, config.setup, config.expected);
+    }
 
     // 測試案例 5 & 6：錯誤路徑覆蓋 (非 PDF 與 密碼錯誤)
     const testErrorPaths = async () => {
@@ -330,7 +363,9 @@ try {
         }
     };
 
-    await testErrorPaths();
+    if (shouldRunErrorPaths) {
+        await testErrorPaths();
+    }
 
     console.log('\n🎉 所有 E2E 測試與驗證均順利通過！');
 } catch (e) {

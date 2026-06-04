@@ -78,8 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 將焦點移入 Modal
                 const activeModal = document.querySelector('.modal-overlay.active');
                 if (activeModal && !activeModal.contains(document.activeElement)) {
-                    // 優先 focus 第一個 input，否則 focus 第一個可互動按鈕
+                    // 優先 focus 有 autofocus 屬性的元素，其次是輸入框，否則 focus 第一個可互動按鈕
                     const focusable =
+                        activeModal.querySelector('[autofocus]') ||
                         activeModal.querySelector(
                             'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])'
                         ) ||

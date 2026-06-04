@@ -7,7 +7,14 @@
  * 3. 包含預覽項目輪播 (Carousel) 展示邏輯，在介面自動化操作過程中，自動點開預覽畫面供開發者肉眼即時查看。
  * 4. 確保 Modals 動畫過渡、焦點陷阱 (Focus Trap) 等 UI 行為正常，並將最終截圖結果存入 snap-files 目錄。
  *
- * 執行指令： npm run snap [檔名]
+ * 執行指令：
+ *   - npm run snap                (預設測試全部，並自動清空舊資料)
+ *   - npm run snap [檔名]         (測試單一檔案)
+ *   - npm run snap -- --clean [檔名] (強制清空目錄後測試單一檔案)
+ *   - npm run snap -- --clean     (僅清空輸出目錄，不進行測試)
+ * 
+ * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
+ *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */
 import fs from 'fs';
 import path from 'path';
@@ -23,12 +30,25 @@ const __dirname = path.dirname(__filename);
 // 定義快照輸出目錄
 const snapFilesDir = path.resolve(__dirname, 'snap-files');
 
-// 取得使用者指定的測試檔案，若無則預設測試 sample1 到 sample4
-const args = process.argv.slice(2);
+// 取得使用者指定的測試檔案，過濾掉 --clean 參數
+const rawArgs = process.argv.slice(2);
+const isClean = rawArgs.includes('--clean');
+const args = rawArgs.filter((arg) => arg !== '--clean');
+
+// 如果只有傳入 --clean，沒有指定任何檔案，則僅清空目錄並結束
+if (isClean && args.length === 0) {
+    if (fs.existsSync(snapFilesDir)) {
+        fs.rmSync(snapFilesDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(snapFilesDir, { recursive: true });
+    console.log('🧹 快照輸出目錄已清空，結束執行。');
+    process.exit(0);
+}
+
 const targetFileNames = args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf'];
 
-// 如果是預設全部測試，則清空輸出目錄避免舊截圖殘留；若是指定檔案測試，則僅確保目錄存在
-if (args.length === 0) {
+// 如果是預設全部測試，或者明確加上 --clean 選項，則清空輸出目錄避免舊資料殘留；否則僅確保目錄存在
+if (args.length === 0 || isClean) {
     if (fs.existsSync(snapFilesDir)) {
         fs.rmSync(snapFilesDir, { recursive: true, force: true });
     }
@@ -95,7 +115,15 @@ try {
 
         // 跨系統 WSL2 <-> Windows 檔案路徑橋接：動態將 Linux 本地路徑映射為 Windows UNC 共享格式
         const distro = process.env.WSL_DISTRO_NAME || 'Ubuntu';
-        const localPDF = path.resolve(__dirname, 'e2e-files', targetFileName);
+        const localPDF = path.isAbsolute(targetFileName)
+            ? targetFileName
+            : path.resolve(__dirname, 'e2e-files', targetFileName);
+            
+        if (!fs.existsSync(localPDF)) {
+            console.error(`❌ 找不到指定的測試檔案: ${localPDF}，跳過此檔案。`);
+            continue;
+        }
+        
         const winPDF = `\\\\wsl.localhost\\${distro}` + localPDF.replace(/\//g, '\\');
 
         if (!page.url().includes('5500')) {

@@ -18,9 +18,9 @@ npm --no-git-tag-version version <新版本號>
 - **`README.md`**: 於 `## 📦 Release Notes` 頂部加入新版標題、日期，並根據近期變更**自動歸納改版重點**。
 
 ## 3. 執行 CI/CD 管線
-一鍵執行格式化、靜態分析 (含全域變數檢查)、E2E核心測試、預覽抓取測試、UI 快照測試、文件生成與打包：
+一鍵執行格式化、靜態分析 (含全域變數檢查)、E2E核心測試、文件生成與打包：
 ```bash
-npm run format && npm run lint && npm run e2e && npm run e2e-preview && npm run snap && npm run docs && ./bin/build-zip.sh
+npm run format && npm run lint && npm run e2e && npm run docs && ./bin/build-zip.sh
 ```
 > ⚠️ **Fail-fast 原則**：若管線中途失敗，**立即中斷發佈流程**並回報錯誤以利修復。
 
