@@ -50,7 +50,7 @@ const detectedImages = new Map();
 const imagesToDestroy = [];
 
 // 6. 延伸圖形狀態 (ExtGState) 狀態管理
-/** @type {Map<string, {keyName: string, page: number, ref: any, detailText: string, caVal: number, CAVal: number}>} 延伸圖形狀態（key = `${page}:${name}`） */
+/** @type {Map<string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}>} 延伸圖形狀態（key = `${page}:${name}`） */
 const detectedExtGStates = new Map();
 /** @type {string[]} 儲存選定要清除的延伸圖形狀態鍵值 */
 const extGStatesToDestroy = [];

@@ -13,7 +13,7 @@
  *   - npm run e2e-preview [檔名]         (測試單一檔案)
  *   - npm run e2e-preview -- --clean [檔名] (強制清空目錄後測試單一檔案)
  *   - npm run e2e-preview -- --clean     (僅清空輸出目錄，不進行測試)
- * 
+ *
  * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
  *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */

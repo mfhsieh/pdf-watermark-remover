@@ -87,7 +87,7 @@
 <dt><a href="#imagesToDestroy">imagesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存選定要清除的影像外部物件鍵值</p>
 </dd>
-<dt><a href="#detectedExtGStates">detectedExtGStates</a> : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, caVal: number, CAVal: number}&gt;</code></dt>
+<dt><a href="#detectedExtGStates">detectedExtGStates</a> : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code></dt>
 <dd><p>延伸圖形狀態（key = <code>${page}:${name}</code>）</p>
 </dd>
 <dt><a href="#extGStatesToDestroy">extGStatesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
@@ -601,7 +601,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 **Kind**: global constant  
 <a name="detectedExtGStates"></a>
 
-## detectedExtGStates : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, caVal: number, CAVal: number}&gt;</code>
+## detectedExtGStates : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code>
 延伸圖形狀態（key = `${page}:${name}`）
 
 **Kind**: global constant  

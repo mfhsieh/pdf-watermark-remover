@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainContainer.setAttribute('aria-hidden', 'true');
                 }
                 document.body.classList.add('modal-open');
-                
+
                 // 針對手機版徹底防止捲動穿透的終極解法 (鎖死 body)
                 document.body.style.position = 'fixed';
                 document.body.style.top = `-${savedScrollPosition}px`;
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainContainer.setAttribute('aria-hidden', 'false');
                 }
                 document.body.classList.remove('modal-open');
-                
+
                 // 解開手機版捲動鎖定，並還原至原本的捲動位置
                 document.body.style.position = '';
                 document.body.style.top = '';

@@ -11,7 +11,7 @@
  *   - npm run e2e [檔名]         (測試單一檔案)
  *   - npm run e2e -- --clean [檔名] (強制清空目錄後測試單一檔案)
  *   - npm run e2e -- --clean     (僅清空輸出目錄，不進行測試)
- * 
+ *
  * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
  *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */
@@ -42,6 +42,16 @@ const indexUrl = 'file://' + path.resolve(__dirname, '../index.html');
  * @returns {Promise<Object|null>} 回傳各項特徵的數量，若解析失敗則回傳 null
  */
 async function countFeatures(pdfBytes) {
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+        if (
+            typeof args[0] === 'string' &&
+            (args[0].includes('Trying to parse invalid object') || args[0].includes('Invalid object ref'))
+        )
+            return;
+        originalWarn(...args);
+    };
+
     try {
         // 載入 PDF，忽略加密狀態（因為清除後的檔案應該已經解密）
         const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
@@ -49,6 +59,21 @@ async function countFeatures(pdfBytes) {
         let images = 0;
         let extgs = 0;
         let annots = 0;
+        let ocgs = 0;
+
+        // 全文件層級掃描 OCGs
+        const catalogDict = doc.catalog;
+        if (catalogDict instanceof PDFDict) {
+            const ocPropertiesRef = catalogDict.get(PDFName.of('OCProperties'));
+            const ocProperties = doc.context.lookup(ocPropertiesRef);
+            if (ocProperties instanceof PDFDict) {
+                const ocgsRef = ocProperties.get(PDFName.of('OCGs'));
+                const ocgsArray = doc.context.lookup(ocgsRef);
+                if (ocgsArray instanceof PDFArray) {
+                    ocgs = ocgsArray.size();
+                }
+            }
+        }
 
         for (const page of doc.getPages()) {
             const annotsArray = page.node.lookup(PDFName.of('Annots'));
@@ -56,36 +81,69 @@ async function countFeatures(pdfBytes) {
                 annots += annotsArray.size();
             }
 
-            const resources = page.node.lookup(PDFName.of('Resources'));
-            if (resources instanceof PDFDict) {
+            const visitedRefs = new Set();
+
+            function traverseResources(resourcesNode) {
+                const resources = doc.context.lookup(resourcesNode);
+                if (!(resources instanceof PDFDict)) return;
+
                 const xObjects = doc.context.lookup(resources.get(PDFName.of('XObject')));
                 if (xObjects instanceof PDFDict) {
                     for (const key of xObjects.keys()) {
-                        const xObj = doc.context.lookup(xObjects.get(key));
+                        const xObjRef = xObjects.get(key);
+                        let refStr = '';
+                        if (xObjRef && typeof xObjRef.toString === 'function') {
+                            refStr = xObjRef.toString();
+                            if (visitedRefs.has(refStr)) continue;
+                            visitedRefs.add(refStr);
+                        }
+
+                        const xObj = doc.context.lookup(xObjRef);
                         const subtype =
                             xObj instanceof PDFRawStream
                                 ? doc.context.lookup(xObj.dict.get(PDFName.of('Subtype')))
                                 : null;
+
                         if (subtype instanceof PDFName) {
-                            if (subtype.toString() === '/Form') forms++;
-                            if (subtype.toString() === '/Image') images++;
+                            if (subtype.toString() === '/Form') {
+                                forms++;
+                                const formResources = xObj.dict.get(PDFName.of('Resources'));
+                                if (formResources) traverseResources(formResources);
+                            } else if (subtype.toString() === '/Image') {
+                                images++;
+                            }
                         }
                     }
                 }
 
                 const extGState = doc.context.lookup(resources.get(PDFName.of('ExtGState')));
                 if (extGState instanceof PDFDict) {
-                    extgs += extGState.keys().length;
+                    for (const key of extGState.keys()) {
+                        const extGsRef = extGState.get(key);
+                        if (extGsRef && typeof extGsRef.toString === 'function') {
+                            const refStr = 'extgs_' + extGsRef.toString();
+                            if (!visitedRefs.has(refStr)) {
+                                visitedRefs.add(refStr);
+                                extgs++;
+                            }
+                        } else {
+                            extgs++;
+                        }
+                    }
                 }
             }
+
+            traverseResources(page.node.lookup(PDFName.of('Resources')));
         }
-        return { forms, images, extgs, annots };
+        return { forms, images, extgs, annots, ocgs };
     } catch {
         // Node.js 環境下的 pdf-lib 解析某些損壞物件時會報錯，這裡做容錯處理
-        console.warn(
+        originalWarn(
             '⚠️ 警告：無法在 Node.js 環境中解析 PDF 進行驗證計數 (此為 pdf-lib 的已知解析限制)。將跳過計數驗證。'
         );
         return null;
+    } finally {
+        console.warn = originalWarn;
     }
 }
 
@@ -133,7 +191,11 @@ try {
         const page = await browser.newPage();
 
         // 監聽並印出瀏覽器內的 console.log 與錯誤，方便除錯
-        page.on('console', (msg) => console.log('BROWSER LOG:', msg.text()));
+        page.on('console', (msg) => {
+            const text = msg.text();
+            if (text.includes('Trying to parse invalid object') || text.includes('Invalid object ref')) return;
+            console.log('BROWSER LOG:', text);
+        });
         page.on('pageerror', (err) => console.log('BROWSER ERROR:', err.toString()));
 
         try {
@@ -251,6 +313,8 @@ try {
                         outputCounts.annots < inputCounts.annots,
                         '預期 Annotations (註解) 數量會減少，但並沒有。'
                     );
+                if (expectedReductions.ocgs)
+                    assert.ok(outputCounts.ocgs < inputCounts.ocgs, '預期 OCG (圖層) 數量會減少，但並沒有。');
 
                 console.log(`✅ 測試通過 ${filename} - 驗證成功，結果已儲存至 ${expectedFile}`);
             } else {

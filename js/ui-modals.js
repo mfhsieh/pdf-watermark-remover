@@ -662,6 +662,7 @@ async function openObjectPreview(strategyType, key, entry) {
     } catch (err) {
         console.error('預覽生成失敗', err);
         objectPreviewTitle.textContent = `❌ 預覽失敗：${err.message}`;
+        addStatusMessage(`預覽失敗：${err.message}`, 'error');
     } finally {
         objectPreviewSpinner.classList.add('hidden');
     }

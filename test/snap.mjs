@@ -12,7 +12,7 @@
  *   - npm run snap [檔名]         (測試單一檔案)
  *   - npm run snap -- --clean [檔名] (強制清空目錄後測試單一檔案)
  *   - npm run snap -- --clean     (僅清空輸出目錄，不進行測試)
- * 
+ *
  * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
  *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */
@@ -118,12 +118,12 @@ try {
         const localPDF = path.isAbsolute(targetFileName)
             ? targetFileName
             : path.resolve(__dirname, 'e2e-files', targetFileName);
-            
+
         if (!fs.existsSync(localPDF)) {
             console.error(`❌ 找不到指定的測試檔案: ${localPDF}，跳過此檔案。`);
             continue;
         }
-        
+
         const winPDF = `\\\\wsl.localhost\\${distro}` + localPDF.replace(/\//g, '\\');
 
         if (!page.url().includes('5500')) {

@@ -936,19 +936,19 @@ function scanResources(scanDoc, page, pageIndex) {
                     const gsObj = scanDoc.context.lookup(extGState.get(key));
 
                     let details = [];
-                    let caVal = 1.0,
-                        CAVal = 1.0;
+                    let fillOpacity = 1.0,
+                        strokeOpacity = 1.0;
                     if (gsObj instanceof PDFDict) {
                         const ca = gsObj.get(PDFName.of('ca'));
                         const CA = gsObj.get(PDFName.of('CA'));
                         const BM = gsObj.get(PDFName.of('BM'));
                         if (ca !== undefined) {
                             details.push(`ca: ${ca.toString()}`);
-                            if (typeof ca.value === 'function') caVal = ca.value();
+                            if (typeof ca.value === 'function') fillOpacity = ca.value();
                         }
                         if (CA !== undefined) {
                             details.push(`CA: ${CA.toString()}`);
-                            if (typeof CA.value === 'function') CAVal = CA.value();
+                            if (typeof CA.value === 'function') strokeOpacity = CA.value();
                         }
                         if (BM !== undefined) details.push(`BM: ${BM.toString()}`);
                     }
@@ -963,8 +963,8 @@ function scanResources(scanDoc, page, pageIndex) {
                             detailText: detailText,
                             page: pageIndex + 1,
                             ref: gsObj,
-                            caVal: caVal,
-                            CAVal: CAVal,
+                            fillOpacity: fillOpacity,
+                            strokeOpacity: strokeOpacity,
                         },
                         isSuspectExtGState,
                         extGStatesToDestroy
