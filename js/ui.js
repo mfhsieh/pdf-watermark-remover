@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modals = document.querySelectorAll('.modal-overlay');
     let lastActiveElement = null;
     let currentlyHasActiveModal = false;
+    let savedScrollPosition = 0;
 
     /**
      * 透過 MutationObserver 統一監聽所有 Modal 的 class 變化，並自動處理焦點與 inert。
@@ -68,13 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (hasActiveModal !== currentlyHasActiveModal) {
             if (hasActiveModal) {
-                // 狀態從無到有：記錄開啟前的焦點
+                // 狀態從無到有：記錄開啟前的焦點與捲動位置
                 lastActiveElement = document.activeElement;
+                savedScrollPosition = window.scrollY;
                 if (mainContainer) {
                     mainContainer.inert = true;
                     mainContainer.setAttribute('aria-hidden', 'true');
                 }
                 document.body.classList.add('modal-open');
+                
+                // 針對手機版徹底防止捲動穿透的終極解法 (鎖死 body)
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${savedScrollPosition}px`;
+                document.body.style.width = '100%';
                 // 將焦點移入 Modal
                 const activeModal = document.querySelector('.modal-overlay.active');
                 if (activeModal && !activeModal.contains(document.activeElement)) {
@@ -88,12 +95,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (focusable) focusable.focus();
                 }
             } else {
-                // 狀態從有到無：解開 inert 並還原焦點
+                // 狀態從有到無：解開 inert 並還原焦點與背景捲動
                 if (mainContainer) {
                     mainContainer.inert = false;
                     mainContainer.setAttribute('aria-hidden', 'false');
                 }
                 document.body.classList.remove('modal-open');
+                
+                // 解開手機版捲動鎖定，並還原至原本的捲動位置
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                window.scrollTo(0, savedScrollPosition);
                 if (lastActiveElement && document.body.contains(lastActiveElement)) {
                     lastActiveElement.focus();
                 }

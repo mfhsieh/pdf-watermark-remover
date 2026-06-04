@@ -26,7 +26,8 @@
 | `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件（支援巢狀遞迴掃描）以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
 | `pdf-cleaner.js`| 核心清除引擎 | 執行實際的 PDF 結構重構。運用「空串流置換」與正則防禦技術來移除浮水印，防止 PDF 損毀。 |
 | `app.js` | 流程控制與事件綁定 | 程式的進入點。負責綁定拖曳、點擊等事件，統一檔案處理流程 (`handleFileSelected`)，並串接上述模組完成完整流程。 |
-| `polyfill-config.js` | 相容性補丁 | 將 `window.TextEncoder` 與 `TextDecoder` 強制設為 `undefined`，確保舊版 `text-encoding` 函式庫在現代瀏覽器中正常掛載。 |
+| `polyfill-config.js` | 相容性補丁 (前綴) | 將 `window.TextEncoder` 與 `TextDecoder` 強制設為 `undefined`，確保舊版 `text-encoding` 函式庫在現代瀏覽器中正常掛載。 |
+| `polyfill-config-after.js`| 相容性補丁 (後置) | 在 `text-encoding` 載入完成後，還原原生的 `TextEncoder` 與 `TextDecoder`，以避免與其他現代套件 (如 `pdf-lib`) 衝突。 |
 
 ---
 
@@ -101,9 +102,11 @@
   已於原始碼頂部明確記錄其對於全域狀態 (`window.State`) 的高度相依性，作為未來若引入建置工具時，優先進行解耦與單元測試重構的明確方向。
 
 ### `ui.js`
-不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 守門員**：
+不僅負責使用 `document.getElementById` 集中宣告所有固定存在的 DOM 元素，它現在更是專案的 **無障礙體驗 (a11y) 與行動端 UX 守門員**：
 - **全域 Escape 鍵監聽：** 統一處理按下 ESC 鍵時關閉預覽彈窗或設定選單，並即時執行清理邏輯。
-- **Modal 焦點陷阱 (Focus Trap)：** 實作 `MutationObserver` 監聽彈窗狀態，當 Modal 開啟時自動對主背景 (`#mainContainer`) 設定 `inert="true"` 與 `aria-hidden="true"`，防止鍵盤焦點與螢幕閱讀器穿透到後方元件。同時加入了 `keydown` (`Tab` / `Shift + Tab`) 的事件攔截與焦點迴圈確保相容性，且針對包含 `textarea` 與 `select` 的設定型彈窗最佳化焦點優先權，避免開啟時發生不正常的畫面位移。
+- **Modal 焦點陷阱 (Focus Trap) 與防捲動穿透 (Scroll Bleed Prevention)：** 實作 `MutationObserver` 監聽彈窗狀態。當 Modal 開啟時：
+  1. 自動對主背景 (`#mainContainer`) 設定 `inert="true"` 與 `aria-hidden="true"`，防止鍵盤焦點與螢幕閱讀器穿透到後方元件。
+  2. 針對手機版觸控拖曳導致的 **捲動穿透 (Scroll Bleed)** 問題，實作了終極防護：記錄捲動位置並將 `body` 強制設為 `position: fixed`，徹底鎖死底層主畫面；關閉時則無縫還原，完美提升行動端操作體驗。
 - **技術債 (Technical Debt) 註明：** 與 `ui-modals.js` 相同，已標示並記錄其受限於 `file://` 執行環境而導致的模組耦合問題。
 
 ### `app.js`
@@ -112,9 +115,9 @@
 - **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
 - **動態配置讀取與輸出：** 捨棄寫死的 DOM ID 綁定，`getOptions()` 會動態迭代全域的 `STRATEGY_REGISTRY` 來抓取 6 大策略當前的核取狀態，達到完全解耦（開閉原則）。處理流程中，會呼叫 `processPdf`，並將重構完成的文件轉成 Blob 供下載，**同時具備容錯的下載檔名處理後備方案**。
 
-### `polyfill-config.js`
-處理外部依賴套件相容性的補丁檔案。
-- **環境設定：** 透過先將 `window.TextEncoder` 與 `window.TextDecoder` 設為 `undefined`，強制舊版 `text-encoding` polyfill 掛載其全域物件。確保應用程式在現代瀏覽器環境中依然能穩定呼叫 Big5 等非標準編碼的轉換功能。
+### `polyfill-config.js` & `polyfill-config-after.js`
+處理外部依賴套件相容性的補丁檔案群。
+- **環境設定與還原：** 透過先將 `window.TextEncoder` 設為 `undefined`，強制舊版 `text-encoding` polyfill 掛載，確保能穩定支援 Big5 等非標準編碼；載入完成後，再透過 `polyfill-config-after.js` 將原生的 TextEncoder 還原，避免對底層 `pdf-lib` 等依賴現代 API 的套件造成效能或相容性干擾。
 
 ---
 
