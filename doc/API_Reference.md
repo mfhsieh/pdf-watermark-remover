@@ -28,6 +28,9 @@
 <dt><a href="#HEURISTIC_THRESHOLD">HEURISTIC_THRESHOLD</a> : <code>number</code></dt>
 <dd><p>高頻率出現門檻 (0~1)</p>
 </dd>
+<dt><a href="#LARGE_TEXT_SIZE_THRESHOLD">LARGE_TEXT_SIZE_THRESHOLD</a> : <code>number</code></dt>
+<dd><p>巨型文字特徵門檻</p>
+</dd>
 <dt><a href="#selectedFile">selectedFile</a> : <code>File</code> | <code>null</code></dt>
 <dd><p>目前使用者選取上傳的 PDF 檔案實體 (File)</p>
 </dd>
@@ -69,6 +72,12 @@
 <dt><a href="#formXObjectsToDestroy">formXObjectsToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存使用者勾選要刪除的 raw stream text</p>
 </dd>
+<dt><a href="#detectedImages">detectedImages</a> : <code>Map.&lt;string, {keyName: string, pages: Array.&lt;number&gt;, ref: any, rawStream: string, width: number, height: number, filterStr: string}&gt;</code></dt>
+<dd><p>影像外部物件狀態（key = refStr）</p>
+</dd>
+<dt><a href="#imagesToDestroy">imagesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
+<dd><p>儲存選定要清除的影像外部物件鍵值</p>
+</dd>
 <dt><a href="#detectedAnnotations">detectedAnnotations</a> : <code>Map.&lt;string, any&gt;</code></dt>
 <dd><p>當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr）</p>
 </dd>
@@ -81,23 +90,23 @@
 <dt><a href="#directContentsToDestroy">directContentsToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存選定要清空的頁面直接內容參照字串</p>
 </dd>
-<dt><a href="#detectedImages">detectedImages</a> : <code>Map.&lt;string, {keyName: string, pages: Array.&lt;number&gt;, ref: any, rawStream: string, width: number, height: number, filterStr: string}&gt;</code></dt>
-<dd><p>影像外部物件狀態（key = refStr）</p>
+<dt><a href="#detectedTextBlocks">detectedTextBlocks</a> : <code>Map.&lt;string, {page: number}&gt;</code></dt>
+<dd><p>巨型文字區塊狀態 (key = pageIndex)</p>
 </dd>
-<dt><a href="#imagesToDestroy">imagesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
-<dd><p>儲存選定要清除的影像外部物件鍵值</p>
-</dd>
-<dt><a href="#detectedExtGStates">detectedExtGStates</a> : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code></dt>
-<dd><p>延伸圖形狀態（key = <code>${page}:${name}</code>）</p>
-</dd>
-<dt><a href="#extGStatesToDestroy">extGStatesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
-<dd><p>儲存選定要清除的延伸圖形狀態鍵值</p>
+<dt><a href="#textBlocksToDestroy">textBlocksToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
+<dd><p>儲存選定要清除的巨型文字區塊所在頁面索引</p>
 </dd>
 <dt><a href="#detectedOCGs">detectedOCGs</a> : <code>Map.&lt;string, {name: string, ref: any}&gt;</code></dt>
 <dd><p>選擇性內容群組狀態（key = ocgRefStr）</p>
 </dd>
 <dt><a href="#ocgsToDestroy">ocgsToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
 <dd><p>儲存選定要隱藏的 OCG 參照字串</p>
+</dd>
+<dt><a href="#detectedExtGStates">detectedExtGStates</a> : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code></dt>
+<dd><p>延伸圖形狀態（key = <code>${page}:${name}</code>）</p>
+</dd>
+<dt><a href="#extGStatesToDestroy">extGStatesToDestroy</a> : <code>Array.&lt;string&gt;</code></dt>
+<dd><p>儲存選定要清除的延伸圖形狀態鍵值</p>
 </dd>
 <dt><a href="#STRATEGY_REGISTRY">STRATEGY_REGISTRY</a></dt>
 <dd><p>STRATEGY_REGISTRY 將各種清理策略封裝註冊。
@@ -185,21 +194,21 @@
 <dt><a href="#loadGlobalKeywords">loadGlobalKeywords()</a> ⇒ <code>void</code></dt>
 <dd><p>載入並初始化全域關鍵字設定（從 localStorage 讀取或使用預設值）</p>
 </dd>
-<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold)</a> ⇒ <code>void</code></dt>
+<dt><a href="#saveGlobalKeywords">saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold, largeTextSizeThreshold)</a> ⇒ <code>void</code></dt>
 <dd><p>儲存全域設定至 localStorage</p>
 </dd>
 <dt><a href="#safeRemoveFromDictionary">safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, targetRef, keysToRemove)</a> ⇒ <code>void</code></dt>
 <dd><p>安全地從 PDFDict 資源字典中移除指定鍵值
 若原字典已被多頁共用，會先進行 clone 以隔離修改。</p>
 </dd>
-<dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>Object</code></dt>
+<dt><a href="#removeDeletedReferencesFromText">removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks])</a> ⇒ <code>Object</code></dt>
 <dd><p>共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)</p>
 </dd>
-<dt><a href="#rebuildStreamWithoutReferences">rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>PDFRawStream</code> | <code>null</code></dt>
+<dt><a href="#rebuildStreamWithoutReferences">rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks])</a> ⇒ <code>PDFRawStream</code> | <code>null</code></dt>
 <dd><p>共用串流重構邏輯：解碼二進位串流，抹除已刪除資源的參照指令，並重構為新的 PDFRawStream。
 若內容有被修改，則回傳重構後的新串流，否則回傳 null。</p>
 </dd>
-<dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys)</a> ⇒ <code>void</code></dt>
+<dt><a href="#cleanContentStreams">cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks])</a> ⇒ <code>void</code></dt>
 <dd><p>清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯</p>
 </dd>
 <dt><a href="#processPdf">processPdf(pdfDoc, options)</a> ⇒ <code>Object</code></dt>
@@ -229,18 +238,18 @@
  若符合條件則將其從資源字典中無損移除。</p>
 </dd>
 <dt><a href="#removeAnnotations">removeAnnotations(page, annotsSet)</a> ⇒ <code>number</code></dt>
-<dd><p>策略二：清除註解 (Annotation)
+<dd><p>策略三：清除註解 (Annotation)
 Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。</p>
 </dd>
 <dt><a href="#removeDirectContent">removeDirectContent(pdfDoc, page, directContentsSet)</a> ⇒ <code>number</code></dt>
-<dd><p>策略三：檢查並清空可疑內容串流
+<dd><p>策略四：檢查並清空可疑內容串流 (頁面直接內容)
 某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj &quot;CONFIDENTIAL&quot;）。
 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。</p>
 </dd>
 <dt><a href="#removeExtGState">removeExtGState(pdfDoc, resources, pageIndex, extGStatesSet)</a> ⇒ <code>Object</code></dt>
-<dd><p>策略五：清理 ExtGState 半透明狀態
+<dd><p>策略七：清理 ExtGState 半透明狀態
  ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
  遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。</p>
 </dd>
@@ -296,6 +305,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 </dd>
 <dt><a href="#generateDirectContentPreviewUrl">generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIndex)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
 <dd><p>生成 Direct Content (頁面直接內容) 的即時預覽 URL</p>
+</dd>
+<dt><a href="#generateTextBlocksPreviewUrl">generateTextBlocksPreviewUrl(pageIndex)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
+<dd><p>生成 TextBlocks (巨型文字區塊) 的即時預覽 URL</p>
 </dd>
 <dt><a href="#updateScanResultUI">updateScanResultUI(optionsContainer)</a></dt>
 <dd><p>掃描完成後更新 UI：根據偵測結果顯示/隱藏策略列、自動勾選疑似浮水印策略，並給出掃描摘要提示。</p>
@@ -392,20 +404,25 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dt><a href="#isSuspectFormXObject">isSuspectFormXObject(entry, [rawStr])</a> ⇒ <code>boolean</code></dt>
 <dd><p>策略 1: 表單外部物件 (Form XObject) 判定</p>
 </dd>
+<dt><a href="#isSuspectImageXObject">isSuspectImageXObject(entry)</a> ⇒ <code>boolean</code></dt>
+<dd><p>策略 2: 影像外部物件 (Image XObject) 判定</p>
+</dd>
 <dt><a href="#isSuspectAnnotation">isSuspectAnnotation(entry)</a> ⇒ <code>boolean</code></dt>
-<dd><p>策略 2: 註解 (Annotation) 判定</p>
+<dd><p>策略 3: 註解 (Annotation) 判定</p>
 </dd>
 <dt><a href="#isSuspectDirectContent">isSuspectDirectContent(entry)</a> ⇒ <code>boolean</code></dt>
-<dd><p>策略 3: 頁面直接內容 (Direct Content) 判定</p>
+<dd><p>策略 4: 頁面直接內容 (Direct Content) 判定</p>
 </dd>
-<dt><a href="#isSuspectImageXObject">isSuspectImageXObject(entry)</a> ⇒ <code>boolean</code></dt>
-<dd><p>策略 4: 影像外部物件 (Image XObject) 判定</p>
-</dd>
-<dt><a href="#isSuspectExtGState">isSuspectExtGState(entry)</a> ⇒ <code>boolean</code></dt>
-<dd><p>策略 5: 延伸圖形狀態 (ExtGState) 判定</p>
+<dt><a href="#isSuspectTextBlock">isSuspectTextBlock(rawStr)</a> ⇒ <code>boolean</code></dt>
+<dd><p>策略 5: 巨型文字區塊 (TextBlocks) 判定
+掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+例如： /F1 100 Tf</p>
 </dd>
 <dt><a href="#isSuspectOCG">isSuspectOCG(entry)</a> ⇒ <code>boolean</code></dt>
 <dd><p>策略 6: 選擇性內容群組 (OCG) 判定</p>
+</dd>
+<dt><a href="#isSuspectExtGState">isSuspectExtGState(entry)</a> ⇒ <code>boolean</code></dt>
+<dd><p>策略 7: 延伸圖形狀態 (ExtGState) 判定</p>
 </dd>
 <dt><a href="#decodeBinaryToText">decodeBinaryToText(data)</a> ⇒ <code>string</code></dt>
 <dd><p>將 Uint8Array 以二進位字串的方式精確轉換（避免 TextDecoder 將非 UTF-8 字元變成亂碼）</p>
@@ -495,6 +512,12 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 高頻率出現門檻 (0~1)
 
 **Kind**: global variable  
+<a name="LARGE_TEXT_SIZE_THRESHOLD"></a>
+
+## LARGE\_TEXT\_SIZE\_THRESHOLD : <code>number</code>
+巨型文字特徵門檻
+
+**Kind**: global variable  
 <a name="selectedFile"></a>
 
 ## selectedFile : <code>File</code> \| <code>null</code>
@@ -567,6 +590,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 儲存使用者勾選要刪除的 raw stream text
 
 **Kind**: global constant  
+<a name="detectedImages"></a>
+
+## detectedImages : <code>Map.&lt;string, {keyName: string, pages: Array.&lt;number&gt;, ref: any, rawStream: string, width: number, height: number, filterStr: string}&gt;</code>
+影像外部物件狀態（key = refStr）
+
+**Kind**: global constant  
+<a name="imagesToDestroy"></a>
+
+## imagesToDestroy : <code>Array.&lt;string&gt;</code>
+儲存選定要清除的影像外部物件鍵值
+
+**Kind**: global constant  
 <a name="detectedAnnotations"></a>
 
 ## detectedAnnotations : <code>Map.&lt;string, any&gt;</code>
@@ -591,28 +626,16 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 儲存選定要清空的頁面直接內容參照字串
 
 **Kind**: global constant  
-<a name="detectedImages"></a>
+<a name="detectedTextBlocks"></a>
 
-## detectedImages : <code>Map.&lt;string, {keyName: string, pages: Array.&lt;number&gt;, ref: any, rawStream: string, width: number, height: number, filterStr: string}&gt;</code>
-影像外部物件狀態（key = refStr）
-
-**Kind**: global constant  
-<a name="imagesToDestroy"></a>
-
-## imagesToDestroy : <code>Array.&lt;string&gt;</code>
-儲存選定要清除的影像外部物件鍵值
+## detectedTextBlocks : <code>Map.&lt;string, {page: number}&gt;</code>
+巨型文字區塊狀態 (key = pageIndex)
 
 **Kind**: global constant  
-<a name="detectedExtGStates"></a>
+<a name="textBlocksToDestroy"></a>
 
-## detectedExtGStates : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code>
-延伸圖形狀態（key = `${page}:${name}`）
-
-**Kind**: global constant  
-<a name="extGStatesToDestroy"></a>
-
-## extGStatesToDestroy : <code>Array.&lt;string&gt;</code>
-儲存選定要清除的延伸圖形狀態鍵值
+## textBlocksToDestroy : <code>Array.&lt;string&gt;</code>
+儲存選定要清除的巨型文字區塊所在頁面索引
 
 **Kind**: global constant  
 <a name="detectedOCGs"></a>
@@ -625,6 +648,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 ## ocgsToDestroy : <code>Array.&lt;string&gt;</code>
 儲存選定要隱藏的 OCG 參照字串
+
+**Kind**: global constant  
+<a name="detectedExtGStates"></a>
+
+## detectedExtGStates : <code>Map.&lt;string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}&gt;</code>
+延伸圖形狀態（key = `${page}:${name}`）
+
+**Kind**: global constant  
+<a name="extGStatesToDestroy"></a>
+
+## extGStatesToDestroy : <code>Array.&lt;string&gt;</code>
+儲存選定要清除的延伸圖形狀態鍵值
 
 **Kind**: global constant  
 <a name="STRATEGY_REGISTRY"></a>
@@ -806,7 +841,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 **Kind**: global function  
 <a name="saveGlobalKeywords"></a>
 
-## saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold) ⇒ <code>void</code>
+## saveGlobalKeywords(keysArray, contentsArray, threshold, heuristicThreshold, largeTextSizeThreshold) ⇒ <code>void</code>
 儲存全域設定至 localStorage
 
 **Kind**: global function  
@@ -817,6 +852,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 | contentsArray | <code>Array.&lt;string&gt;</code> | 內容文字關鍵字陣列 |
 | threshold | <code>number</code> | 透明度門檻值 |
 | heuristicThreshold | <code>number</code> | 智慧偵測高頻率門檻 |
+| largeTextSizeThreshold | <code>number</code> | 巨型文字特徵門檻 |
 
 <a name="safeRemoveFromDictionary"></a>
 
@@ -837,50 +873,53 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 
 <a name="removeDeletedReferencesFromText"></a>
 
-## removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>Object</code>
+## removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks]) ⇒ <code>Object</code>
 共用的字串置換輔助函式，用於從 Content Stream 中移除對已刪除資源的參照 (如 Do, gs, OCG)
 
 **Kind**: global function  
 **Returns**: <code>Object</code> - 置換後的文字與是否被修改的布林值  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| text | <code>string</code> | 原始內容串流文字 |
-| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
-| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
-| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| text | <code>string</code> |  | 原始內容串流文字 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 OCG 鍵名清單 |
+| [removeLargeTextBlocks] | <code>boolean</code> | <code>false</code> | 是否清除巨型文字區塊 |
 
 <a name="rebuildStreamWithoutReferences"></a>
 
-## rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>PDFRawStream</code> \| <code>null</code>
+## rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks]) ⇒ <code>PDFRawStream</code> \| <code>null</code>
 共用串流重構邏輯：解碼二進位串流，抹除已刪除資源的參照指令，並重構為新的 PDFRawStream。
 若內容有被修改，則回傳重構後的新串流，否則回傳 null。
 
 **Kind**: global function  
 **Returns**: <code>PDFRawStream</code> \| <code>null</code> - 重構後的新串流物件  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
-| stream | <code>PDFRawStream</code> | 原始二進位串流 |
-| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
-| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
-| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> |  | PDF 文件物件 |
+| stream | <code>PDFRawStream</code> |  | 原始二進位串流 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 OCG 鍵名清單 |
+| [removeLargeTextBlocks] | <code>boolean</code> | <code>false</code> | 是否清除巨型文字區塊 |
 
 <a name="cleanContentStreams"></a>
 
-## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) ⇒ <code>void</code>
+## cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys, [removeLargeTextBlocks]) ⇒ <code>void</code>
 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
 
 **Kind**: global function  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| pdfDoc | <code>PDFDocument</code> | PDF 文件物件 |
-| page | <code>PDFPage</code> | 頁面物件 |
-| deletedXObjKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 XObject 鍵名清單 |
-| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 ExtGState 鍵名清單 |
-| deletedOcgKeys | <code>Array.&lt;string&gt;</code> | 被刪除的 OCG 鍵名清單 |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| pdfDoc | <code>PDFDocument</code> |  | PDF 文件物件 |
+| page | <code>PDFPage</code> |  | 頁面物件 |
+| deletedXObjKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 XObject 鍵名清單 |
+| deletedExtGStateKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 ExtGState 鍵名清單 |
+| deletedOcgKeys | <code>Array.&lt;string&gt;</code> |  | 被刪除的 OCG 鍵名清單 |
+| [removeLargeTextBlocks] | <code>boolean</code> | <code>false</code> | 是否清除巨型文字區塊 |
 
 <a name="cleanContentStreams..processStream"></a>
 
@@ -911,7 +950,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 | Param | Type | Description |
 | --- | --- | --- |
 | pdfDoc | <code>PDFDocument</code> | pdf-lib 的 PDF 文件物件 |
-| options | <code>Object</code> | 包含 6 大清理策略勾選狀態的布林值物件 |
+| options | <code>Object</code> | 包含 7 大清理策略勾選狀態的布林值物件 |
 
 <a name="cleanResourcesRecursively"></a>
 
@@ -997,7 +1036,7 @@ STRATEGY_REGISTRY 將各種清理策略封裝註冊。
 <a name="removeAnnotations"></a>
 
 ## removeAnnotations(page, annotsSet) ⇒ <code>number</code>
-策略二：清除註解 (Annotation)
+策略三：清除註解 (Annotation)
 Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
 
@@ -1012,7 +1051,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <a name="removeDirectContent"></a>
 
 ## removeDirectContent(pdfDoc, page, directContentsSet) ⇒ <code>number</code>
-策略三：檢查並清空可疑內容串流
+策略四：檢查並清空可疑內容串流 (頁面直接內容)
 某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。
@@ -1029,7 +1068,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <a name="removeExtGState"></a>
 
 ## removeExtGState(pdfDoc, resources, pageIndex, extGStatesSet) ⇒ <code>Object</code>
-策略五：清理 ExtGState 半透明狀態
+策略七：清理 ExtGState 半透明狀態
  ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
  遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
 
@@ -1276,6 +1315,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | streamRefStr | <code>string</code> | 串流參照字串 |
 | pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
 | streamIndex | <code>number</code> | 串流在 Contents 陣列中的索引 |
+
+<a name="generateTextBlocksPreviewUrl"></a>
+
+## generateTextBlocksPreviewUrl(pageIndex) ⇒ <code>Promise.&lt;string&gt;</code>
+生成 TextBlocks (巨型文字區塊) 的即時預覽 URL
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;string&gt;</code> - Blob URL  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pageIndex | <code>number</code> | 頁面索引 (0-indexed) |
 
 <a name="updateScanResultUI"></a>
 
@@ -1613,10 +1664,22 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | entry | <code>Object</code> |  | 表單外部物件偵測 Entry |
 | [rawStr] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | 原始內容串流文字 (可選) |
 
+<a name="isSuspectImageXObject"></a>
+
+## isSuspectImageXObject(entry) ⇒ <code>boolean</code>
+策略 2: 影像外部物件 (Image XObject) 判定
+
+**Kind**: global function  
+**Returns**: <code>boolean</code> - 是否為疑似浮水印  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| entry | <code>Object</code> | 影像外部物件偵測 Entry |
+
 <a name="isSuspectAnnotation"></a>
 
 ## isSuspectAnnotation(entry) ⇒ <code>boolean</code>
-策略 2: 註解 (Annotation) 判定
+策略 3: 註解 (Annotation) 判定
 
 **Kind**: global function  
 **Returns**: <code>boolean</code> - 是否為疑似浮水印  
@@ -1628,7 +1691,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <a name="isSuspectDirectContent"></a>
 
 ## isSuspectDirectContent(entry) ⇒ <code>boolean</code>
-策略 3: 頁面直接內容 (Direct Content) 判定
+策略 4: 頁面直接內容 (Direct Content) 判定
 
 **Kind**: global function  
 **Returns**: <code>boolean</code> - 是否為疑似浮水印  
@@ -1637,29 +1700,19 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | --- | --- | --- |
 | entry | <code>Object</code> | 頁面直接內容偵測 Entry |
 
-<a name="isSuspectImageXObject"></a>
+<a name="isSuspectTextBlock"></a>
 
-## isSuspectImageXObject(entry) ⇒ <code>boolean</code>
-策略 4: 影像外部物件 (Image XObject) 判定
+## isSuspectTextBlock(rawStr) ⇒ <code>boolean</code>
+策略 5: 巨型文字區塊 (TextBlocks) 判定
+掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+例如： /F1 100 Tf
 
 **Kind**: global function  
-**Returns**: <code>boolean</code> - 是否為疑似浮水印  
+**Returns**: <code>boolean</code> - 是否包含巨型文字區塊  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| entry | <code>Object</code> | 影像外部物件偵測 Entry |
-
-<a name="isSuspectExtGState"></a>
-
-## isSuspectExtGState(entry) ⇒ <code>boolean</code>
-策略 5: 延伸圖形狀態 (ExtGState) 判定
-
-**Kind**: global function  
-**Returns**: <code>boolean</code> - 是否為疑似浮水印  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| entry | <code>Object</code> | 延伸圖形狀態偵測 Entry |
+| rawStr | <code>string</code> | 原始內容字串 |
 
 <a name="isSuspectOCG"></a>
 
@@ -1672,6 +1725,18 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 | Param | Type | Description |
 | --- | --- | --- |
 | entry | <code>Object</code> | 選擇性內容群組偵測 Entry |
+
+<a name="isSuspectExtGState"></a>
+
+## isSuspectExtGState(entry) ⇒ <code>boolean</code>
+策略 7: 延伸圖形狀態 (ExtGState) 判定
+
+**Kind**: global function  
+**Returns**: <code>boolean</code> - 是否為疑似浮水印  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| entry | <code>Object</code> | 延伸圖形狀態偵測 Entry |
 
 <a name="decodeBinaryToText"></a>
 

@@ -101,6 +101,18 @@
                             ⚙
                         </button>
                     </div>
+                    <!-- Image XObject：影像外部物件 -->
+                    <div class="option-row" id="optionRowImageXObject">
+                        <label><input type="checkbox" id="removeImageXObject" /> 影像外部物件 (Image XObject)</label>
+                        <button
+                            id="openImageKeywordsModalBtn"
+                            class="icon-btn"
+                            title="設定「影像外部物件」清除選項"
+                            aria-label="設定「影像外部物件」清除選項"
+                        >
+                            ⚙
+                        </button>
+                    </div>
                     <!-- Annotations：各種註解（印章、附註等） -->
                     <div class="option-row" id="optionRowAnnotations">
                         <label><input type="checkbox" id="removeAnnotations" /> 註解 (Annotation)</label>
@@ -125,34 +137,20 @@
                             ⚙
                         </button>
                     </div>
-                    <!-- Image XObject：影像外部物件 -->
-                    <div class="option-row" id="optionRowImageXObject">
-                        <label><input type="checkbox" id="removeImageXObject" /> 影像外部物件 (Image XObject)</label>
+                    <!-- Text Blocks：巨型文字區塊 -->
+                    <div class="option-row" id="optionRowTextBlocks">
+                        <label><input type="checkbox" id="removeTextBlocks" /> 巨型文字區塊 (TextBlocks)</label>
                         <button
-                            id="openImageKeywordsModalBtn"
+                            id="openTextBlocksModalBtn"
                             class="icon-btn"
-                            title="設定「影像外部物件」清除選項"
-                            aria-label="設定「影像外部物件」清除選項"
-                        >
-                            ⚙
-                        </button>
-                    </div>
-
-                    <!-- ExtGState：延伸圖形狀態 -->
-                    <div class="option-row" id="optionRowExtGState">
-                        <label><input type="checkbox" id="removeExtGState" /> 延伸圖形狀態 (ExtGState)</label>
-                        <button
-                            id="openExtGStateKeywordsModalBtn"
-                            class="icon-btn"
-                            title="設定「延伸圖形狀態」清除選項"
-                            aria-label="設定「延伸圖形狀態」清除選項"
+                            title="設定「巨型文字區塊」清除選項"
+                            aria-label="設定「巨型文字區塊」清除選項"
                         >
                             ⚙
                         </button>
                     </div>
                     <!-- OCG / Optional Content Group：選擇性內容群組 -->
                     <div class="option-row" id="optionRowOCG">
-
                         <label><input type="checkbox" id="removeOCG" /> 選擇性內容群組 (OCG)</label>
                         <button
                             id="openOCGKeywordsModalBtn"
@@ -163,14 +161,14 @@
                             ⚙
                         </button>
                     </div>
-                    <!-- Strategy 7: Text Blocks -->
-                    <div class="option-row" id="optionRowTextBlocks">
-                        <label><input type="checkbox" id="removeTextBlocks" /> 巨型文字區塊 (TextBlocks)</label>
+                    <!-- ExtGState：延伸圖形狀態 -->
+                    <div class="option-row" id="optionRowExtGState">
+                        <label><input type="checkbox" id="removeExtGState" /> 延伸圖形狀態 (ExtGState)</label>
                         <button
-                            id="openTextBlocksModalBtn"
+                            id="openExtGStateKeywordsModalBtn"
                             class="icon-btn"
-                            title="設定「巨型文字區塊」清除選項"
-                            aria-label="設定「巨型文字區塊」清除選項"
+                            title="設定「延伸圖形狀態」清除選項"
+                            aria-label="設定「延伸圖形狀態」清除選項"
                         >
                             ⚙
                         </button>
@@ -251,15 +249,12 @@
                                 PDF 底層結構進行清除：
                                 <ul>
                                     <li>
-                                        <strong>頁面直接內容 (Direct Content)</strong>：直接寫入於頁面內容串流 (Content
-                                        Stream) 中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
-                                    </li>
-                                    <li>
-                                        <strong>巨型文字區塊 (TextBlocks)</strong>：透過精確計算版面座標轉換矩陣 (CTM 與 Tm)，自動偵測並清除不尋常大小的巨型文字浮水印。
-                                    </li>
-                                    <li>
                                         <strong>表單外部物件 (Form XObject)</strong
                                         >：獨立封裝的複用元件（支援深層巢狀結構掃描），常見於整頁重複疊加的背景或滿版浮水印。
+                                    </li>
+                                    <li>
+                                        <strong>影像外部物件 (Image XObject)</strong>：以點陣圖（如
+                                        JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
                                     </li>
                                     <li>
                                         <strong>註解 (Annotation)</strong>：包含浮水印 (Watermark)、蓋印與圖章 (Stamp)
@@ -270,16 +265,13 @@
                                         Stream) 中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
                                     </li>
                                     <li>
-                                        <strong>影像外部物件 (Image XObject)</strong>：以點陣圖（如
-                                        JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
+                                        <strong>巨型文字區塊 (TextBlocks)</strong>：透過精確計算版面座標轉換矩陣 (CTM 與
+                                        Tm)，自動偵測並清除不尋常大小的巨型文字浮水印。
                                     </li>
+                                    <li><strong>選擇性內容群組 (OCG)</strong>：可控制特定背景或浮水印可見性的圖層。</li>
                                     <li>
                                         <strong>延伸圖形狀態 (ExtGState)</strong>：控制透明度（Alpha
                                         值）與混合模式狀態的物件，常見於半透明背景或斜角文字浮水印。
-                                    </li>
-                                    <li>
-                                        <strong>選擇性內容群組 (Optional Content Group, OCG)</strong
-                                        >：可控制特定背景或浮水印可見性的圖層。
                                     </li>
                                 </ul>
                             </li>
@@ -415,6 +407,7 @@
                 </p>
 
                 <div class="modal-list-container extended-list">
+                    <!-- 1. 資源鍵名與圖層名稱關鍵字 -->
                     <div class="keywords-field-group">
                         <div class="keywords-field-header">
                             <label class="keywords-field-label">1. 資源鍵名與圖層名稱關鍵字</label>
@@ -438,6 +431,7 @@
                             XObject)、延伸圖形狀態 (ExtGState) 與選擇性內容群組 (OCG)。
                         </p>
                     </div>
+                    <!-- 2. 「頁面直接內容」關鍵字 -->
                     <div class="keywords-field-group">
                         <div class="keywords-field-header">
                             <label class="keywords-field-label">2. 「頁面直接內容」關鍵字</label>
@@ -462,9 +456,57 @@
                             (CMap)、向量路徑或點陣影像，此關鍵字將無法命中。建議善用「👁️ 預覽」功能，眼見為憑。
                         </p>
                     </div>
+                    <!-- 3. 巨型文字特徵門檻 (字型大小) -->
                     <div class="keywords-field-group">
                         <div class="keywords-field-header">
-                            <label class="keywords-field-label">3. 高透明度特徵門檻</label>
+                            <label class="keywords-field-label">3. 巨型文字特徵門檻 (字型大小)</label>
+                            <button
+                                id="resetLargeTextSizeBtn"
+                                class="modal-select-btn deselect-all"
+                                title="回復巨型文字門檻的預設值"
+                            >
+                                ↺ 回復預設
+                            </button>
+                        </div>
+                        <p class="keywords-hint intro">
+                            當文字的「實際顯示大小 (Effective
+                            Size)」<strong>大於或等於</strong>此數值時，會被預選為巨型文字浮水印。
+                        </p>
+
+                        <div class="slider-control-group">
+                            <span class="slider-label">小</span>
+                            <input
+                                type="range"
+                                id="largeTextSizeThresholdSlider"
+                                min="10"
+                                max="300"
+                                step="1"
+                                class="slider-input"
+                                aria-label="巨型文字特徵門檻滑桿"
+                            />
+                            <span class="slider-label">大</span>
+                            <div class="slider-value-wrapper">
+                                <input
+                                    type="number"
+                                    id="largeTextSizeThresholdInput"
+                                    class="keywords-textarea slider-number-input"
+                                    min="10"
+                                    max="500"
+                                    step="1"
+                                    placeholder="例如: 80"
+                                    aria-label="巨型文字特徵門檻數值"
+                                />
+                            </div>
+                        </div>
+
+                        <p class="keywords-hint">
+                            <span class="hint-primary">適用策略：</span>巨型文字區塊 (TextBlocks)。
+                        </p>
+                    </div>
+                    <!-- 4. 高透明度特徵門檻 -->
+                    <div class="keywords-field-group">
+                        <div class="keywords-field-header">
+                            <label class="keywords-field-label">4. 高透明度特徵門檻</label>
                             <button
                                 id="resetTransparencyBtn"
                                 class="modal-select-btn deselect-all"
@@ -508,10 +550,10 @@
                             <span class="hint-primary">適用策略：</span>延伸圖形狀態 (ExtGState)。
                         </p>
                     </div>
-
+                    <!-- 5. 高頻特徵門檻 -->
                     <div class="keywords-field-group">
                         <div class="keywords-field-header">
-                            <label class="keywords-field-label">4. 高頻特徵門檻</label>
+                            <label class="keywords-field-label">5. 高頻特徵門檻</label>
                             <button
                                 id="resetHeuristicBtn"
                                 class="modal-select-btn deselect-all"
@@ -555,52 +597,6 @@
                             (Image XObject)。
                         </p>
                     </div>
-
-                    <div class="keywords-field-group">
-                        <div class="keywords-field-header">
-                            <label class="keywords-field-label">5. 巨型文字特徵門檻 (字型大小)</label>
-                            <button
-                                id="resetLargeTextSizeBtn"
-                                class="modal-select-btn deselect-all"
-                                title="回復巨型文字門檻的預設值"
-                            >
-                                ↺ 回復預設
-                            </button>
-                        </div>
-                        <p class="keywords-hint intro">
-                            當文字的「實際顯示大小 (Effective Size)」<strong>大於或等於</strong>此數值時，會被預選為巨型文字浮水印。
-                        </p>
-
-                        <div class="slider-control-group">
-                            <span class="slider-label">小</span>
-                            <input
-                                type="range"
-                                id="largeTextSizeThresholdSlider"
-                                min="10"
-                                max="300"
-                                step="1"
-                                class="slider-input"
-                                aria-label="巨型文字特徵門檻滑桿"
-                            />
-                            <span class="slider-label">大</span>
-                            <div class="slider-value-wrapper">
-                                <input
-                                    type="number"
-                                    id="largeTextSizeThresholdInput"
-                                    class="keywords-textarea slider-number-input"
-                                    min="10"
-                                    max="500"
-                                    step="1"
-                                    placeholder="例如: 80"
-                                    aria-label="巨型文字特徵門檻數值"
-                                />
-                            </div>
-                        </div>
-
-                        <p class="keywords-hint">
-                            <span class="hint-primary">適用策略：</span>巨型文字區塊 (TextBlocks)。
-                        </p>
-                    </div>
                 </div>
 
                 <div class="modal-actions bar">
@@ -624,17 +620,19 @@
             <div class="modal-card">
                 <h3 id="passwordModalTitle">🔒 此 PDF 檔案已受密碼保護</h3>
                 <p>請輸入文件密碼以進行解密與浮水印清除：</p>
-                <input
-                    type="password"
-                    id="pdfPasswordInput"
-                    placeholder="請輸入 PDF 密碼"
-                    aria-label="請輸入 PDF 密碼"
-                />
-                <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
-                <div class="modal-actions">
-                    <button id="modalCancelButton" class="button">取消</button>
-                    <button id="modalSubmitButton" class="button button-primary">確認</button>
-                </div>
+                <form id="passwordModalForm" onsubmit="event.preventDefault()">
+                    <input
+                        type="password"
+                        id="pdfPasswordInput"
+                        placeholder="請輸入 PDF 密碼"
+                        aria-label="請輸入 PDF 密碼"
+                    />
+                    <div id="modalError" class="modal-error hidden">密碼錯誤，請重新輸入。</div>
+                    <div class="modal-actions">
+                        <button type="button" id="modalCancelButton" class="button">取消</button>
+                        <button type="submit" id="modalSubmitButton" class="button button-primary">確認</button>
+                    </div>
+                </form>
             </div>
         </div>
 

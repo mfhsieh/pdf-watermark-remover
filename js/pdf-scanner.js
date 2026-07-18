@@ -616,6 +616,23 @@ async function generateDirectContentPreviewUrl(streamRefStr, pageIndex, streamIn
 }
 
 /**
+ * 生成 TextBlocks (巨型文字區塊) 的即時預覽 URL
+ * @param {number} pageIndex - 頁面索引 (0-indexed)
+ * @returns {Promise<string>} Blob URL
+ */
+async function generateTextBlocksPreviewUrl(pageIndex) {
+    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
+    const { previewDoc, page } = await createIsolatedPreviewDoc(srcDoc, pageIndex);
+
+    // 套用 cleanContentStreams 僅移除此頁面的大型文字區塊
+    if (typeof cleanContentStreams === 'function') {
+        cleanContentStreams(previewDoc, page, [], [], [], true);
+    }
+
+    return await saveAndCreatePreviewUrl(previewDoc);
+}
+
+/**
  * 掃描完成後更新 UI：根據偵測結果顯示/隱藏策略列、自動勾選疑似浮水印策略，並給出掃描摘要提示。
  * @param {HTMLElement} optionsContainer - 策略選項容器 DOM 元素
  */
@@ -1021,6 +1038,15 @@ function scanDirectContent(scanDoc, page, pageIndex) {
                         isSuspectDirectContent,
                         directContentsToDestroy
                     );
+
+                    // 策略 5：巨型文字區塊偵測
+                    if (isSuspectTextBlock(rawStr)) {
+                        const pageKey = `page_${pageIndex}`;
+                        if (!detectedTextBlocks.has(pageKey)) {
+                            detectedTextBlocks.set(pageKey, { page: pageIndex + 1 });
+                            textBlocksToDestroy.push(pageKey); // 預設自動勾選
+                        }
+                    }
                 } catch (e) {
                     console.error('Direct content parse error', e);
                 }

@@ -45,7 +45,8 @@ if (isClean && args.length === 0) {
     process.exit(0);
 }
 
-const targetFileNames = args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf'];
+const targetFileNames =
+    args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf', 'sample5.pdf'];
 
 // 如果是預設全部測試，或者明確加上 --clean 選項，則清空輸出目錄避免舊資料殘留；否則僅確保目錄存在
 if (args.length === 0 || isClean) {
@@ -135,10 +136,12 @@ try {
 
         await page.setCacheEnabled(false);
         await page.reload({ waitUntil: 'networkidle0' });
+        page.on('pageerror', (err) => console.log('Page Error:', err));
+        page.on('console', (msg) => console.log('Console:', msg.text()));
         await page.setViewport({ width: 1280, height: 900 });
 
         // 1. 初始狀態截圖
-        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-01-initial.png`, fullPage: true });
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-01-initial.png` });
         console.log('📸 截圖 1: 初始狀態 ✅');
 
         // 2. 上傳檔案並等待背景掃描完成
@@ -147,8 +150,14 @@ try {
         await fileInput.uploadFile(winPDF);
         console.log('📂 檔案已上傳，等待掃描...');
 
-        await page.waitForFunction(() => document.body.innerText.includes('掃描完成'), { timeout: 30000 });
-        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-02-scanned.png`, fullPage: true });
+        await page.waitForFunction(
+            () => {
+                const btn = document.getElementById('processButton');
+                return btn && !btn.classList.contains('hidden') && !btn.disabled;
+            },
+            { timeout: 60000 }
+        );
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-02-scanned.png` });
         console.log('📸 截圖 2: 掃描完成 ✅');
 
         // 2.5 開啟各個設定彈窗 (Modals) 並截圖
@@ -166,6 +175,12 @@ try {
                 active: '#formXObjectKeywordsModal',
             },
             {
+                name: 'image-xobject',
+                open: '#openImageKeywordsModalBtn',
+                close: '#closeImageKeywordsModalBtn',
+                active: '#imageKeywordsModal',
+            },
+            {
                 name: 'annotations',
                 open: '#openAnnotsSettingsModalBtn',
                 close: '#closeAnnotsSettingsModalBtn',
@@ -178,22 +193,22 @@ try {
                 active: '#triggerWordsModal',
             },
             {
-                name: 'image-xobject',
-                open: '#openImageKeywordsModalBtn',
-                close: '#closeImageKeywordsModalBtn',
-                active: '#imageKeywordsModal',
-            },
-            {
-                name: 'extgstate',
-                open: '#openExtGStateKeywordsModalBtn',
-                close: '#closeExtGStateKeywordsModalBtn',
-                active: '#extGStateKeywordsModal',
+                name: 'text-blocks',
+                open: '#openTextBlocksModalBtn',
+                close: '#closeTextBlocksModalBtn',
+                active: '#textBlocksModal',
             },
             {
                 name: 'ocg',
                 open: '#openOCGKeywordsModalBtn',
                 close: '#closeOCGKeywordsModalBtn',
                 active: '#ocgKeywordsModal',
+            },
+            {
+                name: 'extgstate',
+                open: '#openExtGStateKeywordsModalBtn',
+                close: '#closeExtGStateKeywordsModalBtn',
+                active: '#extGStateKeywordsModal',
             },
         ];
 
@@ -249,7 +264,7 @@ try {
         console.log('🚀 已點擊清除按鈕，等待處理...');
 
         await page.waitForFunction(() => document.body.innerText.includes('清除已完成'), { timeout: 30000 });
-        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-03-done.png`, fullPage: true });
+        await page.screenshot({ path: `${snapFilesDir}/${baseName}-ui-03-done.png` });
         console.log('📸 截圖 3: 清除完成 ✅');
     }
 

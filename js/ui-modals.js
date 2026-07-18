@@ -222,7 +222,14 @@ class WatermarkStrategyModal {
             this.listContainer.before(controlsRow);
 
             // 針對支援即時預覽的清理類型，預先判定以減少迴圈內的重複陣列宣告
-            const previewTypes = ['formXObjectItem', 'imageXObjectItem', 'directContentItem', 'annotItem', 'ocgItem'];
+            const previewTypes = [
+                'formXObjectItem',
+                'imageXObjectItem',
+                'directContentItem',
+                'annotItem',
+                'ocgItem',
+                'textBlocksItem',
+            ];
             const supportPreview = previewTypes.includes(this.checkboxName);
 
             const sortedEntries = Array.from(map.entries()).sort(this.getSortCompare);
@@ -354,71 +361,7 @@ new WatermarkStrategyModal({
     resetMsg: '已將當前檔案中的「表單外部物件」清理選項回復為預設值（預設勾選疑似浮水印的物件，其餘安全保留）。',
 });
 
-// 2. 註解 (Annotation) Modal
-new WatermarkStrategyModal({
-    modalId: 'annotsSettingsModal',
-    openBtnId: 'openAnnotsSettingsModalBtn',
-    closeBtnId: 'closeAnnotsSettingsModalBtn',
-    applyBtnId: 'applyAnnotsSettingsBtn',
-    resetBtnId: 'resetAnnotsSettingsBtn',
-    listContainerId: 'annotsSubtypesContainer',
-    descId: 'annotsModalDesc',
-    checkboxName: 'annotItem',
-    emptyIcon: '📄',
-    emptyMessage: '當前 PDF 檔案中未偵測到任何「註解」，無需進行設定。',
-    mainCheckboxId: 'removeAnnotations',
-    getDetectedMap: () => detectedAnnotations,
-    getDestroyList: () => annotsToDestroy,
-    getSuspectState: (key, entry) => isSuspectAnnotation(entry),
-    getSortCompare: (a, b) => {
-        const annotA = a[1];
-        const annotB = b[1];
-        if (annotA.page !== annotB.page) return annotA.page - annotB.page;
-        const isSpecialA = annotA.subtype === 'Link' || annotA.subtype === 'Widget';
-        const isSpecialB = annotB.subtype === 'Link' || annotB.subtype === 'Widget';
-        if (isSpecialA && !isSpecialB) return 1;
-        if (!isSpecialA && isSpecialB) return -1;
-        if (annotA.subtype !== annotB.subtype) return annotA.subtype.localeCompare(annotB.subtype);
-        return 0;
-    },
-    renderLabel: (labelEl, key, entry) => {
-        const meta = annotSubtypeMeta[entry.subtype];
-        const labelText = meta ? meta.label : `/${entry.subtype}`;
-        const textColor = meta ? meta.color : 'inherit';
-        if (textColor !== 'inherit') labelEl.style.color = textColor;
-        const pageLabel = ` (第 ${entry.page} 頁)`;
-        labelEl.appendChild(document.createTextNode(`[${labelText}]${pageLabel}`));
-    },
-    applyMsgTemplate: (len) => `已成功套用「註解」清理設定！共選定清理 ${len} 個「註解」實例。`,
-    resetMsg: '已將當前檔案中的「註解」清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。',
-});
-
-// 3. 頁面直接內容 (Direct Content) Modal
-new WatermarkStrategyModal({
-    modalId: 'triggerWordsModal',
-    openBtnId: 'openTriggerWordsModalBtn',
-    closeBtnId: 'closeTriggerWordsModalBtn',
-    applyBtnId: 'applyTriggerWordsBtn',
-    resetBtnId: 'resetTriggerWordsBtn',
-    listContainerId: 'directContentListContainer',
-    descId: 'triggerWordsModalDesc',
-    checkboxName: 'directContentItem',
-    emptyIcon: '📭',
-    emptyMessage: '當前 PDF 檔案中未偵測到任何「頁面直接內容」。',
-    mainCheckboxId: 'removeDirectContent',
-    getDetectedMap: () => detectedDirectContents,
-    getDestroyList: () => directContentsToDestroy,
-    getSuspectState: (key, entry) => isSuspectDirectContent(entry),
-    getSortCompare: (a, b) => a[1].page - b[1].page,
-    renderLabel: (labelEl, key, entry) => {
-        const labelText = `第 ${entry.page} 頁`;
-        labelEl.appendChild(document.createTextNode(labelText));
-    },
-    applyMsgTemplate: (len) => `已成功套用「頁面直接內容」清理設定！共選定清理 ${len} 個「頁面直接內容」實例。`,
-    resetMsg: '已將當前檔案中的「頁面直接內容」清理選項回復為預設值（預設勾選疑似浮水印的內容串流，其餘安全保留）。',
-});
-
-// 4. 影像外部物件 (Image XObject) Modal
+// 2. 影像外部物件 (Image XObject) Modal
 new WatermarkStrategyModal({
     modalId: 'imageKeywordsModal',
     openBtnId: 'openImageKeywordsModalBtn',
@@ -458,30 +401,92 @@ new WatermarkStrategyModal({
     resetMsg: '已將當前檔案中的「影像外部物件」清理選項回復為預設值（自動勾選名稱疑似浮水印之項目，其餘安全保留）。',
 });
 
-// 5. 延伸圖形狀態 (ExtGState) Modal
+// 3. 註解 (Annotation) Modal
 new WatermarkStrategyModal({
-    modalId: 'extGStateKeywordsModal',
-    openBtnId: 'openExtGStateKeywordsModalBtn',
-    closeBtnId: 'closeExtGStateKeywordsModalBtn',
-    applyBtnId: 'applyExtGStateKeywordsBtn',
-    resetBtnId: 'resetExtGStateBtn',
-    listContainerId: 'extGStateListContainer',
-    descId: 'extGStateModalDesc',
-    checkboxName: 'extGStateItem',
-    emptyIcon: '📭',
-    emptyMessage: '當前 PDF 檔案中未偵測到任何「延伸圖形狀態」。',
-    mainCheckboxId: 'removeExtGState',
-    getDetectedMap: () => detectedExtGStates,
-    getDestroyList: () => extGStatesToDestroy,
-    getSuspectState: (key, entry) => isSuspectExtGState(entry),
-    getSortCompare: (a, b) =>
-        a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
-    renderLabel: (labelEl, key, entry) => {
-        const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
-        labelEl.appendChild(document.createTextNode(`${displayName} (${entry.detailText}) (第 ${entry.page} 頁)`));
+    modalId: 'annotsSettingsModal',
+    openBtnId: 'openAnnotsSettingsModalBtn',
+    closeBtnId: 'closeAnnotsSettingsModalBtn',
+    applyBtnId: 'applyAnnotsSettingsBtn',
+    resetBtnId: 'resetAnnotsSettingsBtn',
+    listContainerId: 'annotsSubtypesContainer',
+    descId: 'annotsModalDesc',
+    checkboxName: 'annotItem',
+    emptyIcon: '📄',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「註解」，無需進行設定。',
+    mainCheckboxId: 'removeAnnotations',
+    getDetectedMap: () => detectedAnnotations,
+    getDestroyList: () => annotsToDestroy,
+    getSuspectState: (key, entry) => isSuspectAnnotation(entry),
+    getSortCompare: (a, b) => {
+        const annotA = a[1];
+        const annotB = b[1];
+        if (annotA.page !== annotB.page) return annotA.page - annotB.page;
+        const isSpecialA = annotA.subtype === 'Link' || annotA.subtype === 'Widget';
+        const isSpecialB = annotB.subtype === 'Link' || annotB.subtype === 'Widget';
+        if (isSpecialA && !isSpecialB) return 1;
+        if (!isSpecialA && isSpecialB) return -1;
+        if (annotA.subtype !== annotB.subtype) return annotA.subtype.localeCompare(annotB.subtype);
+        return 0;
     },
-    applyMsgTemplate: (len) => `已成功套用「延伸圖形狀態」清理設定！共選定清理 ${len} 個「延伸圖形狀態」實例。`,
-    resetMsg: '已將當前檔案中的「延伸圖形狀態」清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。',
+    renderLabel: (labelEl, key, entry) => {
+        const meta = annotSubtypeMeta[entry.subtype];
+        const labelText = meta ? meta.label : `/${entry.subtype}`;
+        const textColor = meta ? meta.color : 'inherit';
+        if (textColor !== 'inherit') labelEl.style.color = textColor;
+        const pageLabel = ` (第 ${entry.page} 頁)`;
+        labelEl.appendChild(document.createTextNode(`[${labelText}]${pageLabel}`));
+    },
+    applyMsgTemplate: (len) => `已成功套用「註解」清理設定！共選定清理 ${len} 個「註解」實例。`,
+    resetMsg: '已將當前檔案中的「註解」清理選項回復為預設值（預設勾選 Watermark 與 Stamp 類型，其餘類型安全保留）。',
+});
+
+// 4. 頁面直接內容 (Direct Content) Modal
+new WatermarkStrategyModal({
+    modalId: 'triggerWordsModal',
+    openBtnId: 'openTriggerWordsModalBtn',
+    closeBtnId: 'closeTriggerWordsModalBtn',
+    applyBtnId: 'applyTriggerWordsBtn',
+    resetBtnId: 'resetTriggerWordsBtn',
+    listContainerId: 'directContentListContainer',
+    descId: 'triggerWordsModalDesc',
+    checkboxName: 'directContentItem',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「頁面直接內容」。',
+    mainCheckboxId: 'removeDirectContent',
+    getDetectedMap: () => detectedDirectContents,
+    getDestroyList: () => directContentsToDestroy,
+    getSuspectState: (key, entry) => isSuspectDirectContent(entry),
+    getSortCompare: (a, b) => a[1].page - b[1].page,
+    renderLabel: (labelEl, key, entry) => {
+        const labelText = `第 ${entry.page} 頁`;
+        labelEl.appendChild(document.createTextNode(labelText));
+    },
+    applyMsgTemplate: (len) => `已成功套用「頁面直接內容」清理設定！共選定清理 ${len} 個「頁面直接內容」實例。`,
+    resetMsg: '已將當前檔案中的「頁面直接內容」清理選項回復為預設值（預設勾選疑似浮水印的內容串流，其餘安全保留）。',
+});
+
+// 5. 巨型文字區塊 (TextBlocks) Modal
+new WatermarkStrategyModal({
+    modalId: 'textBlocksModal',
+    openBtnId: 'openTextBlocksModalBtn',
+    closeBtnId: 'closeTextBlocksModalBtn',
+    applyBtnId: 'applyTextBlocksBtn',
+    resetBtnId: 'resetTextBlocksBtn',
+    listContainerId: 'textBlocksListContainer',
+    descId: 'textBlocksModalDesc',
+    checkboxName: 'textBlocksItem',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「巨型文字區塊」。',
+    mainCheckboxId: 'removeTextBlocks',
+    getDetectedMap: () => detectedTextBlocks,
+    getDestroyList: () => textBlocksToDestroy,
+    getSuspectState: () => true,
+    getSortCompare: (a, b) => a[1].page - b[1].page,
+    renderLabel: (labelEl, key, entry) => {
+        labelEl.appendChild(document.createTextNode(`第 ${entry.page} 頁的巨型文字區塊`));
+    },
+    applyMsgTemplate: (len) => `已成功套用「巨型文字區塊」清理設定！共選定清理 ${len} 個實例。`,
+    resetMsg: '已將當前檔案中的「巨型文字區塊」清理選項回復為預設值（自動勾選偵測到的區塊）。',
 });
 
 // 6. 選擇性內容群組 (OCG) Modal
@@ -508,6 +513,32 @@ new WatermarkStrategyModal({
     resetMsg: '已將當前檔案中的「選擇性內容群組」清理選項回復為預設值（自動勾選名稱疑似浮水印之圖層，其餘安全保留）。',
 });
 
+// 7. 延伸圖形狀態 (ExtGState) Modal
+new WatermarkStrategyModal({
+    modalId: 'extGStateKeywordsModal',
+    openBtnId: 'openExtGStateKeywordsModalBtn',
+    closeBtnId: 'closeExtGStateKeywordsModalBtn',
+    applyBtnId: 'applyExtGStateKeywordsBtn',
+    resetBtnId: 'resetExtGStateBtn',
+    listContainerId: 'extGStateListContainer',
+    descId: 'extGStateModalDesc',
+    checkboxName: 'extGStateItem',
+    emptyIcon: '📭',
+    emptyMessage: '當前 PDF 檔案中未偵測到任何「延伸圖形狀態」。',
+    mainCheckboxId: 'removeExtGState',
+    getDetectedMap: () => detectedExtGStates,
+    getDestroyList: () => extGStatesToDestroy,
+    getSuspectState: (key, entry) => isSuspectExtGState(entry),
+    getSortCompare: (a, b) =>
+        a[1].page !== b[1].page ? a[1].page - b[1].page : a[1].keyName.localeCompare(b[1].keyName),
+    renderLabel: (labelEl, key, entry) => {
+        const displayName = entry.keyName.startsWith('/') ? entry.keyName : `/${entry.keyName}`;
+        labelEl.appendChild(document.createTextNode(`${displayName} (${entry.detailText}) (第 ${entry.page} 頁)`));
+    },
+    applyMsgTemplate: (len) => `已成功套用「延伸圖形狀態」清理設定！共選定清理 ${len} 個「延伸圖形狀態」實例。`,
+    resetMsg: '已將當前檔案中的「延伸圖形狀態」清理選項回復為預設值（自動勾選疑似浮水印的延伸狀態，其餘安全保留）。',
+});
+
 // ==========================================
 // [Global Settings] 全域設定彈出視窗 (Modal) UI 綁定邏輯
 // ==========================================
@@ -519,6 +550,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const transparencySlider = document.getElementById('transparencyThresholdSlider');
     const heuristicInput = document.getElementById('heuristicThresholdInput');
     const heuristicSlider = document.getElementById('heuristicThresholdSlider');
+    const largeTextSizeInput = document.getElementById('largeTextSizeThresholdInput');
+    const largeTextSizeSlider = document.getElementById('largeTextSizeThresholdSlider');
 
     // 雙向綁定：透明度滑桿與輸入框
     if (transparencySlider && transparencyInput) {
@@ -550,6 +583,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (largeTextSizeSlider && largeTextSizeInput) {
+        largeTextSizeSlider.addEventListener('input', (e) => {
+            largeTextSizeInput.value = e.target.value;
+        });
+
+        largeTextSizeInput.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                largeTextSizeSlider.value = val;
+            }
+        });
+    }
+
     /**
      * 輔助函式：自動根據內容多寡調整 Textarea 的高度
      * @param {HTMLTextAreaElement} el - 目標文字方塊元素
@@ -570,6 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (transparencySlider) transparencySlider.value = TRANSPARENCY_THRESHOLD;
         if (heuristicInput) heuristicInput.value = HEURISTIC_THRESHOLD;
         if (heuristicSlider) heuristicSlider.value = HEURISTIC_THRESHOLD;
+        if (largeTextSizeInput) largeTextSizeInput.value = LARGE_TEXT_SIZE_THRESHOLD;
+        if (largeTextSizeSlider) largeTextSizeSlider.value = LARGE_TEXT_SIZE_THRESHOLD;
         modal.classList.add('active');
 
         // 開啟時立即觸發高度適應，避免內容過長出現捲軸 (微幅延遲確保渲染計算精確)
@@ -616,6 +664,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const resetLargeTextSizeBtn = document.getElementById('resetLargeTextSizeBtn');
+    if (resetLargeTextSizeBtn) {
+        resetLargeTextSizeBtn.addEventListener('click', async () => {
+            if (await customConfirm('確定要將「巨型文字特徵門檻」回復為預設值嗎？')) {
+                if (largeTextSizeInput) largeTextSizeInput.value = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
+                if (largeTextSizeSlider) largeTextSizeSlider.value = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
+            }
+        });
+    }
+
     document.getElementById('saveGlobalKeywordsBtn').addEventListener('click', () => {
         const keysRaw = keyInput.value
             .split(',')
@@ -634,7 +692,13 @@ document.addEventListener('DOMContentLoaded', () => {
             finalHeuristicThreshold = isNaN(hRaw) ? DEFAULT_HEURISTIC_THRESHOLD : hRaw;
         }
 
-        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold, finalHeuristicThreshold);
+        let finalLargeTextSizeThreshold = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
+        if (largeTextSizeInput) {
+            const lRaw = parseFloat(largeTextSizeInput.value);
+            finalLargeTextSizeThreshold = isNaN(lRaw) ? DEFAULT_LARGE_TEXT_SIZE_THRESHOLD : lRaw;
+        }
+
+        saveGlobalKeywords(keysRaw, contentsRaw, finalThreshold, finalHeuristicThreshold, finalLargeTextSizeThreshold);
         modal.classList.remove('active');
         addStatusMessage('已儲存自訂設定。', 'success');
 
@@ -705,6 +769,10 @@ async function openObjectPreview(strategyType, key, entry) {
             ocgItem: async () => {
                 objectPreviewTitle.innerHTML = `🔍 圖層<strong class="preview-effect-badge">移除效果</strong>預覽：${escapeHTML(entry.name)} (全份文件)`;
                 return await generateOCGPreviewUrl(key);
+            },
+            textBlocksItem: async () => {
+                objectPreviewTitle.innerHTML = `🔍 巨型文字區塊<strong class="preview-effect-badge">移除效果</strong>預覽：第 ${entry.page} 頁`;
+                return await generateTextBlocksPreviewUrl(entry.page - 1);
             },
         };
 

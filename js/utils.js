@@ -91,27 +91,7 @@ function isSuspectFormXObject(entry, rawStr = '') {
 }
 
 /**
- * 策略 2: 註解 (Annotation) 判定
- * @param {Object} entry - 註解偵測 Entry
- * @returns {boolean} 是否為疑似浮水印
- */
-function isSuspectAnnotation(entry) {
-    if (!entry) return false;
-    return entry.subtype === 'Watermark' || entry.subtype === 'Stamp';
-}
-
-/**
- * 策略 3: 頁面直接內容 (Direct Content) 判定
- * @param {Object} entry - 頁面直接內容偵測 Entry
- * @returns {boolean} 是否為疑似浮水印
- */
-function isSuspectDirectContent(entry) {
-    if (!entry) return false;
-    return isSuspectContentText(entry.rawText);
-}
-
-/**
- * 策略 4: 影像外部物件 (Image XObject) 判定
+ * 策略 2: 影像外部物件 (Image XObject) 判定
  * @param {Object} entry - 影像外部物件偵測 Entry
  * @returns {boolean} 是否為疑似浮水印
  */
@@ -122,17 +102,46 @@ function isSuspectImageXObject(entry) {
 }
 
 /**
- * 策略 5: 延伸圖形狀態 (ExtGState) 判定
- * @param {Object} entry - 延伸圖形狀態偵測 Entry
+ * 策略 3: 註解 (Annotation) 判定
+ * @param {Object} entry - 註解偵測 Entry
  * @returns {boolean} 是否為疑似浮水印
  */
-function isSuspectExtGState(entry) {
+function isSuspectAnnotation(entry) {
     if (!entry) return false;
-    if (isSuspectKeyName(entry.keyName)) return true;
-    const fillOpacity = entry.fillOpacity !== undefined ? entry.fillOpacity : 1.0;
-    const strokeOpacity = entry.strokeOpacity !== undefined ? entry.strokeOpacity : 1.0;
-    // 使用 config.js 中全域定義的透明度門檻（預設 0.5）
-    return fillOpacity <= TRANSPARENCY_THRESHOLD || strokeOpacity <= TRANSPARENCY_THRESHOLD;
+    return entry.subtype === 'Watermark' || entry.subtype === 'Stamp';
+}
+
+/**
+ * 策略 4: 頁面直接內容 (Direct Content) 判定
+ * @param {Object} entry - 頁面直接內容偵測 Entry
+ * @returns {boolean} 是否為疑似浮水印
+ */
+function isSuspectDirectContent(entry) {
+    if (!entry) return false;
+    return isSuspectContentText(entry.rawText);
+}
+
+/**
+ * 策略 5: 巨型文字區塊 (TextBlocks) 判定
+ * 掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+ * 例如： /F1 100 Tf
+ * @param {string} rawStr - 原始內容字串
+ * @returns {boolean} 是否包含巨型文字區塊
+ */
+function isSuspectTextBlock(rawStr) {
+    if (!rawStr) return false;
+    const btBlocks = rawStr.match(/BT[\s\S]*?ET/g);
+    if (!btBlocks) return false;
+
+    for (const block of btBlocks) {
+        // 尋找 Tf 指令前面的數字，例如 "100 Tf" 或 "120.5 Tf"
+        const tfMatch = block.match(/([0-9.]+)\s+Tf\b/);
+        if (tfMatch) {
+            const fontSize = parseFloat(tfMatch[1]);
+            if (fontSize >= 80) return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -143,6 +152,20 @@ function isSuspectExtGState(entry) {
 function isSuspectOCG(entry) {
     if (!entry) return false;
     return isSuspectKeyName(entry.name);
+}
+
+/**
+ * 策略 7: 延伸圖形狀態 (ExtGState) 判定
+ * @param {Object} entry - 延伸圖形狀態偵測 Entry
+ * @returns {boolean} 是否為疑似浮水印
+ */
+function isSuspectExtGState(entry) {
+    if (!entry) return false;
+    if (isSuspectKeyName(entry.keyName)) return true;
+    const fillOpacity = entry.fillOpacity !== undefined ? entry.fillOpacity : 1.0;
+    const strokeOpacity = entry.strokeOpacity !== undefined ? entry.strokeOpacity : 1.0;
+    // 使用 config.js 中全域定義的透明度門檻（預設 0.5）
+    return fillOpacity <= TRANSPARENCY_THRESHOLD || strokeOpacity <= TRANSPARENCY_THRESHOLD;
 }
 
 /**

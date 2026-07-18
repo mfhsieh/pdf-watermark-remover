@@ -6,7 +6,7 @@
  * 2. 自動遍歷並點擊六大策略 (FormXObject, Annotation 等) 的浮水印設定視窗。
  * 3. 利用 Fetch API 將隱藏 iframe 中的 Blob URL (物件預覽圖) 取出，並轉存為本地端 PDF，
  *    藉此迴避原生 PDFium 外掛進程導致 Puppeteer 截圖變黑的問題。
- * 4. 支援批次輪詢測試多份樣本 (預設 sample1 到 sample4)。
+ * 4. 支援批次輪詢測試多份樣本 (預設 sample1 到 sample5)。
  *
  * 執行指令：
  *   - npm run e2e-preview                (預設測試全部，並自動清空舊資料)
@@ -46,7 +46,8 @@ if (isClean && args.length === 0) {
     process.exit(0);
 }
 
-const targetFileNames = args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf'];
+const targetFileNames =
+    args.length > 0 ? args : ['sample1.pdf', 'sample2.pdf', 'sample3.pdf', 'sample4.pdf', 'sample5.pdf'];
 
 // 如果是預設全部測試，或者明確加上 --clean 選項，則清空輸出目錄避免舊資料殘留；否則僅確保目錄存在
 if (args.length === 0 || isClean) {
@@ -58,7 +59,7 @@ if (args.length === 0 || isClean) {
     if (!fs.existsSync(previewsDir)) fs.mkdirSync(previewsDir, { recursive: true });
 }
 
-// 定義 6 大策略的 Modal 選擇器資訊
+// 定義 7 大策略的 Modal 選擇器資訊
 const strategies = [
     {
         rowId: '#optionRowFormXObject',
@@ -66,6 +67,13 @@ const strategies = [
         closeBtn: '#closeFormXObjectKeywordsModalBtn',
         modalId: '#formXObjectKeywordsModal',
         name: 'FormXObject',
+    },
+    {
+        rowId: '#optionRowImageXObject',
+        openBtn: '#openImageKeywordsModalBtn',
+        closeBtn: '#closeImageKeywordsModalBtn',
+        modalId: '#imageKeywordsModal',
+        name: 'ImageXObject',
     },
     {
         rowId: '#optionRowAnnotations',
@@ -82,18 +90,11 @@ const strategies = [
         name: 'DirectContent',
     },
     {
-        rowId: '#optionRowImageXObject',
-        openBtn: '#openImageKeywordsModalBtn',
-        closeBtn: '#closeImageKeywordsModalBtn',
-        modalId: '#imageKeywordsModal',
-        name: 'ImageXObject',
-    },
-    {
-        rowId: '#optionRowExtGState',
-        openBtn: '#openExtGStateKeywordsModalBtn',
-        closeBtn: '#closeExtGStateKeywordsModalBtn',
-        modalId: '#extGStateKeywordsModal',
-        name: 'ExtGState',
+        rowId: '#optionRowTextBlocks',
+        openBtn: '#openTextBlocksModalBtn',
+        closeBtn: '#closeTextBlocksModalBtn',
+        modalId: '#textBlocksModal',
+        name: 'TextBlocks',
     },
     {
         rowId: '#optionRowOCG',
@@ -101,6 +102,13 @@ const strategies = [
         closeBtn: '#closeOCGKeywordsModalBtn',
         modalId: '#ocgKeywordsModal',
         name: 'OCG',
+    },
+    {
+        rowId: '#optionRowExtGState',
+        openBtn: '#openExtGStateKeywordsModalBtn',
+        closeBtn: '#closeExtGStateKeywordsModalBtn',
+        modalId: '#extGStateKeywordsModal',
+        name: 'ExtGState',
     },
 ];
 

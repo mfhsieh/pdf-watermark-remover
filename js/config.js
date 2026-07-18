@@ -62,7 +62,12 @@ const DEFAULT_HEURISTIC_THRESHOLD = 0.8;
 /** @type {number} 高頻率出現門檻 (0~1) */
 let HEURISTIC_THRESHOLD = DEFAULT_HEURISTIC_THRESHOLD;
 
-// 6. 預覽標示紅框外觀設定 (Form XObject, Image XObject, Annotation 共用)
+// 6. 巨型文字大小特徵門檻 (Large Text Size Threshold)
+const DEFAULT_LARGE_TEXT_SIZE_THRESHOLD = 72;
+/** @type {number} 巨型文字特徵門檻 */
+let LARGE_TEXT_SIZE_THRESHOLD = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
+
+// 7. 預覽標示紅框外觀設定 (Form XObject, Image XObject, Annotation 共用)
 const PREVIEW_HIGHLIGHT_CONFIG = {
     color: [1, 0.2, 0.2], // RGB 顏色比例 (0~1)，紅色
     borderWidth: 3, // 邊框寬度
@@ -114,6 +119,7 @@ function loadGlobalKeywords() {
         const savedContents = localStorage.getItem('WATERMARK_CONTENT_KEYWORDS');
         const savedThreshold = localStorage.getItem('TRANSPARENCY_THRESHOLD');
         const savedHeuristicThreshold = localStorage.getItem('HEURISTIC_THRESHOLD');
+        const savedLargeTextSizeThreshold = localStorage.getItem('LARGE_TEXT_SIZE_THRESHOLD');
 
         const parsedKeys = savedKeys ? JSON.parse(savedKeys) : null;
         const parsedContents = savedContents ? JSON.parse(savedContents) : null;
@@ -127,11 +133,16 @@ function loadGlobalKeywords() {
             savedHeuristicThreshold !== null && !isNaN(parseFloat(savedHeuristicThreshold))
                 ? parseFloat(savedHeuristicThreshold)
                 : DEFAULT_HEURISTIC_THRESHOLD;
+        LARGE_TEXT_SIZE_THRESHOLD =
+            savedLargeTextSizeThreshold !== null && !isNaN(parseFloat(savedLargeTextSizeThreshold))
+                ? parseFloat(savedLargeTextSizeThreshold)
+                : DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
     } catch {
         WATERMARK_KEY_KEYWORDS = [...DEFAULT_KEY_KEYWORDS];
         WATERMARK_CONTENT_KEYWORDS = [...DEFAULT_CONTENT_KEYWORDS];
         TRANSPARENCY_THRESHOLD = DEFAULT_TRANSPARENCY_THRESHOLD;
         HEURISTIC_THRESHOLD = DEFAULT_HEURISTIC_THRESHOLD;
+        LARGE_TEXT_SIZE_THRESHOLD = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD;
     }
     buildFinalContentKeywords();
 }
@@ -142,23 +153,27 @@ function loadGlobalKeywords() {
  * @param {string[]} contentsArray - 內容文字關鍵字陣列
  * @param {number} threshold - 透明度門檻值
  * @param {number} heuristicThreshold - 智慧偵測高頻率門檻
+ * @param {number} largeTextSizeThreshold - 巨型文字特徵門檻
  * @returns {void}
  */
 function saveGlobalKeywords(
     keysArray,
     contentsArray,
     threshold = DEFAULT_TRANSPARENCY_THRESHOLD,
-    heuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD
+    heuristicThreshold = DEFAULT_HEURISTIC_THRESHOLD,
+    largeTextSizeThreshold = DEFAULT_LARGE_TEXT_SIZE_THRESHOLD
 ) {
     WATERMARK_KEY_KEYWORDS = keysArray;
     WATERMARK_CONTENT_KEYWORDS = contentsArray;
     TRANSPARENCY_THRESHOLD = threshold;
     HEURISTIC_THRESHOLD = heuristicThreshold;
+    LARGE_TEXT_SIZE_THRESHOLD = largeTextSizeThreshold;
 
     localStorage.setItem('WATERMARK_KEY_KEYWORDS', JSON.stringify(keysArray));
     localStorage.setItem('WATERMARK_CONTENT_KEYWORDS', JSON.stringify(contentsArray));
     localStorage.setItem('TRANSPARENCY_THRESHOLD', TRANSPARENCY_THRESHOLD.toString());
     localStorage.setItem('HEURISTIC_THRESHOLD', HEURISTIC_THRESHOLD.toString());
+    localStorage.setItem('LARGE_TEXT_SIZE_THRESHOLD', LARGE_TEXT_SIZE_THRESHOLD.toString());
 
     buildFinalContentKeywords();
 }

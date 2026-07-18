@@ -359,6 +359,35 @@ try {
 
         // 測試案例 4：使用預設選項（假設預設邏輯會自動偵測並處理，主要驗證腳本順利執行不報錯）
         'sample4.pdf': { setup: null, expected: {} },
+
+        // 測試案例 5：模擬使用者打開設定，只勾選「巨型文字區塊 (TextBlocks)」並驗證其清除效果
+        'sample5.pdf': {
+            setup: () => {
+                // 取消勾選其他所有自動偵測到的策略
+                [
+                    'removeFormXObject',
+                    'removeImageXObject',
+                    'removeAnnotations',
+                    'removeDirectContent',
+                    'removeOCG',
+                    'removeExtGState',
+                ].forEach((id) => {
+                    const cb = document.getElementById(id);
+                    if (cb && cb.checked) cb.click();
+                });
+
+                // 確保 TextBlocks 策略主開關有勾選
+                const tbCb = document.getElementById('removeTextBlocks');
+                if (tbCb && !tbCb.checked) tbCb.click();
+
+                // 打開 TextBlocks 細項設定，勾選全選
+                document.getElementById('openTextBlocksModalBtn').click();
+                const selectAllTextBlocks = document.querySelector('#textBlocksModal .select-all');
+                if (selectAllTextBlocks) selectAllTextBlocks.click();
+                document.getElementById('applyTextBlocksBtn').click();
+            },
+            expected: {}, // 文字區塊修改不增減 PDF Resources 物件數量，此處跳過計數驗證，僅確保流程順利無報錯
+        },
     };
 
     // 取得要測試的檔案名稱，若無參數則測試全部預設項目

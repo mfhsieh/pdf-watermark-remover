@@ -45,9 +45,16 @@ function safeRemoveFromDictionary(pdfDoc, resources, dictKey, targetDict, target
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @param {boolean} [removeLargeTextBlocks=false] - 是否清除巨型文字區塊
  * @returns {{text: string, modified: boolean}} 置換後的文字與是否被修改的布林值
  */
-function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+function removeDeletedReferencesFromText(
+    text,
+    deletedXObjKeys,
+    deletedExtGStateKeys,
+    deletedOcgKeys,
+    removeLargeTextBlocks = false
+) {
     let modified = false;
     let newText = text;
 
@@ -73,6 +80,120 @@ function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGState
         }
     });
 
+    if (removeLargeTextBlocks) {
+        let currentCm = [1, 0, 0, 1, 0, 0];
+        let cmStack = [];
+
+        // 掃描串流，建立 Graphics State 與 BT...ET 區塊的對應關係
+        const gsRegex =
+            /([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+cm\b|\bq\b|\bQ\b|\bBT\b|\bET\b/g;
+
+        let match;
+        let blocksToProcess = [];
+        let inBT = false;
+        let btStart = -1;
+        let activeCm = [...currentCm];
+
+        while ((match = gsRegex.exec(newText)) !== null) {
+            const token = match[0];
+            if (token === 'q') {
+                cmStack.push([...currentCm]);
+            } else if (token === 'Q') {
+                if (cmStack.length > 0) currentCm = cmStack.pop();
+            } else if (token.endsWith('cm')) {
+                const a1 = currentCm[0],
+                    b1 = currentCm[1],
+                    c1 = currentCm[2],
+                    d1 = currentCm[3],
+                    e1 = currentCm[4],
+                    f1 = currentCm[5];
+                const a2 = parseFloat(match[1]),
+                    b2 = parseFloat(match[2]),
+                    c2 = parseFloat(match[3]),
+                    d2 = parseFloat(match[4]),
+                    e2 = parseFloat(match[5]),
+                    f2 = parseFloat(match[6]);
+                // CTM_new = CTM_current * M_operand (Row vector multiplication)
+                currentCm = [
+                    a1 * a2 + b1 * c2,
+                    a1 * b2 + b1 * d2,
+                    c1 * a2 + d1 * c2,
+                    c1 * b2 + d1 * d2,
+                    e1 * a2 + f1 * c2 + e2,
+                    e1 * b2 + f1 * d2 + f2,
+                ];
+            } else if (token === 'BT') {
+                inBT = true;
+                btStart = match.index;
+                activeCm = [...currentCm];
+            } else if (token === 'ET') {
+                if (inBT) {
+                    blocksToProcess.push({
+                        start: btStart,
+                        end: match.index + 2,
+                        cm: activeCm,
+                    });
+                    inBT = false;
+                }
+            }
+        }
+
+        // 倒序處理區塊，避免修改字串後導致後續索引偏移
+        for (let i = blocksToProcess.length - 1; i >= 0; i--) {
+            const blockInfo = blocksToProcess[i];
+            let blockStr = newText.substring(blockInfo.start, blockInfo.end);
+
+            let currentTm = [1, 0, 0, 1, 0, 0];
+            let currentTf = 0;
+
+            const blockOpRegex =
+                /([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+([0-9.+-]+)\s+Tm\b|\/([A-Za-z0-9_+-]+)\s+([0-9.]+)\s+Tf\b|(\([^)]*\))\s*(?:Tj\b|')|(\[[\s\S]*?\])\s*TJ\b|[0-9.+-]+\s+[0-9.+-]+\s+(\([^)]*\))\s*"\b/g;
+
+            const newBlockStr = blockStr.replace(
+                blockOpRegex,
+                (m, tma, tmb, tmc, tmd, tme, tmf, fontName, fontSize) => {
+                    if (m.endsWith('Tm')) {
+                        currentTm = [
+                            parseFloat(tma),
+                            parseFloat(tmb),
+                            parseFloat(tmc),
+                            parseFloat(tmd),
+                            parseFloat(tme),
+                            parseFloat(tmf),
+                        ];
+                        return m;
+                    } else if (m.endsWith('Tf')) {
+                        currentTf = parseFloat(fontSize);
+                        return m;
+                    } else {
+                        // 計算 Trm = Tm * cm 的垂直縮放比例
+                        const a1 = blockInfo.cm[0],
+                            b1 = blockInfo.cm[1],
+                            c1 = blockInfo.cm[2],
+                            d1 = blockInfo.cm[3];
+                        const c2 = currentTm[2],
+                            d2 = currentTm[3];
+
+                        const trm_c = c2 * a1 + d2 * c1;
+                        const trm_d = c2 * b1 + d2 * d1;
+                        const verticalScale = Math.sqrt(trm_c * trm_c + trm_d * trm_d);
+                        const effectiveSize = currentTf * verticalScale;
+
+                        if (effectiveSize >= LARGE_TEXT_SIZE_THRESHOLD) {
+                            modified = true;
+                            return '';
+                        }
+                        return m;
+                    }
+                }
+            );
+
+            if (newBlockStr !== blockStr) {
+                newText = newText.substring(0, blockInfo.start) + newBlockStr + newText.substring(blockInfo.end);
+            }
+        }
+    }
+
     return { text: newText, modified };
 }
 
@@ -84,13 +205,27 @@ function removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGState
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @param {boolean} [removeLargeTextBlocks=false] - 是否清除巨型文字區塊
  * @returns {PDFRawStream|null} 重構後的新串流物件
  */
-function rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+function rebuildStreamWithoutReferences(
+    pdfDoc,
+    stream,
+    deletedXObjKeys,
+    deletedExtGStateKeys,
+    deletedOcgKeys,
+    removeLargeTextBlocks = false
+) {
     try {
         const bytes = getDecodedStreamContents(stream);
         const text = decodeBinaryToText(bytes);
-        const result = removeDeletedReferencesFromText(text, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys);
+        const result = removeDeletedReferencesFromText(
+            text,
+            deletedXObjKeys,
+            deletedExtGStateKeys,
+            deletedOcgKeys,
+            removeLargeTextBlocks
+        );
 
         if (result.modified) {
             const arr = encodeTextToBinary(result.text);
@@ -128,9 +263,17 @@ function rebuildStreamWithoutReferences(pdfDoc, stream, deletedXObjKeys, deleted
  * @param {string[]} deletedXObjKeys - 被刪除的 XObject 鍵名清單
  * @param {string[]} deletedExtGStateKeys - 被刪除的 ExtGState 鍵名清單
  * @param {string[]} deletedOcgKeys - 被刪除的 OCG 鍵名清單
+ * @param {boolean} [removeLargeTextBlocks=false] - 是否清除巨型文字區塊
  * @returns {void}
  */
-function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys, deletedOcgKeys) {
+function cleanContentStreams(
+    pdfDoc,
+    page,
+    deletedXObjKeys,
+    deletedExtGStateKeys,
+    deletedOcgKeys,
+    removeLargeTextBlocks = false
+) {
     const contentsKey = PDFName.of('Contents');
     const contentsRef = page.node.get(contentsKey);
     if (!contentsRef) return;
@@ -150,7 +293,8 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
                 stream,
                 deletedXObjKeys,
                 deletedExtGStateKeys,
-                deletedOcgKeys
+                deletedOcgKeys,
+                removeLargeTextBlocks
             );
             if (newStream) {
                 const newRef = pdfDoc.context.register(newStream);
@@ -182,7 +326,7 @@ function cleanContentStreams(pdfDoc, page, deletedXObjKeys, deletedExtGStateKeys
  * 同時執行單頁資源隔離複製，確保頁面間的修改不互相干擾。
  *
  * @param {PDFDocument} pdfDoc - pdf-lib 的 PDF 文件物件
- * @param {Object} options - 包含 6 大清理策略勾選狀態的布林值物件
+ * @param {Object} options - 包含 7 大清理策略勾選狀態的布林值物件
  * @returns {Object} 包含 modifiedObjects (已被修改/置換的物件總數) 的統計物件
  */
 async function processPdf(pdfDoc, options) {
@@ -196,6 +340,7 @@ async function processPdf(pdfDoc, options) {
         ocgs: new Set(ocgsToDestroy),
         annots: new Set(annotsToDestroy),
         directContents: new Set(directContentsToDestroy),
+        textBlocks: new Set(textBlocksToDestroy),
     };
 
     // 針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
@@ -232,12 +377,12 @@ async function processPdf(pdfDoc, options) {
             page.node.set(PDFName.of('Resources'), resources);
         }
 
-        // 策略二：清除註解 (Annotation)
+        // 策略三：清除註解 (Annotation)
         if (options.removeAnnotations) {
             modifiedObjects += removeAnnotations(page, destroySets.annots);
         }
 
-        // 策略三：清除頁面直接內容 (Direct Content)
+        // 策略四：清除頁面直接內容 (Direct Content)
         if (options.removeDirectContent) {
             modifiedObjects += removeDirectContent(pdfDoc, page, destroySets.directContents);
         }
@@ -257,9 +402,25 @@ async function processPdf(pdfDoc, options) {
             allDeletedOcgKeys
         );
 
+        // 策略五：清除巨型文字區塊 (TextBlocks)
+        const shouldCleanTextBlocks =
+            options.removeTextBlocks && destroySets.textBlocks && destroySets.textBlocks.has(`page_${pageIndex}`);
+
         // 清理 content stream 中對已刪除資源的參考，防止 Acrobat Reader 報錯
-        if (allDeletedXObjectKeys.length > 0 || allDeletedExtGStateKeys.length > 0 || allDeletedOcgKeys.length > 0) {
-            cleanContentStreams(pdfDoc, page, allDeletedXObjectKeys, allDeletedExtGStateKeys, allDeletedOcgKeys);
+        if (
+            allDeletedXObjectKeys.length > 0 ||
+            allDeletedExtGStateKeys.length > 0 ||
+            allDeletedOcgKeys.length > 0 ||
+            shouldCleanTextBlocks
+        ) {
+            cleanContentStreams(
+                pdfDoc,
+                page,
+                allDeletedXObjectKeys,
+                allDeletedExtGStateKeys,
+                allDeletedOcgKeys,
+                shouldCleanTextBlocks
+            );
         }
     }
 
@@ -467,7 +628,7 @@ function removeXObjects(pdfDoc, resources, targetSubtype, targetDestroySet) {
 }
 
 /**
- * 策略二：清除註解 (Annotation)
+ * 策略三：清除註解 (Annotation)
  * Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章、批註等）。
  * 直接在 page.node 中將 /Annots 字典鍵值物理刪除即可，此操作不會損害 PDF 頁面結構。
  *
@@ -498,7 +659,7 @@ function removeAnnotations(page, annotsSet) {
 }
 
 /**
- * 策略三：檢查並清空可疑內容串流
+ * 策略四：檢查並清空可疑內容串流 (頁面直接內容)
  * 某些 PDF 會直接在 Contents 內容串流中以明文字串寫出浮水印文字（例如：/Tj "CONFIDENTIAL"）。
  * 由於 PDF 串流通常已被壓縮（FlateDecode），此處透過 getDecodedStreamContents() 在記憶體中解壓縮，
  * 轉為 UTF-8 明文字串比對特徵關鍵字。若命中，則清空該內容串流。
@@ -535,7 +696,7 @@ function removeDirectContent(pdfDoc, page, directContentsSet) {
 }
 
 /**
- *  策略五：清理 ExtGState 半透明狀態
+ *  策略七：清理 ExtGState 半透明狀態
  *  ExtGState 用於綁定半透明效果的透明度設定。某些浮水印會在這裡綁定名稱含 watermark 的透明組態。
  *  遍歷 Resources 中的 ExtGState 資源，若命名相符，則以空的 ExtGState 物件重置之。
  *

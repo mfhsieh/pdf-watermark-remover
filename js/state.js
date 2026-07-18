@@ -31,35 +31,41 @@ const detectedFormXObjects = new Map();
 /** @type {string[]} 儲存使用者勾選要刪除的 raw stream text */
 const formXObjectsToDestroy = [];
 
-// 3. 註解 (Annotation) 狀態管理
-/** @type {Map<string, any>} 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr） */
-const detectedAnnotations = new Map();
-/** @type {string[]} 要刪除的特定註解參照 (annotRefStr) 清單 */
-const annotsToDestroy = [];
-
-// 4. 頁面直接內容 (Direct Content) 狀態管理
-/** @type {Map<string, {page: number, ref: any, rawText: string, streamIndex: number}>} 頁面直接內容狀態（key = streamRefStr） */
-const detectedDirectContents = new Map();
-/** @type {string[]} 儲存選定要清空的頁面直接內容參照字串 */
-const directContentsToDestroy = [];
-
-// 5. 影像外部物件 (Image XObject) 狀態管理
+// 3. 影像外部物件 (Image XObject) 狀態管理
 /** @type {Map<string, {keyName: string, pages: number[], ref: any, rawStream: string, width: number, height: number, filterStr: string}>} 影像外部物件狀態（key = refStr） */
 const detectedImages = new Map();
 /** @type {string[]} 儲存選定要清除的影像外部物件鍵值 */
 const imagesToDestroy = [];
 
-// 6. 延伸圖形狀態 (ExtGState) 狀態管理
-/** @type {Map<string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}>} 延伸圖形狀態（key = `${page}:${name}`） */
-const detectedExtGStates = new Map();
-/** @type {string[]} 儲存選定要清除的延伸圖形狀態鍵值 */
-const extGStatesToDestroy = [];
+// 4. 註解 (Annotation) 狀態管理
+/** @type {Map<string, any>} 當前 PDF 檔案中偵測到的所有註解實例（key = annotRefStr） */
+const detectedAnnotations = new Map();
+/** @type {string[]} 要刪除的特定註解參照 (annotRefStr) 清單 */
+const annotsToDestroy = [];
+
+// 5. 頁面直接內容 (Direct Content) 狀態管理
+/** @type {Map<string, {page: number, ref: any, rawText: string, streamIndex: number}>} 頁面直接內容狀態（key = streamRefStr） */
+const detectedDirectContents = new Map();
+/** @type {string[]} 儲存選定要清空的頁面直接內容參照字串 */
+const directContentsToDestroy = [];
+
+// 6. 巨型文字區塊 (TextBlocks) 狀態管理
+/** @type {Map<string, {page: number}>} 巨型文字區塊狀態 (key = pageIndex) */
+const detectedTextBlocks = new Map();
+/** @type {string[]} 儲存選定要清除的巨型文字區塊所在頁面索引 */
+const textBlocksToDestroy = [];
 
 // 7. 選擇性內容群組 (OCG) 狀態管理
 /** @type {Map<string, {name: string, ref: any}>} 選擇性內容群組狀態（key = ocgRefStr） */
 const detectedOCGs = new Map();
 /** @type {string[]} 儲存選定要隱藏的 OCG 參照字串 */
 const ocgsToDestroy = [];
+
+// 8. 延伸圖形狀態 (ExtGState) 狀態管理
+/** @type {Map<string, {keyName: string, page: number, ref: any, detailText: string, fillOpacity: number, strokeOpacity: number}>} 延伸圖形狀態（key = `${page}:${name}`） */
+const detectedExtGStates = new Map();
+/** @type {string[]} 儲存選定要清除的延伸圖形狀態鍵值 */
+const extGStatesToDestroy = [];
 
 /**
  * 全域策略註冊表 (Strategy Registry)
@@ -106,6 +112,12 @@ const STRATEGY_REGISTRY = (window.STRATEGY_REGISTRY = [
         rowId: 'optionRowExtGState',
     },
     { map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG', rowId: 'optionRowOCG' },
+    {
+        map: detectedTextBlocks,
+        destroyList: textBlocksToDestroy,
+        checkboxId: 'removeTextBlocks',
+        rowId: 'optionRowTextBlocks',
+    },
 ]);
 
 /**
@@ -218,6 +230,7 @@ function promptForPassword(isRetry = false) {
 
     return new Promise((resolve) => {
         const modal = document.getElementById('passwordModal');
+        const form = document.getElementById('passwordModalForm');
         const input = document.getElementById('pdfPasswordInput');
         const errorEl = document.getElementById('modalError');
         const submitBtn = document.getElementById('modalSubmitButton');
@@ -241,7 +254,8 @@ function promptForPassword(isRetry = false) {
          */
         function cleanup() {
             modal.classList.remove('active');
-            submitBtn.removeEventListener('click', onSubmit);
+            if (form) form.removeEventListener('submit', onSubmit);
+            else submitBtn.removeEventListener('click', onSubmit);
             cancelBtn.removeEventListener('click', onCancel);
             input.removeEventListener('keydown', onKeyDown);
             window._currentPasswordPromptCleanup = null;
@@ -252,7 +266,8 @@ function promptForPassword(isRetry = false) {
          * 內部輔助函式：處理送出密碼邏輯
          * @returns {void}
          */
-        function onSubmit() {
+        function onSubmit(e) {
+            if (e) e.preventDefault();
             const password = input.value;
             cleanup();
             resolve(password);
@@ -273,14 +288,15 @@ function promptForPassword(isRetry = false) {
          * @returns {void}
          */
         function onKeyDown(e) {
-            if (e.key === 'Enter') {
-                onSubmit();
+            if (!form && e.key === 'Enter') {
+                onSubmit(e);
             } else if (e.key === 'Escape') {
                 onCancel();
             }
         }
 
-        submitBtn.addEventListener('click', onSubmit);
+        if (form) form.addEventListener('submit', onSubmit);
+        else submitBtn.addEventListener('click', onSubmit);
         cancelBtn.addEventListener('click', onCancel);
         input.addEventListener('keydown', onKeyDown);
     });

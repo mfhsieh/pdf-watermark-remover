@@ -1,5 +1,5 @@
 .git/
-.gemini/
+.agents/
 node_modules/
 
 test/e2e-files/
