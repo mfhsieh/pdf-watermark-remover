@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.4.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.4.2.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.0.zip)
 
 ## 📌 專案簡介
 
@@ -21,9 +21,10 @@
 - **高透明度特徵門檻**：針對「延伸圖形狀態 (ExtGState)」設計。當物件較透明 (alpha 值較小) 時，系統即會將其預選。
 - **限制**：部分 PDF 在產生或轉存時會對文字進行重新編碼（如轉為字型子集 (Font Subset)、自訂字元對應表 (CMap)，或將文字轉為向量路徑），此情況下字元的位元組特徵與原始輸入不符，關鍵字比對將無法命中。建議善用「預覽」功能確認實際效果。
 
-### 2. 六種清除策略可分別勾選
-針對 PDF 底層結構的六種物件類型，支援個別偵測、預覽與勾選：
+### 2. 七種清除策略可分別勾選
+針對 PDF 底層結構的七種物件類型，支援個別偵測、預覽與勾選：
 - **頁面直接內容 (Direct Content)**：直接寫入於頁面內容串流 (Content Stream) 中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
+- **巨型文字區塊 (TextBlocks)**：透過精確計算版面座標轉換矩陣 (CTM 與 Tm)，自動偵測並清除不尋常大小的巨型文字浮水印。
 - **表單外部物件 (Form XObject)**：獨立封裝的複用元件（支援深層巢狀結構掃描），常見於整頁重複疊加的背景或滿版浮水印。
 - **影像外部物件 (Image XObject)**：以點陣圖（如 JPEG、PNG）形式存在的浮水印，如公司 Logo、章戳或掃描背景。
 - **註解 (Annotation)**：包含浮水印 (Watermark)、蓋印與圖章 (Stamp) 等附加於頁面上方的互動元件。
@@ -59,7 +60,7 @@
 - **自訂關鍵字**：預設已內建常見的浮水印關鍵字（如 watermark、機密、內部等）。如果您遇到特殊名稱的浮水印，可手動新增，系統支援自動生成多重編碼（UTF-16BE、Big5），以相容各種 PDF 系統。
 - **特徵門檻等其他設定**：除了關鍵字外，您也可以依據需求，調整包含物件「出現頻率」、「透明度」判定門檻，以精準捕捉浮水印。
 
-### 3. 確認勾選六大策略及子項
+### 3. 確認勾選七大策略及子項
 - 系統掃描後，會為您**自動預先勾選**具有浮水印特徵的物件。
 - 您可以點擊「⚙️」展開各個策略的子項清單，進行手動微調。例如：您可以選擇保留「打字機文字」的註解，但強制勾選刪除特定的「表單外部物件」。
 
@@ -152,6 +153,9 @@
 
 ## 📦 Release Notes
 
+- **v2.5.0 (2026-07-18)**
+  - ✨ **第七項清除策略**：新增「巨型文字區塊 (TextBlocks)」清除策略，針對不尋常大小的浮水印文字進行精準偵測與剝離。升級版面座標轉換矩陣 (CTM 與 Tm) 的計算引擎，提升精準度並保留原始正文。
+  - ⚙️ **全域設定擴充**：全域設定新增自訂「巨型文字特徵門檻」，方便針對不同文件來源進行微調。
 - **v2.4.2 (2026-06-04)**
   - ⚡ **效能提升**：引入 `pako` 進行內容串流壓縮，以縮小修改後的 PDF 檔案體積。
   - 🧪 **自動化測試**：增加與強化相關測試腳本 (`snap.mjs`, `lint-all.sh` 等)，提升自動化驗證能力。

@@ -17,7 +17,7 @@
         <!-- 內容安全策略 (CSP)：嚴格限制資源載入來源，防禦 XSS 與惡意注入攻擊 -->
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' blob: data:; frame-src 'self' blob:; connect-src 'self' data: blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+            content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-vvt4KWwuNr51XfE5m+hzeNEGhiOfZzG97ccfqGsPwvE=' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' blob: data:; frame-src 'self' blob:; connect-src 'self' data: blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         />
         <title>PDF 浮水印清除工具</title>
 
@@ -45,7 +45,7 @@
         ></script>
         <script
             src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"
-            integrity="sha384-BTzPyRUxY7isgCNE5C8X79LqCUgMGkEvC8q+Jh3LvNIFCdDrLI1pD90gDySSEAOc"
+            integrity="sha384-YIBe49Arf5FbMEY8fRRGbqrc8vZBBVsCdIZChA2S98AG0Tc3ypkSPf9Je1lMYmVm"
             crossorigin="anonymous"
         ></script>
         <!-- 還原原生 TextEncoder，避免影響 pdf-lib 與其他依賴 -->
@@ -65,7 +65,7 @@
         <div class="container">
             <!-- 頁面頭部標題區 -->
             <header>
-                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.4.2</span></h1>
+                <h1>PDF 浮水印清除工具 <span class="version-badge">v2.5.0</span></h1>
                 <p>在瀏覽器端直接處理，檔案不會上傳至伺服器</p>
             </header>
 
@@ -137,6 +137,7 @@
                             ⚙
                         </button>
                     </div>
+
                     <!-- ExtGState：延伸圖形狀態 -->
                     <div class="option-row" id="optionRowExtGState">
                         <label><input type="checkbox" id="removeExtGState" /> 延伸圖形狀態 (ExtGState)</label>
@@ -151,12 +152,25 @@
                     </div>
                     <!-- OCG / Optional Content Group：選擇性內容群組 -->
                     <div class="option-row" id="optionRowOCG">
+
                         <label><input type="checkbox" id="removeOCG" /> 選擇性內容群組 (OCG)</label>
                         <button
                             id="openOCGKeywordsModalBtn"
                             class="icon-btn"
                             title="設定「選擇性內容群組」清除選項"
                             aria-label="設定「選擇性內容群組」清除選項"
+                        >
+                            ⚙
+                        </button>
+                    </div>
+                    <!-- Strategy 7: Text Blocks -->
+                    <div class="option-row" id="optionRowTextBlocks">
+                        <label><input type="checkbox" id="removeTextBlocks" /> 巨型文字區塊 (TextBlocks)</label>
+                        <button
+                            id="openTextBlocksModalBtn"
+                            class="icon-btn"
+                            title="設定「巨型文字區塊」清除選項"
+                            aria-label="設定「巨型文字區塊」清除選項"
                         >
                             ⚙
                         </button>
@@ -233,9 +247,16 @@
                         </p>
                         <ul>
                             <li>
-                                <strong>六種清除策略與個體勾選</strong>：支援個別偵測與勾選，多數項目支援即時預覽，針對
+                                <strong>七種清除策略與個體勾選</strong>：支援個別偵測與勾選，多數項目支援即時預覽，針對
                                 PDF 底層結構進行清除：
                                 <ul>
+                                    <li>
+                                        <strong>頁面直接內容 (Direct Content)</strong>：直接寫入於頁面內容串流 (Content
+                                        Stream) 中的文字型浮水印（如「機密」、「限閱」），支援雙編碼匹配。
+                                    </li>
+                                    <li>
+                                        <strong>巨型文字區塊 (TextBlocks)</strong>：透過精確計算版面座標轉換矩陣 (CTM 與 Tm)，自動偵測並清除不尋常大小的巨型文字浮水印。
+                                    </li>
                                     <li>
                                         <strong>表單外部物件 (Form XObject)</strong
                                         >：獨立封裝的複用元件（支援深層巢狀結構掃描），常見於整頁重複疊加的背景或滿版浮水印。
@@ -534,6 +555,52 @@
                             (Image XObject)。
                         </p>
                     </div>
+
+                    <div class="keywords-field-group">
+                        <div class="keywords-field-header">
+                            <label class="keywords-field-label">5. 巨型文字特徵門檻 (字型大小)</label>
+                            <button
+                                id="resetLargeTextSizeBtn"
+                                class="modal-select-btn deselect-all"
+                                title="回復巨型文字門檻的預設值"
+                            >
+                                ↺ 回復預設
+                            </button>
+                        </div>
+                        <p class="keywords-hint intro">
+                            當文字的「實際顯示大小 (Effective Size)」<strong>大於或等於</strong>此數值時，會被預選為巨型文字浮水印。
+                        </p>
+
+                        <div class="slider-control-group">
+                            <span class="slider-label">小</span>
+                            <input
+                                type="range"
+                                id="largeTextSizeThresholdSlider"
+                                min="10"
+                                max="300"
+                                step="1"
+                                class="slider-input"
+                                aria-label="巨型文字特徵門檻滑桿"
+                            />
+                            <span class="slider-label">大</span>
+                            <div class="slider-value-wrapper">
+                                <input
+                                    type="number"
+                                    id="largeTextSizeThresholdInput"
+                                    class="keywords-textarea slider-number-input"
+                                    min="10"
+                                    max="500"
+                                    step="1"
+                                    placeholder="例如: 80"
+                                    aria-label="巨型文字特徵門檻數值"
+                                />
+                            </div>
+                        </div>
+
+                        <p class="keywords-hint">
+                            <span class="hint-primary">適用策略：</span>巨型文字區塊 (TextBlocks)。
+                        </p>
+                    </div>
                 </div>
 
                 <div class="modal-actions bar">
@@ -709,6 +776,37 @@
                     <div class="right-group">
                         <button id="closeImageKeywordsModalBtn" class="button" autofocus>取消</button>
                         <button id="applyImageKeywordsBtn" class="button button-primary">套用</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 巨型文字區塊 (TextBlocks) 設定 Modal -->
+        <div
+            id="textBlocksModal"
+            class="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="textBlocksModalTitle"
+        >
+            <div class="modal-card modal-lg">
+                <h3 id="textBlocksModalTitle">⚙ 「巨型文字區塊」清理選項</h3>
+                <p id="textBlocksModalDesc" class="modal-desc">
+                    請勾選想要<strong class="badge badge-danger">清除</strong>的項目（未勾選項目將<strong
+                        class="badge badge-success"
+                        >保留</strong
+                    >）：
+                </p>
+
+                <div id="textBlocksListContainer" class="modal-list-container">
+                    <!-- 將由 JS 根據當前 PDF 偵測結果動態渲染 Checkbox 列表 -->
+                </div>
+
+                <div class="modal-actions bar">
+                    <button id="resetTextBlocksBtn" class="button btn-outline">回復預設值</button>
+                    <div class="right-group">
+                        <button id="closeTextBlocksModalBtn" class="button" autofocus>取消</button>
+                        <button id="applyTextBlocksBtn" class="button button-primary">套用</button>
                     </div>
                 </div>
             </div>
