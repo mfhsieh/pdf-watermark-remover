@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.0.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.1.zip)
 
 ## 📌 專案簡介
 
@@ -89,9 +89,9 @@
 
 ## 🚀 離線使用
 
-本專案為**純前端靜態網頁工具 (Client-Side Static Tool)**，不依賴後端伺服器，可完全離線使用：
-- **下載與執行**：您可以直接下載專案提供的壓縮檔（或自行在終端機執行 `./bin/build-zip.sh` 來打包離線版本）。解壓縮後，在任何現代瀏覽器中雙擊打開 `index.html` 即可執行，無需安裝伺服器環境。
-- **離線運作**：首次開啟工具時，需確保有網路連線以便從 CDN 快取核心程式庫（包含 `pdf-lib`、`text-encoding`、`pako` 以及解密用的 `qpdf-wasm` 引擎）。快取完成後，即可在完全無網路的環境下離線處理 PDF。
+本專案為**純前端靜態網頁工具 (Client-Side Static Tool)**，不依賴後端伺服器；首次使用載入並快取核心程式庫後，即可離線使用：
+- **下載與執行**：您可以直接下載專案提供的壓縮檔（或在終端機執行 `npm run build`，也可直接執行 `./bin/build-zip.sh` 來打包離線版本）。解壓縮後，在任何現代瀏覽器中雙擊打開 `index.html` 即可執行，無需安裝伺服器環境。
+- **離線運作**：首次開啟工具時，請確保有網路連線，以便從 CDN 載入並快取核心程式庫（包含 `pdf-lib`、`text-encoding`、`pako` 以及解密用的 `qpdf-wasm` 引擎）。完成首次載入後，瀏覽器即可使用已快取的程式庫，在無網路環境下處理 PDF；若清除瀏覽器快取或更換瀏覽器，需重新連線載入程式庫。
 
 ---
 
@@ -104,8 +104,10 @@
 | `npm run e2e`  | 執行端到端 (E2E) 測試 (`test/e2e.mjs`)，進行無頭瀏覽器操作與結果驗證。 |
 | `npm run e2e-preview` | 執行預覽測試 (`test/e2e-preview.mjs`)，自動提取所有策略的預覽 PDF 檔，供後續檢查。 |
 | `npm run snap` | 執行視覺快照測試 (`test/snap.mjs`)，輪播各項畫面，確保 UI 行為正常。 |
+| `npm run build` | 執行 `bin/build-zip.sh`，依目前版本號產生發布用 ZIP 壓縮檔。 |
+| `npm run release-build` | 依序執行格式化、lint、E2E 測試、API 文件生成與 ZIP 打包，建立完整且同步的發布成果。 |
 | `npm run docs` | 自動將 `js/` 目錄下的所有原始碼註釋，產生並更新 `doc/API_Reference.md` 文件。 |
-| `npm run lint` | 執行 ESLint 語法檢查，確保程式碼品質。 |
+| `npm run lint` | 執行 ESLint 語法檢查，並執行 `bin/lint-all.sh` 進行跨模組全域變數分析，確保程式碼品質。 |
 | `npm run format`| 執行 Prettier，一鍵將所有 HTML/CSS/JS 程式碼自動排版。 |
 | `./bin/lint-all.sh` | 全域變數分析腳本，將各 JS 模組合併後執行 ESLint，以捕捉跨模組宣告卻未使用的多餘變數。 |
 
@@ -153,6 +155,8 @@
 
 ## 📦 Release Notes
 
+- **v2.5.1 (2026-08-27)**
+  - 📝 **文件一致化**：統一專案的授權、作者、版本資訊，以及七種清除策略的名稱與顯示順序。
 - **v2.5.0 (2026-07-18)**
   - ✨ **第七項清除策略**：新增「巨型文字區塊 (TextBlocks)」清除策略，針對不尋常大小的浮水印文字進行精準偵測與剝離。
   - ⚙️ **全域設定擴充**：全域設定新增自訂「巨型文字特徵門檻」，方便針對不同文件來源進行微調。
@@ -189,7 +193,7 @@
   * **DOM 快取**：集中快取主要 DOM 節點，減少重複遍歷。
   * **其它**：UI 微調與文字調整。
 - **v1.2.0 (2026-05-25)**
-  * 升級為「六種清除策略可分別勾選」，以精確勾選取代關鍵字匹配，降低誤刪風險。
+  * 當時升級為「六種清除策略可分別勾選」，以精確勾選取代關鍵字匹配，降低誤刪風險；目前版本已擴充為七種策略。
 - **v1.1.2 (2026-05-24)**
   * 新增開啟密碼解密、檔案權限解除與跨檔案密碼沿用。
 - **v1.0.0 (2026-05-23)**

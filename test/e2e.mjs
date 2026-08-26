@@ -463,6 +463,7 @@ try {
     console.log('\n🎉 所有 E2E 測試與驗證均順利通過！');
 } catch (e) {
     console.error('\n❌ E2E 測試失敗:', e);
+    process.exitCode = 1;
 } finally {
     // 測試結束，關閉瀏覽器
     if (browser) await browser.close();

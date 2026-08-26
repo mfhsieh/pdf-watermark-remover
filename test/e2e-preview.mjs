@@ -3,7 +3,7 @@
  *
  * 職責：
  * 1. 啟動無頭瀏覽器，自動化上傳 PDF 並等待背景掃描引擎完成。
- * 2. 自動遍歷並點擊六大策略 (FormXObject, Annotation 等) 的浮水印設定視窗。
+ * 2. 自動遍歷並點擊七大策略 (FormXObject, Annotation 等) 的浮水印設定視窗。
  * 3. 利用 Fetch API 將隱藏 iframe 中的 Blob URL (物件預覽圖) 取出，並轉存為本地端 PDF，
  *    藉此迴避原生 PDFium 外掛進程導致 Puppeteer 截圖變黑的問題。
  * 4. 支援批次輪詢測試多份樣本 (預設 sample1 到 sample5)。

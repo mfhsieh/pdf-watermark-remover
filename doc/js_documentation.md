@@ -20,7 +20,7 @@
 | :--- | :--- | :--- |
 | `config.js` | 全域設定與關鍵字 | 處理浮水印判定關鍵字的動態編譯（支援 UTF-16BE、Big5），並管理 localStorage 存取。 |
 | `state.js` | 狀態管理 | 集中管理記憶體暫存（如 PDF 解密快取）、清除策略的待刪除清單，以及共用的日誌與預覽彈窗狀態。 |
-| `utils.js` | 核心判定工具 | 提供六大浮水印策略的判定邏輯（`isSuspect...`）、二進位字串轉換，以及高頻與高透明度等「智慧門檻偵測」。 |
+| `utils.js` | 核心判定工具 | 提供七大浮水印策略的判定邏輯（`isSuspect...`）、二進位字串轉換，以及高頻與高透明度等「智慧門檻偵測」。 |
 | `ui.js` | DOM 選取與無障礙 | 集中宣告介面上的 DOM 元素常數，並負責全域的無障礙 (a11y) 控制（如 Escape 鍵監聽與 Modal 焦點陷阱）。 |
 | `ui-modals.js` | 彈窗管理類別 | 將清除策略的選項視窗封裝為 `WatermarkStrategyModal` 類別，並包含物件即時預覽 (`openObjectPreview`) 的載入與清理邏輯。 |
 | `pdf-scanner.js`| 掃描與預覽引擎 | 負責載入 PDF、執行密碼解密驗證，掃描各類型物件（支援巢狀遞迴掃描）以找出疑似浮水印，並動態產生即時預覽的 Blob URL。 |
@@ -31,16 +31,17 @@
 
 ---
 
-## 3. 六大核心清除策略
+## 3. 七大核心清除策略
 
-本系統針對 PDF 的底層結構，實作了六種無損清除策略。所有的判定邏輯定義於 `utils.js`，清除邏輯實作於 `pdf-cleaner.js`：
+本系統針對 PDF 的底層結構，實作了七種無損清除策略。所有的判定邏輯定義於 `utils.js`，清除邏輯實作於 `pdf-cleaner.js`：
 
 1. **表單外部物件 (Form XObject)：** 針對封裝為可重複使用的圖形或文字物件（支援巢狀結構）。清除時會直接從資源字典將其參照抹除，並清除呼叫指令。
-2. **註解 (Annotation)：** 包含浮水印 (`Watermark`)、印章 (`Stamp`) 等附加於頁面上方的元件。清除時直接從頁面的 `/Annots` 陣列中移除參照。
-3. **頁面直接內容 (Direct Content)：** 針對直接寫入於頁面內容串流（Contents stream）的明文指令。系統會讀出並比對文字，若命中特徵碼則將該流內容清空。
-4. **影像外部物件 (Image XObject)：** 針對圖片型態的浮水印。清除時同樣自資源字典中移除物件參照並清除呼叫指令。
-5. **延伸圖形狀態 (ExtGState)：** 某些浮水印透過綁定特定的透明度（`ca` / `CA`）來呈現半透明效果。此策略負責移除特定的圖形狀態參照。
+2. **影像外部物件 (Image XObject)：** 針對圖片型態的浮水印。清除時同樣自資源字典中移除物件參照並清除呼叫指令。
+3. **註解 (Annotation)：** 包含浮水印 (`Watermark`)、印章 (`Stamp`) 等附加於頁面上方的元件。清除時直接從頁面的 `/Annots` 陣列中移除參照。
+4. **頁面直接內容 (Direct Content)：** 針對直接寫入於頁面內容串流（Contents stream）的明文指令。系統會讀出並比對文字，若命中特徵碼則將該流內容清空。
+5. **巨型文字區塊 (TextBlocks)：** 透過文字大小與版面資訊偵測不尋常的大型文字浮水印，並清除其所在內容區塊。
 6. **選擇性內容群組 (OCG / 圖層)：** 針對利用 PDF 圖層功能實作的浮水印。系統會從 `/OCGs` 清單中移除，並強制將其加入至預設隱藏（`/OFF`）陣列中。
+7. **延伸圖形狀態 (ExtGState)：** 針對控制透明度（`ca` / `CA`）與混合模式的圖形狀態，清除疑似浮水印使用的狀態參照。
 
 ---
 
@@ -58,7 +59,7 @@
   - `detectedFormXObjects` 等：儲存背景掃描引擎抓出的物件 Map。
   - `formXObjectsToDestroy` 等：儲存使用者目前「勾選準備要刪除」的物件清單。
   - `cachedDecryptedBytes`: 儲存剛解密後的 PDF 原始資料（免去重複解密耗時）。
-  - **`STRATEGY_REGISTRY`**: 全域策略註冊表 (Single Source of Truth)，將六大清理策略的資料狀態 (`map`, `destroyList`) 與 UI 綁定 ID 集中管理，完美解決了散彈槍手術 (Shotgun Surgery) 的壞味道。
+  - **`STRATEGY_REGISTRY`**: 全域策略註冊表 (Single Source of Truth)，將七大清理策略的資料狀態 (`map`, `destroyList`) 與 UI 綁定 ID 集中管理，完美解決了散彈槍手術 (Shotgun Surgery) 的壞味道。
 - **重要函式：**
   - `decryptWithQpdfWasm(pdfBytes, password)`: 呼叫 qpdf-wasm 引擎進行非同步解密。包含虛擬記憶體清理（`FS.unlink`）的防禦性除錯邏輯。
   - `resetAllState()`: 負責清空快取變數並安全釋放 `previewUrlCache` 的 Blob URL，防止記憶體洩漏。此處重置陣列時採用**就地清空 (`length = 0`)** 進行突變 (Mutation)，以確保所有 Modal 與引擎間的陣列記憶體參照 (Reference) 永不中斷。
@@ -71,7 +72,7 @@
 
 ### `pdf-scanner.js`
 極其核心的非同步掃描器，職責包含「安全載入」與「預覽生成」。
-- **統一註冊防呆：** 實作 `registerSuspectEntry()` 與跨頁專用的 `registerOrUpdateXObject()` 輔助函式，統一接管 6 大策略的掃描註冊與頁碼陣列推入，消滅重複的 IF 判斷，徹底落實 DRY 原則。
+- **統一註冊防呆：** 實作 `registerSuspectEntry()` 與跨頁專用的 `registerOrUpdateXObject()` 輔助函式，統一接管 7 大策略的掃描註冊與頁碼陣列推入，消滅重複的 IF 判斷，徹底落實 DRY 原則。
 - **核心流程 `showOriginalPreview(file)`：**
   1. 重置所有全域狀態。
   2. 嘗試讀取 PDF，若失敗則呼叫 `decryptWithQpdfWasm` 處理密碼邏輯。
@@ -95,7 +96,7 @@
 ### `ui-modals.js`
 為了減少重複的 DOM 操作，這裡採用 OOP 封裝。
 - **`WatermarkStrategyModal` 類別：** 
-  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 將六大策略資料綁定。**動態生成的 DOM 結構嚴格遵循 HTML5 規範（使用獨立外層 `<div>` 容器分離 `<label>` 與 `<button>`），確保螢幕閱讀器與鍵盤焦點行為正確無誤。**
+  提供通用的彈窗邏輯，自動生成核取方塊清單、綁定全選/全不選功能，以及動態插入「即時預覽 (👁️)」按鈕。透過傳入 `config` 將七大策略資料綁定。**動態生成的 DOM 結構嚴格遵循 HTML5 規範（使用獨立外層 `<div>` 容器分離 `<label>` 與 `<button>`），確保螢幕閱讀器與鍵盤焦點行為正確無誤。**
 - **即時預覽系統 (`openObjectPreview` & `closeObjectPreview`)：**
   捨棄冗長的 `if...else`，改用**策略模式 (Strategy Pattern)** 的 `previewHandlers` 字典來分派預覽載入。切換預覽時會主動攔截並清除前一次的 Blob URL，徹底防堵記憶體洩漏 (Memory Leak)。
 - **技術債 (Technical Debt) 註明：**
@@ -113,7 +114,7 @@
 系統的生命週期進入點。
 - **統一檔案處理：** 提供 `handleFileSelected(file)` 共用函式，避免冗餘。加入了針對非同步預覽的錯誤捕捉 (`catch`) 防護，避免發生 Unhandled Promise Rejection 引發的隱性崩潰。同時在拖曳上傳中增加了附檔名檢查，作為跨作業系統拖曳時可能遺失 MIME Type (`file.type`) 的後備方案。
 - **事件綁定：** 監聽 `fileInput.addEventListener("change")` 以及 Drag & Drop 事件。
-- **動態配置讀取與輸出：** 捨棄寫死的 DOM ID 綁定，`getOptions()` 會動態迭代全域的 `STRATEGY_REGISTRY` 來抓取 6 大策略當前的核取狀態，達到完全解耦（開閉原則）。處理流程中，會呼叫 `processPdf`，並將重構完成的文件轉成 Blob 供下載，**同時具備容錯的下載檔名處理後備方案**。
+- **動態配置讀取與輸出：** 捨棄寫死的 DOM ID 綁定，`getOptions()` 會動態迭代全域的 `STRATEGY_REGISTRY` 來抓取 7 大策略當前的核取狀態，達到完全解耦（開閉原則）。處理流程中，會呼叫 `processPdf`，並將重構完成的文件轉成 Blob 供下載，**同時具備容錯的下載檔名處理後備方案**。
 
 ### `polyfill-config.js` & `polyfill-config-after.js`
 處理外部依賴套件相容性的補丁檔案群。

@@ -46,6 +46,7 @@ async function generateDocs() {
         console.log('✅ 成功產出 API_Reference.md 至 doc 目錄！');
     } catch (e) {
         console.error('❌ 產生文件失敗:', e);
+        process.exitCode = 1;
     }
 }
 

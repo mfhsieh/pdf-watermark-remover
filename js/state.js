@@ -1,6 +1,6 @@
 /**
  * @fileoverview 全域狀態與記憶體管理模組。
- * 集中管理應用程式執行期的快取資料 (解密陣列、密碼、預覽 URL) 與六大策略的偵測/勾選狀態清單，落實單一資料來源 (SSOT)。
+ * 集中管理應用程式執行期的快取資料 (解密陣列、密碼、預覽 URL) 與七大策略的偵測/勾選狀態清單，落實單一資料來源 (SSOT)。
  */
 
 // ==========================================
@@ -69,7 +69,7 @@ const extGStatesToDestroy = [];
 
 /**
  * 全域策略註冊表 (Strategy Registry)
- * 將六大清理策略的資料狀態與 UI 綁定 ID 集中管理，
+ * 將七大清理策略的資料狀態與 UI 綁定 ID 集中管理，
  * 供狀態重置、掃描結果更新與選項取值時進行共用迴圈處理。
  * @type {Array<{map: Map, destroyList: Array, checkboxId: string, rowId: string}>}
  */
@@ -88,6 +88,12 @@ const STRATEGY_REGISTRY = (window.STRATEGY_REGISTRY = [
         rowId: 'optionRowFormXObject',
     },
     {
+        map: detectedImages,
+        destroyList: imagesToDestroy,
+        checkboxId: 'removeImageXObject',
+        rowId: 'optionRowImageXObject',
+    },
+    {
         map: detectedAnnotations,
         destroyList: annotsToDestroy,
         checkboxId: 'removeAnnotations',
@@ -100,23 +106,22 @@ const STRATEGY_REGISTRY = (window.STRATEGY_REGISTRY = [
         rowId: 'optionRowDirectContent',
     },
     {
-        map: detectedImages,
-        destroyList: imagesToDestroy,
-        checkboxId: 'removeImageXObject',
-        rowId: 'optionRowImageXObject',
+        map: detectedTextBlocks,
+        destroyList: textBlocksToDestroy,
+        checkboxId: 'removeTextBlocks',
+        rowId: 'optionRowTextBlocks',
+    },
+    {
+        map: detectedOCGs,
+        destroyList: ocgsToDestroy,
+        checkboxId: 'removeOCG',
+        rowId: 'optionRowOCG',
     },
     {
         map: detectedExtGStates,
         destroyList: extGStatesToDestroy,
         checkboxId: 'removeExtGState',
         rowId: 'optionRowExtGState',
-    },
-    { map: detectedOCGs, destroyList: ocgsToDestroy, checkboxId: 'removeOCG', rowId: 'optionRowOCG' },
-    {
-        map: detectedTextBlocks,
-        destroyList: textBlocksToDestroy,
-        checkboxId: 'removeTextBlocks',
-        rowId: 'optionRowTextBlocks',
     },
 ]);
 

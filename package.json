@@ -1,8 +1,7 @@
 {
   "name": "pdf-watermark-remover",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "PDF 浮水印清除工具，純前端執行，無伺服器上傳，保護您的隱私。",
-  "main": "index.js",
   "directories": {
     "doc": "doc",
     "test": "test"
@@ -11,6 +10,8 @@
     "e2e": "node test/e2e.mjs",
     "e2e-preview": "node test/e2e-preview.mjs",
     "snap": "node test/snap.mjs",
+    "build": "bash bin/build-zip.sh",
+    "release-build": "npm run format && npm run lint && npm run e2e && npm run docs && npm run build",
     "lint": "eslint js/ test/ doc/ && bash bin/lint-all.sh",
     "format": "prettier --write \"js/**/*.js\" \"test/**/*.mjs\" \"doc/**/*.mjs\" \"css/**/*.css\" \"*.html\"",
     "docs": "node doc/doc-gen.mjs",
@@ -22,8 +23,8 @@
     "url": "git+https://github.com/mfhsieh/pdf-watermark-remover.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "mfhsieh at github",
+  "license": "CC BY-NC-SA 4.0",
   "bugs": {
     "url": "https://github.com/mfhsieh/pdf-watermark-remover/issues"
   },
