@@ -471,61 +471,41 @@ async function generateImageXObjectPreviewUrl(keyName, rawStream, pageIndex) {
 }
 
 /**
- * 生成 OCG (圖層) 隱藏效果的即時預覽 URL
+ * 生成 OCG (圖層) 移除效果的即時預覽 URL
+ * 使用與實際清除引擎 (pdf-cleaner.js) 相同的物理移除邏輯，在獨立副本上操作，
+ * 確保預覽結果與實際清除一致，且不會污染快取文件。
  * @param {string} ocgRefStr - OCG 物件參照字串
  * @returns {Promise<string>} Blob URL
  */
 async function generateOCGPreviewUrl(ocgRefStr) {
-    const srcDoc = cachedPdfDocument || (await PDFDocument.load(cachedDecryptedBytes));
-    // srcDoc.catalog 直接回傳 PDFDict，不需再 context.lookup()
-    const catalog = srcDoc.catalog;
-    const ocProperties = srcDoc.context.lookup(catalog.get(PDFName.of('OCProperties')));
+    // 載入獨立副本，避免污染 cachedPdfDocument
+    const previewDoc = await PDFDocument.load(cachedDecryptedBytes, { updateMetadata: false });
+    const ocgsSet = new Set([ocgRefStr]);
 
-    if (ocProperties instanceof PDFDict) {
-        const dDict = srcDoc.context.lookup(ocProperties.get(PDFName.of('D')));
-        if (dDict instanceof PDFDict) {
-            // 尋找目標 OCG 的 Reference
-            const ocgsArray = srcDoc.context.lookup(ocProperties.get(PDFName.of('OCGs')));
-            let targetRef = null;
-            if (ocgsArray instanceof PDFArray) {
-                for (let i = 0; i < ocgsArray.size(); i++) {
-                    const ref = ocgsArray.get(i);
-                    if (ref.toString() === ocgRefStr) {
-                        targetRef = ref;
-                        break;
-                    }
-                }
-            }
+    // 1. 全域層級：從 Catalog 的 OCProperties 中移除目標 OCG 條目
+    removeOCG(previewDoc, ocgsSet);
 
-            if (targetRef) {
-                // 加入 OFF 陣列
-                const offArray = srcDoc.context.lookup(dDict.get(PDFName.of('OFF')));
-                const newOffArray = srcDoc.context.obj([]);
-                if (offArray instanceof PDFArray) {
-                    for (let i = 0; i < offArray.size(); i++) {
-                        newOffArray.push(offArray.get(i));
-                    }
-                }
-                newOffArray.push(targetRef);
-                dDict.set(PDFName.of('OFF'), newOffArray);
+    // 2. 頁面層級：逐頁移除 Properties、XObject 資源，並清理 Content Stream
+    for (let pageIndex = 0; pageIndex < previewDoc.getPageCount(); pageIndex++) {
+        const page = previewDoc.getPage(pageIndex);
+        let resources = page.node.lookup(PDFName.of('Resources'));
+        if (!(resources instanceof PDFDict)) continue;
 
-                // 從 ON 陣列中移除
-                const onArray = srcDoc.context.lookup(dDict.get(PDFName.of('ON')));
-                if (onArray instanceof PDFArray) {
-                    const newOnArray = srcDoc.context.obj([]);
-                    for (let i = 0; i < onArray.size(); i++) {
-                        const ref = onArray.get(i);
-                        if (ref.toString() !== ocgRefStr) {
-                            newOnArray.push(ref);
-                        }
-                    }
-                    dDict.set(PDFName.of('ON'), newOnArray);
-                }
-            }
+        // 複製 Resources 以隔離修改
+        if (resources.clone) {
+            resources = resources.clone(previewDoc.context);
+            page.node.set(PDFName.of('Resources'), resources);
+        }
+
+        const resOcg = removeOCGs(previewDoc, resources, ocgsSet);
+
+        // 清理 Content Stream 中的 /OC /key BDC...EMC 區段
+        if (resOcg.deletedPropertiesKeys && resOcg.deletedPropertiesKeys.length > 0) {
+            cleanContentStreams(previewDoc, page, [], [], resOcg.deletedPropertiesKeys, false);
         }
     }
 
-    return await saveAndCreatePreviewUrl(srcDoc);
+    return await saveAndCreatePreviewUrl(previewDoc);
 }
 
 /**

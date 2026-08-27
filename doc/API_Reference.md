@@ -298,7 +298,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <dd><p>生成 Image XObject 的即時預覽 URL</p>
 </dd>
 <dt><a href="#generateOCGPreviewUrl">generateOCGPreviewUrl(ocgRefStr)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
-<dd><p>生成 OCG (圖層) 隱藏效果的即時預覽 URL</p>
+<dd><p>生成 OCG (圖層) 移除效果的即時預覽 URL
+使用與實際清除引擎 (pdf-cleaner.js) 相同的物理移除邏輯，在獨立副本上操作，
+確保預覽結果與實際清除一致，且不會污染快取文件。</p>
 </dd>
 <dt><a href="#generateAnnotationPreviewUrl">generateAnnotationPreviewUrl(annotRefStr, pageIndex, annotIndex)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
 <dd><p>生成 Annotation (註解) 的即時預覽 URL (高亮顯示所在位置)</p>
@@ -1279,7 +1281,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <a name="generateOCGPreviewUrl"></a>
 
 ## generateOCGPreviewUrl(ocgRefStr) ⇒ <code>Promise.&lt;string&gt;</code>
-生成 OCG (圖層) 隱藏效果的即時預覽 URL
+生成 OCG (圖層) 移除效果的即時預覽 URL
+使用與實際清除引擎 (pdf-cleaner.js) 相同的物理移除邏輯，在獨立副本上操作，
+確保預覽結果與實際清除一致，且不會污染快取文件。
 
 **Kind**: global function  
 **Returns**: <code>Promise.&lt;string&gt;</code> - Blob URL  
