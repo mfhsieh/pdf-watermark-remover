@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.5.2-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.1.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.2.zip)
 
 ## 📌 專案簡介
 
@@ -155,6 +155,8 @@
 
 ## 📦 Release Notes
 
+- **v2.5.2 (2026-08-27)**
+  - 🧪 **E2E 環境相容性**：改用完整 Puppeteer，支援使用 Puppeteer 管理的 Chrome，並兼容宿主機既有的 Chrome 設定。
 - **v2.5.1 (2026-08-27)**
   - 📝 **文件一致化**：統一專案的授權、作者、版本資訊，以及七種清除策略的名稱與顯示順序。
 - **v2.5.0 (2026-07-18)**

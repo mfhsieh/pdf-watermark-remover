@@ -1,6 +1,6 @@
 {
   "name": "pdf-watermark-remover",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "PDF 浮水印清除工具，純前端執行，無伺服器上傳，保護您的隱私。",
   "directories": {
     "doc": "doc",
@@ -38,7 +38,7 @@
     "jsdoc-to-markdown": "^9.1.3",
     "pdf-lib": "^1.17.1",
     "prettier": "^3.8.3",
-    "puppeteer-core": "^25.1.0",
+    "puppeteer": "^25.9.0",
     "text-encoding": "^0.7.0"
   }
 }

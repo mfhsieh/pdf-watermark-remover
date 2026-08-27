@@ -15,7 +15,7 @@
  * 💡 備註：[檔名] 支援相對於當前目錄的路徑或絕對路徑 (如 ../file.pdf)。
  *    若單純提供檔名，將預設於 test/e2e-files/ 目錄底下尋找。
  */
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -174,11 +174,15 @@ let browser;
 
 try {
     // 啟動 Puppeteer 無頭瀏覽器 (Headless Browser)
-    browser = await puppeteer.launch({
-        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+    const launchOptions = {
         headless: true, // 升級為標準設定，避免 headless: 'new' 引發的棄用警告
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    };
+    const systemChromePath = process.env.CHROME_PATH || '/usr/bin/google-chrome';
+    if (fs.existsSync(systemChromePath)) {
+        launchOptions.executablePath = systemChromePath;
+    }
+    browser = await puppeteer.launch(launchOptions);
 
     /**
      * 內部輔助函式：處理單一 PDF 檔案的自動化測試流程
