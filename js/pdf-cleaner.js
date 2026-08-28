@@ -762,6 +762,7 @@ function removeOCGs(pdfDoc, resources, ocgsSet) {
         deletedXObjectKeys: xobjRes.deletedKeys,
     };
 }
+
 /**
  *  策略六（全域層級）：針對全域 OCG (圖層) 進行徹底刪除（從 Catalog 中移除）
  *  @param {PDFDocument} pdfDoc - PDF 文件物件

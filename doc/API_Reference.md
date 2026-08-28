@@ -402,6 +402,9 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 <li>UTF-16BE Latin1 / Big5 的二進位特徵碼（不可 toLowerCase，否則會破壞位元組值）
 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。</li>
 </ol>
+<p>特別注意：Tagged PDF 的 BDC 算符會在 Content Stream 中嵌入結構性屬性字典，例如：
+  /Artifact &lt;&lt;/Subtype /Watermark /Type /Pagination &gt;&gt;BDC
+此為 PDF 規範的結構標記（非可見文字），必須在比對前剝除，避免誤判。</p>
 </dd>
 <dt><a href="#isSuspectFormXObject">isSuspectFormXObject(entry, [rawStr])</a> ⇒ <code>boolean</code></dt>
 <dd><p>策略 1: 表單外部物件 (Form XObject) 判定</p>
@@ -417,7 +420,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 </dd>
 <dt><a href="#isSuspectTextBlock">isSuspectTextBlock(rawStr)</a> ⇒ <code>boolean</code></dt>
 <dd><p>策略 5: 巨型文字區塊 (TextBlocks) 判定
-掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過門檻值 (LARGE_TEXT_SIZE_THRESHOLD) 的文字。
 例如： /F1 100 Tf</p>
 </dd>
 <dt><a href="#isSuspectOCG">isSuspectOCG(entry)</a> ⇒ <code>boolean</code></dt>
@@ -1648,6 +1651,10 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
   2. UTF-16BE Latin1 / Big5 的二進位特徵碼（不可 toLowerCase，否則會破壞位元組值）
 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
 
+特別注意：Tagged PDF 的 BDC 算符會在 Content Stream 中嵌入結構性屬性字典，例如：
+  /Artifact <</Subtype /Watermark /Type /Pagination >>BDC
+此為 PDF 規範的結構標記（非可見文字），必須在比對前剝除，避免誤判。
+
 **Kind**: global function  
 **Returns**: <code>boolean</code> - 若包含浮水印特徵則回傳 true，否則回傳 false  
 
@@ -1708,7 +1715,7 @@ Annots 是蓋在 PDF 正文上方的附加元件（包括電子簽章、印章�
 
 ## isSuspectTextBlock(rawStr) ⇒ <code>boolean</code>
 策略 5: 巨型文字區塊 (TextBlocks) 判定
-掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過門檻值 (LARGE_TEXT_SIZE_THRESHOLD) 的文字。
 例如： /F1 100 Tf
 
 **Kind**: global function  

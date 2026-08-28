@@ -21,7 +21,9 @@ cd "$SCRIPT_DIR/.."
 mkdir -p tmp
 
 > tmp/all.js
-for file in js/utils.js \
+for file in js/polyfill-config.js \
+  js/utils.js \
+  js/polyfill-config-after.js \
   js/config.js \
   js/state.js \
   js/ui.js \

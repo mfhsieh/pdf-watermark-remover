@@ -204,8 +204,6 @@ async function decryptWithQpdfWasm(pdfBytes, password = '') {
         const decryptedBytes = qpdf.FS.readFile(outputPath);
 
         return new Uint8Array(decryptedBytes);
-    } catch (err) {
-        throw err;
     } finally {
         // 無論成功或發生異常，皆主動清理 WebAssembly 虛擬記憶體檔案，防止長期使用引發瀏覽器 Memory Leak
         try {
@@ -332,8 +330,7 @@ function resetAllState() {
     processedPreviewBox.classList.add('hidden');
     processedPreview.removeAttribute('src');
 
-    originalUrl = null;
-    processedUrl = null;
+    // 4. 清空 PDF 快取（密碼、解密位元組、PDFDocument 實例）
     cachedPassword = null;
     cachedDecryptedBytes = null;
     cachedPdfDocument = null;

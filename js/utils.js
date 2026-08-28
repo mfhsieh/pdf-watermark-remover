@@ -58,13 +58,20 @@ function isSuspectKeyName(text) {
  *   2. UTF-16BE Latin1 / Big5 的二進位特徵碼（不可 toLowerCase，否則會破壞位元組值）
  * 因此必須對兩類分別比對：英文全小寫比對，二進位直接對原始 text 比對。
  *
+ * 特別注意：Tagged PDF 的 BDC 算符會在 Content Stream 中嵌入結構性屬性字典，例如：
+ *   /Artifact <</Subtype /Watermark /Type /Pagination >>BDC
+ * 此為 PDF 規範的結構標記（非可見文字），必須在比對前剝除，避免誤判。
+ *
  * @param {string} text - 內容串流文字（以 Latin1 解碼的二進位字串）
  * @returns {boolean} 若包含浮水印特徵則回傳 true，否則回傳 false
  */
 function isSuspectContentText(text) {
     if (!text) return false;
     const expandedText = decodeHexStringsInText(text);
-    const lower = expandedText.toLowerCase();
+    // 剝除 BDC 算符前的屬性字典（Tagged PDF 結構標記，如 /Artifact <</Subtype /Watermark>>BDC）
+    // 這類標記是 PDF 規範內部結構，不是使用者可見的內容文字，不應參與關鍵字比對
+    const strippedText = expandedText.replace(/<<[^<>]*>>\s*(?=BDC)/g, '');
+    const lower = strippedText.toLowerCase();
     return FINAL_CONTENT_KEYWORDS.some((kw) => {
         // 若為純 ASCII（如英文關鍵字），轉小寫進行不區分大小寫的寬鬆比對
         if (/^[\x00-\x7F]*$/.test(kw)) {
@@ -72,7 +79,7 @@ function isSuspectContentText(text) {
         }
         // 非 ASCII（包含中文原字串、或二進位特徵位元組），進行嚴格精確比對
         // 避免 toLowerCase() 破壞二進位特徵值
-        return expandedText.includes(kw);
+        return strippedText.includes(kw);
     });
 }
 
@@ -123,7 +130,7 @@ function isSuspectDirectContent(entry) {
 
 /**
  * 策略 5: 巨型文字區塊 (TextBlocks) 判定
- * 掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過 80 的文字。
+ * 掃描原始 PDF 內容字串，尋找 BT...ET 區塊中，字型設定超過門檻值 (LARGE_TEXT_SIZE_THRESHOLD) 的文字。
  * 例如： /F1 100 Tf
  * @param {string} rawStr - 原始內容字串
  * @returns {boolean} 是否包含巨型文字區塊
@@ -138,7 +145,8 @@ function isSuspectTextBlock(rawStr) {
         const tfMatch = block.match(/([0-9.]+)\s+Tf\b/);
         if (tfMatch) {
             const fontSize = parseFloat(tfMatch[1]);
-            if (fontSize >= 80) return true;
+            // 使用 config.js 中全域定義的巨型文字門檻值（預設 72），與使用者設定保持一致
+            if (fontSize >= LARGE_TEXT_SIZE_THRESHOLD) return true;
         }
     }
     return false;
@@ -251,6 +259,13 @@ function decodeHexStringsInText(text) {
         // 找尋 < 與 >，框出十六進位字串區塊
         const openIdx = text.indexOf('<', start);
         if (openIdx === -1) break;
+
+        // 排除 PDF 字典語法 <<...>>（以兩個角括號開頭），避免誤將字典內容當作 hex 字串解析
+        if (text[openIdx + 1] === '<') {
+            start = openIdx + 2;
+            continue;
+        }
+
         const closeIdx = text.indexOf('>', openIdx);
         if (closeIdx === -1) break;
 
