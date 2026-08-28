@@ -1,10 +1,10 @@
 # PDF 浮水印清除工具
-[![Version](https://img.shields.io/badge/version-2.5.3-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
+[![Version](https://img.shields.io/badge/version-2.5.4-blue.svg)](https://github.com/mfhsieh/pdf-watermark-remover/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hant)
 
 > 🚀 **100% 前端執行，守護您的文件隱私**
 >
-> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.3.zip)
+> [→ 線上使用](https://mfhsieh.github.io/pdf-watermark-remover/) | [→ 下載個人使用版本](dist/pdf-watermark-remover-v2.5.4.zip)
 
 ## 📌 專案簡介
 
@@ -155,6 +155,9 @@
 
 ## 📦 Release Notes
 
+- **v2.5.4 (2026-08-28)**
+  - ✨ **掃描與清除邏輯同步**：同步巨型文字 (TextBlocks) 特徵門檻至全域設定，確保掃描預選與清除邏輯完全一致。
+  - 🐛 **Direct Content 誤判修正**：過濾內容串流的 `<< ... >> BDC` 字典，避免內部屬性（如 watermark）造成預選誤判。
 - **v2.5.3 (2026-08-28)**
   - 🐛 **OCG 預覽修正**：修正選擇性內容群組 (OCG) 的預覽結果與實際清除不一致的問題，改用與清除引擎相同的物理移除邏輯產生預覽，同時消除預覽操作汙染快取的副作用。
 - **v2.5.2 (2026-08-27)**
